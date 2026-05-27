@@ -17,4 +17,16 @@ public class Inventory : MonoBehaviour
         items.Add(item);
         Debug.Log(item.itemName + " 을 훔쳤다!");
     }
+
+    public bool HasItem(string itemName)
+    {
+        foreach (ItemObject item in items)
+        {
+            if (item.itemName == itemName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
