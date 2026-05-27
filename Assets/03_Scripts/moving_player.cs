@@ -7,8 +7,8 @@ public class SimpleFPSController : MonoBehaviour
     public GameObject myInventoryUI; // ◀ 여기에 새로 만든 사각형 패널을 드래그해서 넣으세요!
 
     [Header("Movement")]
-    public float moveSpeed = 5f;
-    public float jumpForce = 5f;
+    public float moveSpeed = 250f;
+    public float jumpForce = 260f;
     public float gravity = 9.81f;
 
     [Header("Look Sensitive")]
