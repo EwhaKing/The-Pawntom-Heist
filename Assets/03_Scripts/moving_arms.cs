@@ -9,7 +9,7 @@ public class HandBob : MonoBehaviour
     public float bobAmount = 0.05f;
 
     [Header("Rotation Bob")]
-    public float tiltAmount = 2f;   // 좌우 기울기
+    public float tiltAmount = 10f;   // 좌우 기울기
     public float rollAmount = 3f;   // 앞뒤 회전 느낌
 
     [Header("Smoothing")]

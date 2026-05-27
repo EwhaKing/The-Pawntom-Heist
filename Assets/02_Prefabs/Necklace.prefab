@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5705784000581286031}
   - component: {fileID: 7993315173500779985}
   - component: {fileID: 8176958869089632036}
-  - component: {fileID: 2185365806609347313}
+  - component: {fileID: 2539450023228467710}
   m_Layer: 6
   m_Name: Necklace
   m_TagString: Untagged
@@ -115,7 +115,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &2185365806609347313
+--- !u!114 &2539450023228467710
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -124,8 +124,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 3880204369791595464}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f48ac3b61923c745b7cd5efd9fc9c93, type: 3}
+  m_Script: {fileID: 11500000, guid: b6d4e5b7f7e578541a1c3220506381d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemObject
-  itemName: Necklace
+  itemName: 
   itemIcon: {fileID: 0}

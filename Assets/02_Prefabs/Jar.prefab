@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6515230344540812120}
   - component: {fileID: 8601931129688917068}
   - component: {fileID: 1793955160414445889}
-  - component: {fileID: 6484048894432468618}
+  - component: {fileID: 8078084053546416047}
   m_Layer: 6
   m_Name: Jar
   m_TagString: Untagged
@@ -113,7 +113,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: -0.0000019073486}
---- !u!114 &6484048894432468618
+--- !u!114 &8078084053546416047
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -122,8 +122,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 2963492028881522695}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f48ac3b61923c745b7cd5efd9fc9c93, type: 3}
+  m_Script: {fileID: 11500000, guid: b6d4e5b7f7e578541a1c3220506381d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemObject
-  itemName: Jar
+  itemName: 
   itemIcon: {fileID: 0}

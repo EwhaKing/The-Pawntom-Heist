@@ -18,7 +18,7 @@ public class ExitInteraction : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(1))
         {
             TryExit();
         }
@@ -31,7 +31,12 @@ public class ExitInteraction : MonoBehaviour
 
         if (Physics.SphereCast(ray, interactRadius, out RaycastHit hit, interactDistance))
         {
-            ExitObject exit = hit.collider.GetComponentInParent<ExitObject>();
+            Debug.Log($"[탈출 레이저] {hit.collider.name}을(를) 조준했습니다.");
+            ExitObject exit = hit.collider.GetComponent<ExitObject>();
+            
+            if (exit == null)
+                exit = hit.collider.GetComponentInParent<ExitObject>();
+            
             if (exit != null)
             {
                 if (Inventory.Instance == null)
@@ -42,14 +47,29 @@ public class ExitInteraction : MonoBehaviour
 
                 if (Inventory.Instance.HasItem(requiredItemName))
                 {
-                    Debug.Log("탈출에 성공했다!");
+                    Debug.Log("🎉 탈출에 성공했다!");
+                    CompleteLevel();
                 }
-
                 else
                 {
                     Debug.Log(requiredItemName + "를 훔쳐야 탈출할 수 있습니다!");
                 }
+            }else
+            {
+                // 🔍 [추가] 물체는 맞췄는데 ExitObject 명찰을 못 찾았을 때 치는 대사
+                Debug.Log($"[탈출 레이저] {hit.collider.name} 또는 그 부모 오브젝트에 'ExitObject' 스크립트가 붙어있지 않습니다!");
             }
         }
+        else
+        {
+            // 🔍 [추가] 레이저가 허공을 날아갔을 때 치는 대사
+            Debug.Log("[탈출 레이저] 아무것도 맞추지 못했습니다. 큐브를 정확히 조준해 주세요.");
+        }
+    }
+
+    private void CompleteLevel()
+    {
+        Time.timeScale = 0f;
+        Debug.Log("✅ 레벨 완료! (시간 정지)");
     }
 }
