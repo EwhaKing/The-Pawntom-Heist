@@ -8,6 +8,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01_Scenes/HackingTestScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/01_Scenes/Bootstrap_Scene.unity
+    guid: b4cad417f92faa341b718e4dedb04ff1
+  - enabled: 1
+    path: Assets/01_Scenes/Map_Scene.unity
+    guid: 53b64c9737ac3904e915ffd6a8fc7cf8
+  - enabled: 1
+    path: Assets/01_Scenes/Lobby_Scene.unity
+    guid: f8794619e86909549aba1455f7a580e2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
