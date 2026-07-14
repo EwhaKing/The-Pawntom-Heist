@@ -64,7 +64,7 @@ public class ItemPickup : MonoBehaviour
 
             if (item != null)
             {
-                Inventory.Instance.AddItem(item);
+                InventoryManager.Instance.AddItem(item);
                 Debug.Log($"✅ {item.itemName}을 획득했습니다!");
                 Destroy(item.gameObject);
             }

@@ -1,16 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Inventory : MonoBehaviour
+/// <summary>
+/// 인벤토리매니저입니다.
+/// TODO : 아이템 정렬, 아이템 사용 함수, 버리기 규칙 등 들어갈 예정
+/// </summary>
+public class InventoryManager : PawntomSingleton<InventoryManager>
 {
-    public static Inventory Instance;
-
     public List<ItemObject> items = new List<ItemObject>();
-
-    private void Awake()
-    {
-        Instance = this;
-    }
 
     public void AddItem(ItemObject item)
     {

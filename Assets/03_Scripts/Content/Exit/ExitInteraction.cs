@@ -39,13 +39,13 @@ public class ExitInteraction : MonoBehaviour
             
             if (exit != null)
             {
-                if (Inventory.Instance == null)
+                if (InventoryManager.Instance == null)
                 {
                     Debug.LogError("Inventory.Instance가 없음!");
                     return;
                 }
 
-                if (Inventory.Instance.HasItem(requiredItemName))
+                if (InventoryManager.Instance.HasItem(requiredItemName))
                 {
                     Debug.Log("🎉 탈출에 성공했다!");
                     CompleteLevel();
