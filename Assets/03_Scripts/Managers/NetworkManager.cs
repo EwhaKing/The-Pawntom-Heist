@@ -27,7 +27,6 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     private NetworkRunner _runner;
     private NetworkSceneManagerDefault _sceneManager;
     private bool _isStarting;
-    [SerializeField] private int mapSceneBuildIndex;
     public NetworkRunner Runner => _runner;
 
     /// <summary>
@@ -130,26 +129,31 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
             return;
         }
 
+        int mapSceneBuildIndex = SceneUtilityHelper.GetBuildIndex(SceneNames.Map);
+
+        if (mapSceneBuildIndex < 0)
+        {
+            Debug.LogError($"[NetworkManager] {SceneNames.Map} 씬이 Build Settings에 없습니다.");
+            return;
+        }
+
         SceneRef gameScene = SceneRef.FromIndex(mapSceneBuildIndex);
 
         Debug.Log($"[NetworkManager] 게임 씬 로드를 요청합니다. " + $"BuildIndex: {mapSceneBuildIndex}");
         _runner.LoadScene(gameScene, LoadSceneMode.Single);
     }
 
-
     #region Fusion Callback
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"[Fusion] Player Joined: {player}");
 
-        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
-
-        if (currentSceneIndex != mapSceneBuildIndex)
+        if (!SceneUtilityHelper.IsActiveScene(SceneNames.Map)) //플레이어는 맵 씬에서만 spawn됩니다.
         {
             return;
         }
 
-        if (runner.IsServer)
+        if (runner.IsServer) //호스트만 플레이어를 spawn합니다.
         {
             SpawnManager.Instance.SpawnPlayer(runner, player);
         }
@@ -203,24 +207,36 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
 
+    /// <summary>
+    /// Fusion 네트워크 씬 로드가 완료되었을 때 호출됩니다.
+    /// </summary>
     public void OnSceneLoadDone(NetworkRunner runner)
     {
-        int activeSceneBuildIndex =
-        SceneManager.GetActiveScene().buildIndex;
+        Scene activeScene = SceneManager.GetActiveScene();
 
-        Debug.Log($"[NetworkManager] 네트워크 씬 로드가 완료되었습니다. " + $"BuildIndex: {activeSceneBuildIndex}");
+        Debug.Log($"[NetworkManager] 네트워크 씬 로드가 완료되었습니다. " + $"Scene: {activeScene.name}, BuildIndex: {activeScene.buildIndex}");
 
-        if (activeSceneBuildIndex != mapSceneBuildIndex)
+        switch (activeScene.name)
         {
-            return;
-        }
+            // case SceneNames.Lobby:
+            //     OnLobbySceneLoaded(runner);
+            //     break;
 
-        if (runner.IsServer)
-        {
-            SpawnManager.Instance.SpawnAllPlayers(runner);
-        }
+            case SceneNames.Map:
+                OnMapSceneLoaded(runner);
+                break;
 
-        GameManager.Instance.EnterInGame();
+            // case SceneNames.Result:
+            //     OnResultSceneLoaded(runner);
+            //     break;
+
+            default:
+                Debug.LogWarning(
+                    $"[NetworkManager] 별도 로드 처리가 없는 씬입니다. " +
+                    $"Scene: {activeScene.name}"
+                );
+                break;
+        }
     }
 
     public void OnSceneLoadStart(NetworkRunner runner)
@@ -234,4 +250,14 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
 
     #endregion
+
+    private void OnMapSceneLoaded(NetworkRunner runner)
+    {
+        if (runner.IsServer)
+        {
+            SpawnManager.Instance.SpawnAllPlayers(runner);
+        }
+
+        GameManager.Instance.EnterInGame();
+    }
 }
