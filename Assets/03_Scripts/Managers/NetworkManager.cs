@@ -251,13 +251,27 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
 
     #endregion
 
+    //각 씬 로드 시 행해져야 하는 일들
+    private void OnLobbySceneLoaded(NetworkRunner runner)
+    {
+        InputManager.Instance.DisableGameplayInput();
+    }
+
     private void OnMapSceneLoaded(NetworkRunner runner)
     {
+        InputManager.Instance.EnableGameplayInput();
+
         if (runner.IsServer)
         {
             SpawnManager.Instance.SpawnAllPlayers(runner);
         }
 
         GameManager.Instance.EnterInGame();
+    }
+
+    private void OnResultSceneLoaded(NetworkRunner runner)
+    {
+        InputManager.Instance.DisableGameplayInput();
+        GameManager.Instance.EnterResult();
     }
 }

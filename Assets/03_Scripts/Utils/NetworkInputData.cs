@@ -1,8 +1,19 @@
 using Fusion;
 using UnityEngine;
 
+public enum InputButton
+{
+    Jump = 0,
+    Sprint = 1, //달리기
+    Interact = 2
+
+    //Attack = 3 //TODO : 기획에 따라 추가하기
+}
+
 public struct NetworkInputData : INetworkInput
 {
-    public Vector2 Move;
-    //public Vector2 Look;
+    public Vector2 Move; // WASD 이동 입력
+    public Vector2 Look; // 마우스 시점 회전 입력
+
+    public NetworkButtons Buttons;
 }
