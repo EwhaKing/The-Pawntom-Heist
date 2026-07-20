@@ -79,45 +79,10 @@ public class GameManager : PawntomSingleton<GameManager>
         ChangeState(GameState.Result);
     }
 
-
-    [Header("현재 로비에서 선택 중인 플레이어 속성")]
-    [SerializeField] private string _currentInputName = string.Empty;
-    [SerializeField] private CatType _currentSelectedCat = CatType.BlackCat;
-    // 나중에 UI나 저장 시스템에서 이 프로퍼티를 통해 이름을 마음대로 넣고 뺍니다.
-    public string CurrentInputName
-    {
-        get { return _currentInputName; }
-        set { _currentInputName = value; }
-    }
-
-    public CatType CurrentSelectedCat
-    {
-        get { return _currentSelectedCat; }
-        set { _currentSelectedCat = value; }
-    }
-
     protected override void Awake()
     {
         base.Awake();
-
-        // TODO : 기획과 상의
-        // [저장 시스템 연동 뼈대] 게임이 처음 켜질 때, 이전에 저장된 이름이 있다면 자동으로 불러옵니다.
-        // 만약 저장된 게 없다면 빈칸이거나 기본값으로 세팅됩니다.
-        /*
-        _currentInputName = PlayerPrefs.GetString("SavedPlayerName", "UnknownCat");
-        _currentSelectedCat = CatType.BlackCat; // 기본 선택 없음
-        */
     }
-
-
-    // TODO : 기획과 상의
-    //[저장용 함수] 방에 성공적으로 입장했을 때, 이 이름을 기억해두기 위해 호출할 함수입니다.
-    // public void SaveCurrentName()
-    // {
-    //     PlayerPrefs.SetString("SavedPlayerName", _currentInputName);
-    //     PlayerPrefs.Save(); // 하드디스크에 실제로 저장
-    //     Debug.Log($"[GameManager] 이름이 성공적으로 저장되었습니다: {_currentInputName}");
-    // }
 
     /// <summary>
     /// 게임 시작 조건을 확인하고 게임 씬 로드를 요청합니다.
