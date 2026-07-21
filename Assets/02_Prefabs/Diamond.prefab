@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 1849821266802469240}
   - component: {fileID: 4260330625829303014}
   - component: {fileID: -2641519256140472174}
+  - component: {fileID: 6334529334843353458}
+  - component: {fileID: 1548388900211741413}
   m_Layer: 6
   m_Name: Diamond
   m_TagString: Untagged
@@ -120,10 +122,44 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1489075253358649210}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6d4e5b7f7e578541a1c3220506381d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemObject
   itemName: sphere
   itemIcon: {fileID: 0}
+--- !u!114 &6334529334843353458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489075253358649210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ef51be8ccd4314e945e77e4111bcec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkItem
+  _ItemId: 2
+  _IsPickedUp:
+    _value: 0
+--- !u!114 &1548388900211741413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489075253358649210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 2174330832
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 6334529334843353458}
+  ForceRemoteRenderTimeframe: 0

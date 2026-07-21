@@ -1164,7 +1164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13425ad66cbef894bbcef69ef90ac996, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
-  items: []
+  _Slots: 
 --- !u!4 &419098684
 Transform:
   m_ObjectHideFlags: 0
@@ -2299,6 +2299,7 @@ MonoBehaviour:
   playerCamera: {fileID: 970411705}
   pickupDistance: 50
   pickupRadius: 0.5
+  pickupPressed: 0
 --- !u!114 &893820137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2314,7 +2315,7 @@ MonoBehaviour:
   playerCamera: {fileID: 970411705}
   interactDistance: 50
   interactRadius: 0.5
-  requiredItemName: Catleaf
+  requiredItemId: 1
 --- !u!1 &959835516
 GameObject:
   m_ObjectHideFlags: 0
@@ -3954,6 +3955,51 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1368197485}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1447669701
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1447669703}
+  - component: {fileID: 1447669702}
+  m_Layer: 0
+  m_Name: ItemDatabase
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1447669702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1447669701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29126b0bbd8a665479bc2d55bdd535dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDatabase
+  items: []
+--- !u!4 &1447669703
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1447669701}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 241.40706, y: 0, z: 149.646}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1458773611
 GameObject:
   m_ObjectHideFlags: 0
@@ -4045,7 +4091,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13425ad66cbef894bbcef69ef90ac996, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
-  items: []
+  _Slots: 
 --- !u!1 &1511935879
 GameObject:
   m_ObjectHideFlags: 0
@@ -6195,6 +6241,14 @@ PrefabInstance:
       propertyPath: SortKey
       value: 1182182534
       objectReference: {fileID: 0}
+    - target: {fileID: 7305377701703729374, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
+      propertyPath: NetworkedBehaviours.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7305377701703729374, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[2]'
+      value: 
+      objectReference: {fileID: 893820137}
     - target: {fileID: 9035410880498178850, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.10000001
@@ -6251,3 +6305,4 @@ SceneRoots:
   - {fileID: 2092822997}
   - {fileID: 419098684}
   - {fileID: 1351391257}
+  - {fileID: 1447669703}
