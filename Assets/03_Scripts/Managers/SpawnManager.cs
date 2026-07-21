@@ -13,7 +13,6 @@ using Unity.VisualScripting;
 ///
 /// TODO:
 /// - Enemy Spawn
-/// - Item Spawn
 /// </summary>
 public class SpawnManager : MonoBehaviour
 {
@@ -112,22 +111,13 @@ public class SpawnManager : MonoBehaviour
     }
 
     // ==================================================
-    // 추후 추가 예정. 적 스폰, 아이템 스폰도 여기서 관리.
+    // 추후 추가 예정. 적 스폰도 여기서 관리.
     // ==================================================
 
     // TODO:
     // Enemy Spawn
     //
     // public void SpawnEnemy(...)
-    // {
-    //
-    // }
-
-
-    // TODO:
-    // Item Spawn
-    //
-    // public void SpawnItem(...)
     // {
     //
     // }
