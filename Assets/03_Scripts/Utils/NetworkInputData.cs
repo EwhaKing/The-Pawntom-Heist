@@ -5,9 +5,11 @@ public enum InputButton
 {
     Jump = 0,
     Sprint = 1, //달리기
-    Interact = 2
+    Interact = 2,
+    // UseItem = 3,
+    // DropItem = 4
 
-    //Attack = 3 //TODO : 기획에 따라 추가하기
+    //Attack = 5 //TODO : 기획에 따라 추가하기
 }
 
 public struct NetworkInputData : INetworkInput

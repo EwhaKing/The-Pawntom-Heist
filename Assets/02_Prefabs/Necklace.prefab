@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 7993315173500779985}
   - component: {fileID: 8176958869089632036}
   - component: {fileID: 2539450023228467710}
+  - component: {fileID: -2162387574047593587}
+  - component: {fileID: 7141881669872107655}
   m_Layer: 6
   m_Name: Necklace
   m_TagString: Untagged
@@ -129,3 +131,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemObject
   itemName: 
   itemIcon: {fileID: 0}
+--- !u!114 &-2162387574047593587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3880204369791595464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ef51be8ccd4314e945e77e4111bcec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkItem
+  _ItemId: 4
+  _IsPickedUp:
+    _value: 0
+--- !u!114 &7141881669872107655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3880204369791595464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 131296439
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: -2162387574047593587}
+  ForceRemoteRenderTimeframe: 0

@@ -1,3 +1,4 @@
+using Fusion;
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -61,6 +62,11 @@ public class InputManager : PawntomSingleton<InputManager>
         data.Look = _inputActions.Player.Look.ReadValue<Vector2>();
         data.Buttons.Set((int)InputButton.Jump, _inputActions.Player.Jump.IsPressed());
         data.Buttons.Set((int)InputButton.Sprint, _inputActions.Player.Sprint.IsPressed());
+        
+        // 아이템 상호 작용 키
+        data.Buttons.Set((int)InputButton.Interact, _inputActions.Player.Interact.IsPressed());
+        // data.Buttons.Set((int)InputButton.UseItem, _inputActions.Player.UseItem.IsPressed());
+        // data.Buttons.Set((int)InputButton.DropItem, _inputActions.Player.DropItem.IsPressed());
 
         return data;
     }

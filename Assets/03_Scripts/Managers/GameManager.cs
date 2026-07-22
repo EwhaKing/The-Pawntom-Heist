@@ -21,6 +21,13 @@ public class GameManager : PawntomSingleton<GameManager>
     public GameState CurrentState { get; private set; } = GameState.Lobby; //초기 상태 : Lobby 상태
 
     /// <summary>
+    /// 탈출구가 열렸는지 여부
+    /// 
+    /// **NetworkBehaviour가 아니기에 [Networked]로 동기화되지는 않음
+    /// </summary>
+    public bool IsEscapeUnlocked { get; private set; } = false;
+
+    /// <summary>
     /// 게임 상태가 변경될 때 호출되는 이벤트. 이전 상태와 새로운 상태를 함께 전달함.
     /// </summary>
     public static event Action<GameState, GameState> OnStateChanged;
@@ -128,6 +135,44 @@ public class GameManager : PawntomSingleton<GameManager>
 
         EnterLoading();
         NetworkManager.Instance.LoadGameScene();
+    }
+    
+
+    /// <summary>
+    /// 탈출구 해금
+    /// Catleaf를 가진 플레이어가 탈출구와 상호작용했을 떄
+    /// </summary>
+    public void UnlockEscape()
+    {
+        if (IsEscapeUnlocked)
+        {
+            Debug.Log("[GameManager] 탈출구는 이미 열려 있습니다.");
+            return;
+        }
+        IsEscapeUnlocked = true;
+        Debug.Log("[GameManager] Catleaf로 탈출구가 열렸습니다.");
+    }
+
+    /// <summary>
+    /// 플레이어 탈출 처리
+    /// 탈출구가 열린 뒤 플레이어가 탈출구와 상호작용했을 때 호출
+    /// </summary>
+    public void PlayerEscaped(PlayerRef player)
+    {
+        Debug.Log($"[GameManager] Player {player} 탈출 성공!");
+        
+        // TODO:
+        // - 탈출한 플레이어 입력 비활성화 / UI 표시
+        // - 모든 생존자 탈출했는지 검사 및 클리어 처리
+    }
+
+    /// <summary>
+    /// 게임 재시작 또는 새 라운드 시작시 탈출 상태 초기화
+    /// </summary>
+    public void ResultEscapeState()
+    {
+        IsEscapeUnlocked = false;
+        Debug.Log("[GameManager] 탈출구 상태 초기화");
     }
 
 }
