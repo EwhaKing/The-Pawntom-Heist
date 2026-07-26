@@ -112,6 +112,16 @@ public class PlayerInteraction : NetworkBehaviour
 
         Debug.Log($"[PlayerInteraction] 맞춘 오브젝트: {hit.collider.name}");
 
+        // 출발 버튼인지 확인
+        EscapeButtonInteraction escapeButton = hit.collider.GetComponentInParent<EscapeButtonInteraction>();
+
+        if (escapeButton != null)
+        {
+            Debug.Log("[PlayerInteraction] 출발 버튼 발견");
+            escapeButton.TryInteract();
+            return;
+        }
+        
         // 맞은 오브젝트 또는 부모에서 NetworkItem 찾기
         NetworkItem item = hit.collider.GetComponentInParent<NetworkItem>();
 
@@ -170,4 +180,6 @@ public class PlayerInteraction : NetworkBehaviour
 
         Runner.Despawn(itemObject);
     }
+
+    
 }

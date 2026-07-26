@@ -175,4 +175,25 @@ public class GameManager : PawntomSingleton<GameManager>
         Debug.Log("[GameManager] 탈출구 상태 초기화");
     }
 
+    /// <summary>
+    /// 탈출 성공 처리
+    ///
+    /// 조건:
+    /// - 본부 안에 살아있는 플레이어가 최소 1명 이상 있음
+    /// - 팀원 중 한 명 이상이 전설의 캣닢을 소지 중
+    /// - 출발 버튼 상호작용 성공
+    /// </summary>
+    public void EscapeSuccess()
+    {
+        Debug.Log("[GameManager] 레벨 클리어! 탈출 성공");
+
+        // TODO:
+        // - 인벤토리 내 생존 전리품 정산
+        // - 보너스 계산
+        // - 다음 일차 데이터 해금
+        // - 상점 씬으로 이동
+        // - 결과 UI 출력
+
+        EnterResult();
+    }
 }
