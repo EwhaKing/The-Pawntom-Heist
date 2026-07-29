@@ -380,7 +380,6 @@ GameObject:
   - component: {fileID: 7305377701703729374}
   - component: {fileID: 4206348069862675202}
   - component: {fileID: 2705510857539572541}
-  - component: {fileID: 6392667557251088810}
   - component: {fileID: -992902756951653428}
   - component: {fileID: 3836724543608950607}
   - component: {fileID: 7937757339757577455}
@@ -476,7 +475,6 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 4206348069862675202}
   - {fileID: 2705510857539572541}
-  - {fileID: 6392667557251088810}
   - {fileID: -992902756951653428}
   - {fileID: 3836724543608950607}
   ForceRemoteRenderTimeframe: 0
@@ -517,22 +515,6 @@ MonoBehaviour:
   maxPitch: 20
   walkSpeed: 20
   sprintSpeed: 40
---- !u!114 &6392667557251088810
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3099201701710747045}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5296406b501a79540a03169d767a401f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ExitInteraction
-  playerCamera: {fileID: 228144081064392142}
-  interactDistance: 50
-  interactRadius: 0.5
-  requiredItemId: 1
 --- !u!114 &-992902756951653428
 MonoBehaviour:
   m_ObjectHideFlags: 0

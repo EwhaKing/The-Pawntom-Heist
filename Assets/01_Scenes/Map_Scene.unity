@@ -1037,8 +1037,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4693d96ce832344e876213e7fb955f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EscapeButtonInteraction
-  headquartersZone: {fileID: 1266709023}
-  ExitItemId: 1
 --- !u!114 &396744820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2348,10 +2346,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5296406b501a79540a03169d767a401f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExitInteraction
-  playerCamera: {fileID: 970411705}
-  interactDistance: 50
-  interactRadius: 0.5
-  requiredItemId: 1
+  _runner: {fileID: 0}
+  _object: {fileID: 0}
+  InvokeRpc: 0
+  ObjectIndex: 0
+  WordOffset: 0
+  WordCount: 0
+  DefaultReplicated: 1
 --- !u!1 &959835516
 GameObject:
   m_ObjectHideFlags: 0
@@ -3529,6 +3530,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee127908fae52b24a9bf3fa070db7a50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HeadquartersZone
+  zoneCollider: {fileID: 1266709024}
   showDebugLog: 1
 --- !u!65 &1266709024
 BoxCollider:
@@ -4004,6 +4006,76 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -59.41107, y: -0, z: 200.32835}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1355022313
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1355022316}
+  - component: {fileID: 1355022315}
+  - component: {fileID: 1355022314}
+  m_Layer: 0
+  m_Name: RuleManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1355022314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355022313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58f4df0b8988028489ead2f9277b72f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuleManager
+  headquartersZone: {fileID: 1266709023}
+  exitItemId: 1
+  _IsDepartureStarted:
+    _value: 0
+  _IsLevelCleared:
+    _value: 0
+--- !u!114 &1355022315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355022313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 4078624796
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 1355022314}
+  ForceRemoteRenderTimeframe: 0
+--- !u!4 &1355022316
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355022313}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 41.22609, y: 127.50002, z: 235.10353}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6410,7 +6482,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7305377701703729374, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 6
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7305377701703729374, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
@@ -6460,15 +6532,15 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
 --- !u!114 &2092822998 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6392667557251088810, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
+  m_CorrespondingSourceObject: {fileID: -992902756951653428, guid: 4ace5a4ca7806634cadc1adee19b173f, type: 3}
   m_PrefabInstance: {fileID: 2092822997}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 893820123}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5296406b501a79540a03169d767a401f, type: 3}
+  m_Script: {fileID: 11500000, guid: f1cb0bc6659ce48409003085e6b24d78, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ExitInteraction
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
 --- !u!54 &2092822999
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6519,3 +6591,4 @@ SceneRoots:
   - {fileID: 1351391257}
   - {fileID: 1447669703}
   - {fileID: 1266709027}
+  - {fileID: 1355022316}
