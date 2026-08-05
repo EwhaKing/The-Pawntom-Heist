@@ -493,8 +493,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Unity::Fusion.NetworkCharacterController
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  gravity: -20
-  jumpImpulse: 8
+  gravity: -100
+  fallMultiplier: 2.5
+  jumpImpulse: 60
   acceleration: 1000
   braking: 10
   maxSpeed: 20
@@ -512,7 +513,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   playerCamera: {fileID: 228144081064392142}
-  lookSensitivity: 0.05
+  lookSensitivity: 0.1
   minPitch: -20
   maxPitch: 20
   walkSpeed: 30

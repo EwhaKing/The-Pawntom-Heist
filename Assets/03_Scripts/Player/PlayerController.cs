@@ -2,6 +2,7 @@ using Fusion;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkCharacterController))]
+[RequireComponent(typeof(PlayerData))]
 public class PlayerController : NetworkBehaviour
 {
     [Header("Camera")]
@@ -11,11 +12,17 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float lookSensitivity = 0.1f;
     [SerializeField] private float minPitch = -20f;
     [SerializeField] private float maxPitch = 20f;
+
     [Header("Movement")]
-    [SerializeField] private float walkSpeed = 20f; //걷기 속도
-    [SerializeField] private float sprintSpeed = 40f; //달리기 속도
+    [SerializeField] private float walkSpeed = 30f; //걷기 속도
+    [SerializeField] private float sprintSpeed = 60f; //달리기 속도
+
+    [Header("Jump")]
+    [SerializeField, Range(0f, 1f)]
+    private float jumpCutMultiplier = 0.45f;
 
     private NetworkCharacterController _controller;
+    private PlayerData _playerData;
 
     private float _pitch; // 카메라의 위아래 회전값
     private NetworkButtons _previousButtons; // 이전 프레임의 버튼 상태를 저장하는 변수
@@ -23,6 +30,7 @@ public class PlayerController : NetworkBehaviour
     private void Awake()
     {
         _controller = GetComponent<NetworkCharacterController>();
+        _playerData = GetComponent<PlayerData>();
     }
 
     /// <summary>
@@ -60,9 +68,23 @@ public class PlayerController : NetworkBehaviour
         bool isSprinting = input.Buttons.IsSet((int)InputButton.Sprint);
         HandleMove(input.Move, isSprinting);
 
-        NetworkButtons pressedButtons = input.Buttons.GetPressed(_previousButtons);
+        NetworkButtons pressed =
+            input.Buttons.GetPressed(_previousButtons);
+
+        NetworkButtons released =
+            input.Buttons.GetReleased(_previousButtons);
+
+        if (pressed.IsSet(InputButton.Jump))
+        {
+            HandleJump();
+        }
+
+        if (released.IsSet(InputButton.Jump))
+        {
+            HandleJumpReleased();
+        }
+
         _previousButtons = input.Buttons;
-        HandleButtons(pressedButtons);
     }
 
     private void HandleMove(Vector2 moveInput, bool isSprinting)
@@ -97,16 +119,21 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
-    private void HandleButtons(NetworkButtons buttons)
+    private void HandleJumpReleased()
     {
-        if (buttons.IsSet((int)InputButton.Jump))
-        {
-            HandleJump();
-        }
+        _controller.CutJump(jumpCutMultiplier);
     }
 
     private void HandleJump()
     {
+        Debug.Log($"점프 전: {_controller.Velocity.y}");
+
         _controller.Jump();
+
+        Debug.Log(
+        $"점프 후: {_controller.Velocity.y}, " +
+        $"Impulse: {_controller.jumpImpulse}, " +
+        $"Grounded: {_controller.Grounded}"
+    );
     }
 }
