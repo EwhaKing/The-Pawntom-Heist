@@ -53,6 +53,8 @@ public class InputManager : PawntomSingleton<InputManager>
     {
         NetworkInputData data = new NetworkInputData();
 
+        data.SelectedSlotIndex = -1;
+
         if (!_isGameplayInputEnabled || _inputActions == null)
         {
             return data;
@@ -60,9 +62,45 @@ public class InputManager : PawntomSingleton<InputManager>
 
         data.Move = _inputActions.Player.Move.ReadValue<Vector2>();
         data.Look = _inputActions.Player.Look.ReadValue<Vector2>();
+        
         data.Buttons.Set((int)InputButton.Jump, _inputActions.Player.Jump.IsPressed());
         data.Buttons.Set((int)InputButton.Sprint, _inputActions.Player.Sprint.IsPressed());
-        
+        data.Buttons.Set((int)InputButton.Interact, _inputActions.Player.Interact.IsPressed());
+
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
+            {
+                data.SelectedSlotIndex = 0;
+            }
+            else if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
+            {
+                data.SelectedSlotIndex = 1;
+            }
+            else if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame)
+            {
+                data.SelectedSlotIndex = 2;
+            }
+            else if (Keyboard.current.digit4Key.wasPressedThisFrame || Keyboard.current.numpad4Key.wasPressedThisFrame)
+            {
+                data.SelectedSlotIndex = 3;
+            }
+        }
+
+        if (Mouse.current != null)
+        {
+            float scrollY = Mouse.current.scroll.ReadValue().y;
+
+            if (scrollY > 0f)
+            {
+                data.SlotScrollDirection = -1;
+            }
+            else if (scrollY < 0f)
+            {
+                data.SlotScrollDirection = 1;
+            }
+        }
+
         // 아이템 상호 작용 키
         data.Buttons.Set((int)InputButton.Interact, _inputActions.Player.Interact.IsPressed());
         // data.Buttons.Set((int)InputButton.UseItem, _inputActions.Player.UseItem.IsPressed());

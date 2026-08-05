@@ -18,4 +18,8 @@ public struct NetworkInputData : INetworkInput
     public Vector2 Look; // 마우스 시점 회전 입력
 
     public NetworkButtons Buttons;
+
+    public int SelectedSlotIndex;
+
+    public int SlotScrollDirection;
 }

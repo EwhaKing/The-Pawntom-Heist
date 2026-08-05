@@ -542,7 +542,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13425ad66cbef894bbcef69ef90ac996, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
-  _Slots: 0000000000000000000000000000000000000000
+  _Slots: 00000000000000000000000000000000
   _SelectedSlotIndex: 0
 --- !u!54 &7937757339757577455
 Rigidbody:

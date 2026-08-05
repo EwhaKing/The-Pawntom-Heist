@@ -1,5 +1,4 @@
 using Fusion;
-using Fusion.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,7 +17,7 @@ using UnityEngine;
 /// </summary>
 public class InventoryManager : NetworkBehaviour
 {
-    public const int MaxSlotCount = 5;
+    public const int MaxSlotCount = 4;
     // 비어있는 슬롯은 0으로 처리
     public const int EmptySlot = 0;
 
@@ -36,6 +35,9 @@ public class InventoryManager : NetworkBehaviour
     /// <summary>
     /// Fusion에서 Player NetworkObject가 Spawn된 후 호출
     /// 전체 인벤토리 목록에 자신을 등록
+    /// 
+    /// 추가사항:
+    /// 로컬 플레이어의 인벤토리만 UI 연결
     /// </summary>
     public override void Spawned()
     {
@@ -43,7 +45,21 @@ public class InventoryManager : NetworkBehaviour
             AllInventories.Add(this);
 
         if(Object.HasStateAuthority)
-            SelectedSlotIndex = 0;
+            SelectedSlotIndex = -1;
+
+        
+        if (Object.HasInputAuthority)
+        {
+            InventoryUI inventoryUI = FindFirstObjectByType<InventoryUI>();
+            if (inventoryUI != null)
+            {
+                inventoryUI.SetTargetInventory(this);
+            }
+            else
+            {
+                Debug.LogWarning("[InventoryManager] 씬에서 InventoryUI를 찾지 못했습니다.");
+            }
+        }
     }
 
     /// <summary>
@@ -54,6 +70,117 @@ public class InventoryManager : NetworkBehaviour
     {
         if (AllInventories.Contains(this))
             AllInventories.Remove(this);
+    }
+
+    /// <summary>
+    /// Fusion 네트워크 Tick마다 호출
+    /// 숫자키 1~4 입력이 들어오면 현재 선택 슬롯 변경
+    /// </summary>
+    public override void FixedUpdateNetwork()
+    {
+        if (!GetInput(out NetworkInputData input))
+        {
+            return;
+        }
+
+        // -1이면 이번 Tick에 슬롯 선택 입력이 없다는 뜻
+        if (input.SelectedSlotIndex >= 0)
+        {
+            ToggleSlot(input.SelectedSlotIndex);
+            return;
+        }
+
+        if (input.SlotScrollDirection != 0)
+        {
+            MoveSelectedSlot(input.SlotScrollDirection);
+        }
+    }
+
+    /// <summary>
+    /// 슬롯을 선택하거나, 이미 선택된 슬롯을 선택 해제
+    /// </summary>
+    public void ToggleSlot(int slotIndex)
+    {
+        if (!Object.HasStateAuthority)
+        {
+            return;
+        }
+
+        if (slotIndex < 0 || slotIndex >= MaxSlotCount)
+        {
+            Debug.LogWarning($"[InventoryManager] 잘못된 슬롯 번호입니다: {slotIndex}");
+            return;
+        }
+
+        if (SelectedSlotIndex == slotIndex)
+        {
+            SelectedSlotIndex = -1;
+            Debug.Log("[InventoryManager] 슬롯 선택 해제. 맨손 상태");
+            return;
+        }
+
+        SelectedSlotIndex = slotIndex;
+
+        Debug.Log($"[InventoryManager] 선택 슬롯 변경: {SelectedSlotIndex + 1}번 슬롯");
+    }
+
+    /// <summary>
+    /// 현재 선택 슬롯을 좌우로 이동
+    /// 
+    /// 아무 슬롯도 선택하지 않은 상태에서 움직이면
+    /// 아래 방향은 1번 슬롯, 위 방향은 4번 슬롯 선택
+    /// </summary>
+    private void MoveSelectedSlot(int direction)
+    {
+        if (!Object.HasStateAuthority)
+            return;
+        
+        if (SelectedSlotIndex < 0)
+        {
+            if (direction > 0)
+            {
+                SelectedSlotIndex = 0;
+            }
+            else
+            {
+                SelectedSlotIndex = MaxSlotCount - 1;
+            }
+
+            Debug.Log($"[InventoryManager] 휠 입력으로 슬롯 선택: {SelectedSlotIndex + 1}번 슬롯");
+            return;
+        }
+
+        int nextIndex = SelectedSlotIndex + direction;
+
+        if (nextIndex >= MaxSlotCount)
+            nextIndex = 0;
+
+        if (nextIndex < 0)
+            nextIndex = MaxSlotCount - 1;
+
+        SelectedSlotIndex = nextIndex;
+
+        Debug.Log($"[InventoryManager] 마우스 휠 선택 슬롯 변경: {SelectedSlotIndex + 1}번 슬롯");
+    }
+
+    /// <summary>
+    /// 현재 손에 들고 있는 아이템 ID 반환
+    /// 
+    /// 반환값:
+    /// - EmptySlot(0): 맨손 또는 빈 슬롯 선택
+    /// - 1 이상: 들고 있는 아이템 ID
+    /// 
+    /// 참고:
+    /// - SelectedSlotIndex가 -1이면 아무 슬롯도 선택하지 않은 상태이므로 맨손 처리
+    /// </summary>
+    public int GetHeldItemId()
+    {
+        if (SelectedSlotIndex < 0 || SelectedSlotIndex >= MaxSlotCount)
+        {
+            return EmptySlot;
+        }
+
+        return Slots[SelectedSlotIndex];
     }
 
     /// <summary>
