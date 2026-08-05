@@ -383,6 +383,7 @@ GameObject:
   - component: {fileID: -992902756951653428}
   - component: {fileID: 3836724543608950607}
   - component: {fileID: 7937757339757577455}
+  - component: {fileID: 8196721981007322051}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -477,6 +478,7 @@ MonoBehaviour:
   - {fileID: 2705510857539572541}
   - {fileID: -992902756951653428}
   - {fileID: 3836724543608950607}
+  - {fileID: 8196721981007322051}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -493,7 +495,7 @@ MonoBehaviour:
   _stateAuthorityChangeErrorCorrectionDelta: 0
   gravity: -20
   jumpImpulse: 8
-  acceleration: 20
+  acceleration: 1000
   braking: 10
   maxSpeed: 20
   rotationSpeed: 0
@@ -510,11 +512,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   playerCamera: {fileID: 228144081064392142}
-  lookSensitivity: 0.1
+  lookSensitivity: 0.05
   minPitch: -20
   maxPitch: 20
-  walkSpeed: 20
-  sprintSpeed: 40
+  walkSpeed: 30
+  sprintSpeed: 60
 --- !u!114 &-992902756951653428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -571,6 +573,23 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &8196721981007322051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d42ee4ef11ec7a8439c5d7a6deb7fe77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerData
+  _SelectedCatType: 0
+  _IsSprinting:
+    _value: 0
+  _IsDead:
+    _value: 0
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0
