@@ -491,8 +491,8 @@ MonoBehaviour:
   lookSensitivity: 0.07
   minPitch: -20
   maxPitch: 20
-  walkSpeed: 30
-  sprintSpeed: 60
+  walkSpeed: 20
+  sprintSpeed: 45
   jumpCutMultiplier: 0.45
 --- !u!114 &-992902756951653428
 MonoBehaviour:
