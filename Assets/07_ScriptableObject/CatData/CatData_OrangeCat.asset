@@ -17,4 +17,4 @@ MonoBehaviour:
   lobbySprite: {fileID: 21300000, guid: f55a243a54845f04a8d2ebc05eb27917, type: 3}
   characterSelectIllustration: {fileID: 21300000, guid: c288d42c3623faf4f899cba1789a5348, type: 3}
   playerPrefab: {fileID: 0}
-  description: OrangeCat
+  description: OrangeCatDescription

@@ -17,4 +17,4 @@ MonoBehaviour:
   lobbySprite: {fileID: 21300000, guid: e7bbc150b071052489e57550cb538242, type: 3}
   characterSelectIllustration: {fileID: 21300000, guid: 244f3bdedd9a15b4eb60dc61e9b79557, type: 3}
   playerPrefab: {fileID: 0}
-  description: TabbyCat
+  description: TabbyCatDescription

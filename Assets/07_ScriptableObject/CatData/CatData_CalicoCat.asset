@@ -17,4 +17,4 @@ MonoBehaviour:
   lobbySprite: {fileID: 21300000, guid: 3e3941f618da8a14e9bae39549c2bc81, type: 3}
   characterSelectIllustration: {fileID: 21300000, guid: e315166f14aa47642860c69aa1c51e41, type: 3}
   playerPrefab: {fileID: 0}
-  description: CalicoCat
+  description: CalicoCatDescription
