@@ -63,9 +63,19 @@ public class PlayerController : NetworkBehaviour
     {
         if (!GetInput(out NetworkInputData input)) { return; }
 
+        if (_playerData.IsDead)
+        {
+            return;
+        }
+
         HandleLook(input.Look);
 
-        bool isSprinting = input.Buttons.IsSet((int)InputButton.Sprint);
+        bool wantsToSprint =
+            input.Buttons.IsSet((int)InputButton.Sprint) &&
+            input.Move.sqrMagnitude > 0f;
+        bool isSprinting = CanSprint(wantsToSprint);
+
+        UpdateStamina(isSprinting);
         HandleMove(input.Move, isSprinting);
 
         NetworkButtons pressed =
@@ -89,6 +99,11 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleMove(Vector2 moveInput, bool isSprinting)
     {
+        if (Object.HasStateAuthority)
+        {
+            _playerData.IsSprinting = isSprinting;
+        }
+
         moveInput = Vector2.ClampMagnitude(moveInput, 1f); //벡터가 1을 넘지 않도록 제한
 
         Vector3 moveDirection = transform.forward * moveInput.y + transform.right * moveInput.x;
@@ -126,6 +141,19 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleJump()
     {
+        if (_playerData.IsExhausted ||
+            !_controller.Grounded ||
+            !_playerData.HasStamina(_playerData.JumpStaminaCost))
+        {
+            return;
+        }
+
+        if (Object.HasStateAuthority &&
+            !_playerData.TryConsumeStamina(_playerData.JumpStaminaCost))
+        {
+            return;
+        }
+
         Debug.Log($"점프 전: {_controller.Velocity.y}");
 
         _controller.Jump();
@@ -135,5 +163,60 @@ public class PlayerController : NetworkBehaviour
         $"Impulse: {_controller.jumpImpulse}, " +
         $"Grounded: {_controller.Grounded}"
     );
+    }
+
+    private bool CanSprint(bool wantsToSprint)
+    {
+        if (!wantsToSprint ||
+            _playerData.IsParkouring ||
+            _playerData.IsExhausted)
+        {
+            return false;
+        }
+
+        return _playerData.CurrentStamina > 0f;
+    }
+
+    private void UpdateStamina(bool isSprinting)
+    {
+        if (!Object.HasStateAuthority)
+        {
+            return;
+        }
+
+        if (_playerData.IsParkouring)
+        {
+            float parkourCost = _playerData.ParkourStaminaCost * Runner.DeltaTime;
+
+            if (!_playerData.TryConsumeStamina(parkourCost))
+            {
+                _playerData.StopParkour();
+            }
+
+            return;
+        }
+
+        if (isSprinting)
+        {
+            _playerData.TryConsumeStamina(
+                _playerData.SprintStaminaCost * Runner.DeltaTime
+            );
+            return;
+        }
+
+        if (!_controller.Grounded)
+        {
+            return;
+        }
+
+        _playerData.RestoreStamina(
+            _playerData.StaminaRegenRate * Runner.DeltaTime
+        );
+    }
+
+    private void HandleParkour()
+    {
+        // TODO: 벽 감지와 파쿠르 이동이 구현되면
+        // PlayerData.TryStartParkour / StopParkour를 이곳에서 호출합니다.
     }
 }

@@ -375,7 +375,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4170410190343019040}
-  - component: {fileID: 5577061502757421618}
   - component: {fileID: 5698956714626828396}
   - component: {fileID: 7305377701703729374}
   - component: {fileID: 4206348069862675202}
@@ -408,30 +407,6 @@ Transform:
   - {fileID: 7023570251610067189}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -104.8, z: 0}
---- !u!114 &5577061502757421618
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3099201701710747045}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b413d87616676c409fd5fda2b234e4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleFPSController
-  myInventoryUI: {fileID: 0}
-  moveSpeed: 5
-  jumpForce: 5
-  gravity: 9.81
-  mouseSensitivity: 0.1
-  useHeadBob: 1
-  bobFrequency: 10
-  bobAmount: 0.04
-  useHandBob: 1
-  handBobAmountX: 0.02
-  handBobAmountY: 0.01
-  playerHandObject: {fileID: 0}
 --- !u!143 &5698956714626828396
 CharacterController:
   m_ObjectHideFlags: 0
@@ -513,11 +488,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   playerCamera: {fileID: 228144081064392142}
-  lookSensitivity: 0.1
+  lookSensitivity: 0.07
   minPitch: -20
   maxPitch: 20
   walkSpeed: 30
   sprintSpeed: 60
+  jumpCutMultiplier: 0.45
 --- !u!114 &-992902756951653428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -586,11 +562,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d42ee4ef11ec7a8439c5d7a6deb7fe77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerData
+  catDataList:
+  - {fileID: 11400000, guid: 14b4d988316429d4fa0a21803c09b73f, type: 2}
+  - {fileID: 11400000, guid: 5e9e9a1d26e97bd428d1a6d2e3a3a61c, type: 2}
+  - {fileID: 11400000, guid: 438295258c198f342a554caec4ecdafb, type: 2}
+  - {fileID: 11400000, guid: af226b002e36fbd42be7d1da394770c9, type: 2}
   _SelectedCatType: 0
   _IsSprinting:
     _value: 0
+  _IsParkouring:
+    _value: 0
+  _IsExhausted:
+    _value: 0
   _IsDead:
     _value: 0
+  _CurrentHealth: 0
+  _CurrentStamina: 0
+  _MaxHealth: 0
+  _MaxStamina: 0
+  _StaminaRegenRate: 0
+  _SprintStaminaCost: 0
+  _JumpStaminaCost: 0
+  _ParkourStaminaCost: 0
+  _ExhaustedDuration: 0
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0
