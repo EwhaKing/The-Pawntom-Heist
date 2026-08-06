@@ -144,31 +144,44 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     }
 
     #region Fusion Callback
+
+    /// <summary>
+    /// Fusion이 내부적으로 플레이어의 입장을 감지해주는 콜백
+    /// </summary>
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"[Fusion] Player Joined: {player}");
 
-        if (!SceneUtilityHelper.IsActiveScene(SceneNames.Map)) //플레이어는 맵 씬에서만 spawn됩니다.
+        if (!SceneUtilityHelper.IsActiveScene(SceneNames.Lobby))
         {
             return;
         }
 
-        if (runner.IsServer) //호스트만 플레이어를 spawn합니다.
-        {
-            SpawnManager.Instance.SpawnPlayer(runner, player);
-        }
+        LobbyManager.Instance?.HandlePlayerJoined(runner, player);
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
-        if (!runner.IsServer)
+        Debug.Log($"[Fusion] Player Left: {player}");
+
+        if (SceneUtilityHelper.IsActiveScene(SceneNames.Lobby))
         {
+            if (LobbyManager.Instance == null)
+            {
+                Debug.LogError(
+                    "[NetworkManager] 로비 씬에 LobbyManager가 없습니다."
+                );
+                return;
+            }
+
+            LobbyManager.Instance.HandlePlayerLeft(runner, player);
             return;
         }
 
-        Debug.Log($"[Fusion] Player Left: {player}");
-
-        SpawnManager.Instance.DespawnPlayer(runner, player);
+        if (SceneUtilityHelper.IsActiveScene(SceneNames.Map) && runner.IsServer)
+        {
+            SpawnManager.Instance.DespawnPlayer(runner, player);
+        }
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input)

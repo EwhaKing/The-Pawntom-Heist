@@ -123,19 +123,20 @@ public class GameManager : PawntomSingleton<GameManager>
         }
 
         // TODO:
-        // LobbyManager가 구현되면 모든 플레이어의 Ready 여부를 검사
-        //
-        // if (!LobbyManager.Instance.IsEveryoneReady())
-        // {
-        //     Debug.LogWarning("[GameManager] 아직 준비하지 않은 플레이어가 있습니다.");
-        //     return;
-        // }
+        // LobbyManager가 구현되면 모든 플레이어의 Ready 여부를 검사 UI 처리
+
+        if (!LobbyManager.Instance.CanStartGame())
+        {
+            Debug.LogWarning("아직 준비하지 않은 플레이어가 있습니다.");
+            return;
+        }
 
         Debug.Log("[GameManager] 게임 시작을 요청합니다.");
 
         EnterLoading();
         NetworkManager.Instance.LoadGameScene();
     }
+
 
     /// <summary>
     /// 탈출 성공 처리

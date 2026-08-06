@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// GameState에 따라 로비 씬의 UI 패널을 전환합니다.
@@ -7,11 +8,7 @@ using UnityEngine;
 /// - Lobby UI 표시
 /// - Loading UI 표시
 /// - Ready UI 표시
-///
-/// 담당하지 않음:
-/// - Fusion 연결
-/// - 게임 상태 변경
-/// - 방 생성 및 참가
+/// 
 /// </summary>
 public class LobbyUI : MonoBehaviour
 {
@@ -20,7 +17,21 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] private GameObject readyPanel;
 
     [Header("Ready UI")]
-    [SerializeField] private GameObject startGameButton;
+    [SerializeField] Button startGameButton;
+    [SerializeField] GameObject readyButton;
+
+    public static LobbyUI Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
 
 
     private void OnEnable()
@@ -36,6 +47,7 @@ public class LobbyUI : MonoBehaviour
     private void Start()
     {
         RefreshUI(GameManager.Instance.CurrentState);
+        RefreshButtons();
     }
 
     private void HandleGameStateChanged(
@@ -50,18 +62,68 @@ public class LobbyUI : MonoBehaviour
         loadingPanel.SetActive(state == GameState.Loading);
         readyPanel.SetActive(state == GameState.Ready);
 
-        bool isHost =
-            NetworkManager.Instance != null &&
-            NetworkManager.Instance.Runner != null &&
-            NetworkManager.Instance.Runner.IsSceneAuthority;
+        RefreshButtons();
+    }
 
-        startGameButton.SetActive(state == GameState.Ready && isHost);
+    public void RefreshButtons()
+    {
+        bool isReadyState =
+            GameManager.Instance != null &&
+            GameManager.Instance.CurrentState == GameState.Ready;
 
-        Debug.Log($"[LobbyUI] UI 상태 변경: {state}, Host: {isHost}");
+        LobbyManager lobbyManager = LobbyManager.Instance;
+
+        if (!isReadyState || lobbyManager == null)
+        {
+            startGameButton.gameObject.SetActive(false);
+            readyButton.SetActive(false);
+            return;
+        }
+
+        LobbyPlayerData localPlayerData =
+            lobbyManager.GetLocalPlayerData();
+
+        // 로컬 플레이어 데이터 등록 전에는 두 버튼 모두 숨김
+        if (localPlayerData == null)
+        {
+            startGameButton.gameObject.SetActive(false);
+            readyButton.SetActive(false);
+            return;
+        }
+
+        bool isHost = lobbyManager.IsLocalPlayerHost();
+
+        // 호스트: Showtime
+        startGameButton.gameObject.SetActive(isHost);
+
+        // 클라이언트: Ready
+        readyButton.SetActive(!isHost);
+
+        if (isHost)
+        {
+            startGameButton.interactable =
+                lobbyManager.CanStartGame();
+        }
+
+        Debug.Log(
+            $"[LobbyUI] 버튼 갱신 | " +
+            $"LocalPlayer={localPlayerData.PlayerRef}, " +
+            $"IsHost={isHost}"
+        );
     }
 
     public void OnClickStartGame()
     {
         GameManager.Instance.StartGame();
+    }
+
+    public void OnClickReady()
+    {
+        LobbyPlayerData player = LobbyManager.Instance.GetLocalPlayerData();
+
+        if (player == null)
+            return;
+
+        player.RequestToggleReady();
     }
 }
