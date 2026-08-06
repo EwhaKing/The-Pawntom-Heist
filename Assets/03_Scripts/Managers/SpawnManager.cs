@@ -85,10 +85,41 @@ public class SpawnManager : MonoBehaviour
         }
 
         Transform spawnPoint = _playerSpawnPoints[spawnIndex];
-        NetworkObject playerObject = runner.Spawn(playerPrefab, spawnPoint.position, spawnPoint.rotation, player);
+        CatType selectedCatType = CatType.BlackCat;
+
+        if (NetworkManager.Instance == null ||
+            !NetworkManager.Instance.TryGetSelectedCatType(player, out selectedCatType))
+        {
+            Debug.LogWarning(
+                $"[SpawnManager] 저장된 고양이 선택 정보를 찾지 못해 기본 품종을 사용합니다. " +
+                $"Player={player}, Default={selectedCatType}"
+            );
+        }
+
+        NetworkObject playerObject = runner.Spawn(
+            playerPrefab,
+            spawnPoint.position,
+            spawnPoint.rotation,
+            player,
+            onBeforeSpawned: (networkRunner, networkObject) =>
+            {
+                PlayerData playerData = networkObject.GetComponent<PlayerData>();
+
+                if (playerData == null)
+                {
+                    Debug.LogError("[SpawnManager] 플레이어 프리팹에 PlayerData가 없습니다.");
+                    return;
+                }
+
+                playerData.SelectedCatType = selectedCatType;
+            }
+        );
         spawnedPlayers[player] = playerObject;
 
-        Debug.Log($"[SpawnManager] Player Spawn : {player}");
+        Debug.Log(
+            $"[SpawnManager] Player Spawn : {player}, " +
+            $"SelectedCat={selectedCatType}"
+        );
     }
 
     /// <summary>

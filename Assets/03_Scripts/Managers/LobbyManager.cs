@@ -208,6 +208,20 @@ public class LobbyManager : MonoBehaviour
         return null;
     }
 
+    public bool TryGetSelectedCatType(
+        PlayerRef player,
+        out CatType selectedCatType)
+    {
+        if (_playerDataMap.TryGetValue(player, out LobbyPlayerData playerData))
+        {
+            selectedCatType = playerData.SelectedCatType;
+            return true;
+        }
+
+        selectedCatType = default;
+        return false;
+    }
+
     private int FindEmptySlotIndex()
     {
         for (int i = 0; i < 4; i++)

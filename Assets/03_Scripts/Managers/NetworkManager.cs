@@ -27,6 +27,7 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     private NetworkRunner _runner;
     private NetworkSceneManagerDefault _sceneManager;
     private bool _isStarting;
+    private readonly Dictionary<PlayerRef, CatType> _selectedCatTypes = new();
     public NetworkRunner Runner => _runner;
 
     /// <summary>
@@ -129,6 +130,8 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
             return;
         }
 
+        CacheSelectedCatTypes();
+
         int mapSceneBuildIndex = SceneUtilityHelper.GetBuildIndex(SceneNames.Map);
 
         if (mapSceneBuildIndex < 0)
@@ -141,6 +144,38 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
 
         Debug.Log($"[NetworkManager] 게임 씬 로드를 요청합니다. " + $"BuildIndex: {mapSceneBuildIndex}");
         _runner.LoadScene(gameScene, LoadSceneMode.Single);
+    }
+
+    private void CacheSelectedCatTypes()
+    {
+        _selectedCatTypes.Clear();
+
+        if (LobbyManager.Instance == null)
+        {
+            Debug.LogError("[NetworkManager] 고양이 선택 정보를 저장할 LobbyManager가 없습니다.");
+            return;
+        }
+
+        foreach (PlayerRef player in _runner.ActivePlayers)
+        {
+            if (LobbyManager.Instance.TryGetSelectedCatType(player, out CatType selectedCatType))
+            {
+                _selectedCatTypes[player] = selectedCatType;
+                continue;
+            }
+
+            Debug.LogWarning(
+                $"[NetworkManager] 플레이어의 고양이 선택 정보를 찾지 못했습니다. " +
+                $"Player={player}"
+            );
+        }
+    }
+
+    public bool TryGetSelectedCatType(
+        PlayerRef player,
+        out CatType selectedCatType)
+    {
+        return _selectedCatTypes.TryGetValue(player, out selectedCatType);
     }
 
     #region Fusion Callback
@@ -200,6 +235,7 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
 
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) //Runner가 완전히 종료됐다.
     {
+        _selectedCatTypes.Clear();
         Debug.Log($"[Fusion] Shutdown : {shutdownReason}");
     }
 
