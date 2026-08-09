@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a1b08dea70a65459bdf7d95ef0d29d, type: 3}
+  m_Name: ItemData_Painting
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemId: 5
+  itemName: Painting
+  itemIcon: {fileID: 21300000, guid: a403ee43b46bb7f4d91562663a51d147, type: 3}
+  itemType: 1
+  canUse: 0
+  canDrop: 1
+  canBuy: 0
+  buyPrice: 0
+  sellPrice: 40
+  modelPrefab: {fileID: 6035396468826116320, guid: 6d3adcf1b2d9e2d45bd599afe0091ff2, type: 3}
