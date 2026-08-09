@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a1b08dea70a65459bdf7d95ef0d29d, type: 3}
+  m_Name: ItemData_Catleaf
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemId: 1
+  itemName: GoldenCatleaf
+  itemIcon: {fileID: 21300000, guid: e9158f0881d0f2140bf1a4fdcb383a76, type: 3}
+  itemType: 0
+  canUse: 0
+  canDrop: 1
+  canBuy: 0
+  buyPrice: 0
+  sellPrice: 200
+  modelPrefab: {fileID: 7654520607168482787, guid: 1c252805e25386a4e84a69d83e33a1f2, type: 3}
