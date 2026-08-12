@@ -15,6 +15,9 @@ public class MinimapPlayerArrow : MonoBehaviour
     [Header("Target")]
     [SerializeField] private Transform targetPlayer;
 
+    [Header("Rotation")]
+    [SerializeField] private float rotationOffset = 180f;
+
     /// <summary>
     /// 화살표가 바라볼 대상 플레이어를 설정
     /// 로컬 플레이어가 Spawn된 후 호출
@@ -29,6 +32,6 @@ public class MinimapPlayerArrow : MonoBehaviour
         if (targetPlayer == null)
             return;
         
-        transform.localRotation = Quaternion.Euler(0f, 0f, -targetPlayer.eulerAngles.y);
+        transform.localRotation = Quaternion.Euler(0f, 0f, -targetPlayer.eulerAngles.y + rotationOffset);
     }
 }
