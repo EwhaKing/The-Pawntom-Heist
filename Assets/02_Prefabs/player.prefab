@@ -383,6 +383,7 @@ GameObject:
   - component: {fileID: 3836724543608950607}
   - component: {fileID: 7937757339757577455}
   - component: {fileID: 8196721981007322051}
+  - component: {fileID: 2501010036201639159}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -454,6 +455,7 @@ MonoBehaviour:
   - {fileID: -992902756951653428}
   - {fileID: 3836724543608950607}
   - {fileID: 8196721981007322051}
+  - {fileID: 2501010036201639159}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -585,6 +587,18 @@ MonoBehaviour:
   _JumpStaminaCost: 0
   _ParkourStaminaCost: 0
   _ExhaustedDuration: 0
+--- !u!114 &2501010036201639159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5ebc7d06e69f524d98ff33f2eac0abf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMinimapConnector
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0
