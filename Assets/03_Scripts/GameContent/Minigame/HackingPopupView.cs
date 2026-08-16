@@ -79,5 +79,67 @@ namespace Hacking
         {
             Destroy(gameObject);
         }
+
+        // <summary>
+        /// UI 버튼에서 위 방향 입력을 전달
+        /// </summary>
+        public void PressUp()
+        {
+            SendVirtualInput(KeyCode.UpArrow);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 아래 방향 입력을 전달
+        /// </summary>
+        public void PressDown()
+        {
+            SendVirtualInput(KeyCode.DownArrow);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 왼쪽 방향 입력을 전달
+        /// </summary>
+        public void PressLeft()
+        {
+            SendVirtualInput(KeyCode.LeftArrow);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 오른쪽 방향 입력을 전달
+        /// </summary>
+        public void PressRight()
+        {
+            SendVirtualInput(KeyCode.RightArrow);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 A 입력을 전달
+        /// </summary>
+        public void PressA()
+        {
+            SendVirtualInput(KeyCode.A);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 D 입력을 전달
+        /// </summary>
+        public void PressD()
+        {
+            SendVirtualInput(KeyCode.D);
+        }
+
+        /// <summary>
+        /// UI 버튼 입력을 현재 실행 중인 미니게임에 전달
+        /// </summary>
+        private void SendVirtualInput(KeyCode key)
+        {
+            if (currentGame == null)
+            {
+                Debug.LogWarning("[HackingPopupView] 현재 실행 중인 미니게임이 없습니다.");
+                return;
+            }
+
+            currentGame.ReceiveVirtualInput(key);
+        }
     }
 }

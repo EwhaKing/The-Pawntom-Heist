@@ -92,9 +92,32 @@ namespace Hacking
 
             if (pressed == KeyCode.None) return;
 
+            CheckCommandInput(pressed);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 들어온 방향키 입력 처리
+        /// </summary>
+        public override void ReceiveVirtualInput(KeyCode key)
+        {
+            CheckCommandInput(key);
+        }
+
+        private void CheckCommandInput(KeyCode pressed)
+        {
+            if (!isActive)
+                return;
+            
+            if (targetSequence == null || targetSequence.Length == 0)
+                return;
+            
+            if (currentIdx < 0 || currentIdx >= targetSequence.Length)
+                return;
+            
             if (pressed == targetSequence[currentIdx])
             {
                 currentIdx++;
+                
                 if (currentIdx >= targetSequence.Length)
                 {
                     FinishGame(true);
@@ -103,7 +126,6 @@ namespace Hacking
             else
             {
                 currentIdx = 0;
-                // [추후 연결 예정] 여기서 "삑!" 오답 효과음 재생
                 Debug.Log("[CommandOverrideGame] 입력 불일치! 처음부터 다시 시작합니다.");
             }
         }
