@@ -441,6 +441,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72c7de62e2029e04c9058255a1581ebf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusUI
+  catImage: {fileID: 6044817992657486965}
+  blackCatSprite: {fileID: 21300000, guid: 83e03bd77e052584db4486cb0a1bec4b, type: 3}
+  tabbyCatSprite: {fileID: 21300000, guid: 59193da61e600624ebd58a0ce4cbf792, type: 3}
+  orangeCatSprite: {fileID: 21300000, guid: 24e546b06486ad24b809b9a85c7b5632, type: 3}
+  calicoCatSprite: {fileID: 21300000, guid: 365aff1ec61621c4c97cf1f65c324ef9, type: 3}
   healthSlider: {fileID: 3014542421966298254}
   healthText: {fileID: 7886292753601079390}
   staminaSlider: {fileID: 9098453031619997607}

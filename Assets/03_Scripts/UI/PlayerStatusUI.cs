@@ -7,6 +7,13 @@ using UnityEngine.UI;
 /// </summary>
 public class PlayerStatusUI : MonoBehaviour
 {
+    [Header("Character")]
+    [SerializeField] private Image catImage;
+    [SerializeField] private Sprite blackCatSprite;
+    [SerializeField] private Sprite tabbyCatSprite;
+    [SerializeField] private Sprite orangeCatSprite;
+    [SerializeField] private Sprite calicoCatSprite;
+
     [Header("Health")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TMP_Text healthText;
@@ -74,6 +81,7 @@ public class PlayerStatusUI : MonoBehaviour
         _playerData.HealthChanged += RefreshHealth;
         _playerData.StaminaChanged += RefreshStamina;
 
+        RefreshCatImage(_playerData.SelectedCatType);
         RefreshHealth(_playerData.CurrentHealth, _playerData.MaxHealth);
         RefreshStamina(_playerData.CurrentStamina, _playerData.MaxStamina);
     }
@@ -88,6 +96,25 @@ public class PlayerStatusUI : MonoBehaviour
         _playerData.HealthChanged -= RefreshHealth;
         _playerData.StaminaChanged -= RefreshStamina;
         _playerData = null;
+    }
+
+    private void RefreshCatImage(CatType catType)
+    {
+        if (catImage == null)
+        {
+            return;
+        }
+
+        catImage.sprite = catType switch
+        {
+            CatType.BlackCat => blackCatSprite,
+            CatType.TabbyCat => tabbyCatSprite,
+            CatType.OrangeCat => orangeCatSprite,
+            CatType.CalicoCat => calicoCatSprite,
+            _ => null
+        };
+
+        catImage.enabled = catImage.sprite != null;
     }
 
     private void RefreshHealth(float current, float maximum)
