@@ -384,6 +384,7 @@ GameObject:
   - component: {fileID: 7937757339757577455}
   - component: {fileID: 8196721981007322051}
   - component: {fileID: 2501010036201639159}
+  - component: {fileID: 7693582246180369213}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -456,6 +457,7 @@ MonoBehaviour:
   - {fileID: 3836724543608950607}
   - {fileID: 8196721981007322051}
   - {fileID: 2501010036201639159}
+  - {fileID: 7693582246180369213}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -599,6 +601,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5ebc7d06e69f524d98ff33f2eac0abf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMinimapConnector
+--- !u!114 &7693582246180369213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fa13aac2bd64a72a12bc1199325389c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FurTrailSpawner
+  furBallPrefab: {fileID: 1207327911143679822, guid: 7848e7833e37d0f44aed5dcb4c801b18, type: 3}
+  walkSpawnDistance: 20
+  sprintSpawnDistance: 35
+  horizontalSpread: 15
+  longitudinalSpread: 15
+  rayStartHeight: 5
+  groundCheckDistance: 40
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  surfaceOffset: 0.3
+  alignToGroundNormal: 1
+  randomizeRotation: 1
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0
