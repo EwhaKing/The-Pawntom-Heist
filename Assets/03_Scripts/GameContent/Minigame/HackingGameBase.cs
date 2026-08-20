@@ -32,6 +32,15 @@ namespace Hacking
         /// </summary>
         public virtual string DisplayText => string.Empty;
 
+        /// <summary>
+        /// UI 버튼에서 들어온 가상 입력을 처리합니다.
+        /// 기본적으로는 아무 동작도 하지 않고,
+        /// 필요한 미니게임에서 override해서 사용합니다.
+        /// </summary>
+        public virtual void ReceiveVirtualInput(KeyCode key)
+        {
+        }
+
         /// <summary>게임이 끝나면(성공/실패 무관) 호출되는 콜백. 파라미터는 성공 여부.</summary>
         public System.Action<bool> OnGameEnded;
 

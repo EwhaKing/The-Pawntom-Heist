@@ -72,7 +72,20 @@ namespace Hacking
             HackingPopupView popupView = popupObj.GetComponent<HackingPopupView>();
 
             GameObject gameObj = Instantiate(selected.gamePrefab);
-            HackingGameBase gameInstance = gameObj.GetComponent<HackingGameBase>();
+
+            // 루트뿐만 아니라 자식 오브젝트에 붙은 미니게임 스크립트도 찾도록 수정
+            HackingGameBase gameInstance = gameObj.GetComponentInChildren<HackingGameBase>(true);
+
+            if (gameInstance == null)
+            {
+                Debug.LogError($"[HackingManager] {selected.gamePrefab.name} 프리팹 안에서 HackingGameBase를 상속한 미니게임 스크립트를 찾지 못했습니다.");
+
+                Destroy(popupObj);
+                Destroy(gameObj);
+                IsHackingActive = false;
+                return;
+            }
+
             gameInstance.InitGame(level);
 
             popupView.InitializePopup(gameInstance, OnHackingFinished);

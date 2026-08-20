@@ -51,7 +51,27 @@ namespace Hacking
 
             if (pressed == KeyCode.None) return;
 
-            // 직전과 같은 키면 무시
+            CheckSignalInput(pressed);
+        }
+
+        /// <summary>
+        /// UI 버튼에서 들어온 A/D 입력을 처리합니다.
+        /// </summary>
+        public override void ReceiveVirtualInput(KeyCode key)
+        {
+            CheckSignalInput(key);
+        }
+
+        /// <summary>
+        /// A/D 교차 입력을 검사하고 게이지를 증가시킵니다.
+        /// </summary>
+        private void CheckSignalInput(KeyCode pressed)
+        {
+            if (!isActive) return;
+
+            if (pressed != KeyCode.A && pressed != KeyCode.D) return;
+
+            // 같은 키를 연속으로 누르면 무시
             if (pressed == lastPressedKey) return;
 
             lastPressedKey = pressed;
