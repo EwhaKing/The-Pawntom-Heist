@@ -25,7 +25,7 @@ public class RuleManager : NetworkBehaviour
     public static RuleManager Instance { get; private set; }
 
     [Header("Required")]
-    [SerializeField] private HeadquartersZone headquartersZone;
+    [SerializeField] private MainbaseZone headquartersZone;
 
     [Header("Item")]
     [SerializeField] private int exitItemId = 1;
