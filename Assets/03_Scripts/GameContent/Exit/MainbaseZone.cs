@@ -13,7 +13,7 @@ using System.Collections.Generic;
 /// - 본부 공간 오브젝트에 붙임
 /// - Collider -> Is Trigger 상태
 /// </summary>
-public class HeadquartersZone : MonoBehaviour
+public class MainbaseZone : MonoBehaviour
 {
     [Header("Zone")]
     [SerializeField] private BoxCollider zoneCollider;

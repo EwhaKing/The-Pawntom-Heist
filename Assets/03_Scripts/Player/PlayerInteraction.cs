@@ -74,6 +74,20 @@ public class PlayerInteraction : NetworkBehaviour
         previousButtons = input.Buttons;
     }
 
+    // UI가 열려있는 동안 플레이어의 동작을 막음
+    private void Update()
+    {
+        if (GameplayInputBlocker.IsBlocked)
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryInteract();
+        }
+    }
+
     /// <summary>
     /// 카메라 정면으로 상호작용 가능한 아이템을 탐색합니다.
     /// </summary>
@@ -111,6 +125,15 @@ public class PlayerInteraction : NetworkBehaviour
         }
 
         Debug.Log($"[PlayerInteraction] 맞춘 오브젝트: {hit.collider.name}");
+
+        // 본부 기계인지 확인
+        ControlMachine controlMachine = hit.collider.GetComponentInParent<ControlMachine>();
+
+        if (controlMachine != null)
+        {
+            controlMachine.TryInteract();
+            return;
+        }
 
         // 출발 버튼인지 확인
         EscapeButtonInteraction escapeButton = hit.collider.GetComponentInParent<EscapeButtonInteraction>();

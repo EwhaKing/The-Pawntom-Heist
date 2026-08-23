@@ -47,16 +47,37 @@ public class InputManager : PawntomSingleton<InputManager>
     }
 
     /// <summary>
-    /// 현재 입력을 수집하여 Fusion 입력 데이터로 반환합니다.
+    /// 현재 입력을 수집하여 Fusion 입력 데이터로 반환
     /// </summary>
     public NetworkInputData GetNetworkInput()
     {
         NetworkInputData data = new NetworkInputData();
 
+        // 기본값 초기화
+        // -1 = 숫자키 슬롯 선택 입력 없음
         data.SelectedSlotIndex = -1;
 
+        // 0 = 마우스 휠 입력 없음
+        data.SlotScrollDirection = 0;
+
+        // 입력 시스템이 꺼져 있거나 InputActions가 없으면 빈 입력 반환
         if (!_isGameplayInputEnabled || _inputActions == null)
         {
+            return data;
+        }
+
+        // CCTV / MainbaseControlUI / 해킹 팝업 등 UI 조작 중이면
+        // 이 클라이언트의 플레이어 입력만 막음
+        if (GameplayInputBlocker.IsBlocked)
+        {
+            data.Move = Vector2.zero;
+            data.Look = Vector2.zero;
+
+            // 버튼 입력도 모두 보내지 않음
+            // Jump / Sprint / Interact / 슬롯 선택 / 휠 입력 전부 차단
+            data.SelectedSlotIndex = -1;
+            data.SlotScrollDirection = 0;
+
             return data;
         }
 
