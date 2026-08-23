@@ -5,10 +5,10 @@ using UnityEngine;
 ///
 /// 담당:
 /// - 실제 맵에 있는 격벽의 해금 상태 관리
-/// - 격벽 열림/닫힘 상태 관리
-/// - 실제 Collider ON/OFF
-/// - 실제 벽 색상 변경
-/// - CCTV/미니맵용 벽 표시 색상 변경
+/// - 실제 격벽 열림/닫힘 처리
+/// - 열린 상태에서는 실제 벽 Renderer/Collider를 끔
+/// - 닫힌 상태에서는 실제 벽 Renderer/Collider를 켬
+/// - CCTV/미니맵용 격벽 표시만 빨강/파랑으로 변경
 ///
 /// 사용 위치:
 /// - 실제 맵의 Wall_01, Wall_02 같은 격벽 오브젝트에 붙임
@@ -20,40 +20,46 @@ public class ControllableWall : MonoBehaviour
     [SerializeField] private bool isOpen;
 
     [Header("Actual Wall")]
-    [SerializeField] private Collider wallCollider;
-    [SerializeField] private Renderer wallRenderer;
+    [Tooltip("실제 맵에서 보이는 벽 Renderer")]
+    [SerializeField] private Renderer[] actualWallRenderers;
+
+    [Tooltip("실제 플레이어를 막는 Collider")]
+    [SerializeField] private Collider[] actualWallColliders;
 
     [Header("Minimap / CCTV Visual")]
+    [Tooltip("CCTV/미니맵에 보이는 격벽 표시용 Renderer")]
     [SerializeField] private Renderer minimapWallRenderer;
 
-    [Header("Colors")]
-    [SerializeField] private Color closedColor = new Color(1f, 0.15f, 0.1f, 1f);
-    [SerializeField] private Color openColor = new Color(0.1f, 0.55f, 1f, 1f);
+    [Header("Minimap Colors")]
+    [SerializeField] private Color minimapClosedColor = new Color(1f, 0.15f, 0.1f, 1f);
+    [SerializeField] private Color minimapOpenColor = new Color(0.1f, 0.55f, 1f, 1f);
 
     public bool IsUnlocked => isUnlocked;
     public bool IsOpen => isOpen;
 
     private void Awake()
     {
-        if (wallCollider == null)
+        // Inspector에 직접 연결하지 않았을 때를 위한 자동 탐색
+        if (actualWallRenderers == null || actualWallRenderers.Length == 0)
         {
-            wallCollider = GetComponent<Collider>();
+            actualWallRenderers = GetComponentsInChildren<Renderer>();
         }
 
-        if (wallRenderer == null)
+        if (actualWallColliders == null || actualWallColliders.Length == 0)
         {
-            wallRenderer = GetComponentInChildren<Renderer>();
+            actualWallColliders = GetComponentsInChildren<Collider>();
         }
 
         ApplyWallState();
     }
 
     /// <summary>
-    /// 격벽을 해금 상태로 변경합니다.
+    /// 격벽을 해금 상태로 변경
     /// </summary>
     public void Unlock()
     {
         isUnlocked = true;
+
         Debug.Log($"[ControllableWall] {gameObject.name} 해금 완료");
 
         ApplyWallState();
@@ -61,10 +67,12 @@ public class ControllableWall : MonoBehaviour
 
     /// <summary>
     /// 격벽을 엽니다.
+    /// 실제 벽은 사라지고, 미니맵/CCTV 표시는 파란색
     /// </summary>
     public void OpenWall()
     {
         isOpen = true;
+
         ApplyWallState();
 
         Debug.Log($"[ControllableWall] {gameObject.name} 열림");
@@ -72,17 +80,19 @@ public class ControllableWall : MonoBehaviour
 
     /// <summary>
     /// 격벽을 닫습니다.
+    /// 실제 벽은 다시 보이고, 미니맵/CCTV 표시는 빨간색
     /// </summary>
     public void CloseWall()
     {
         isOpen = false;
+
         ApplyWallState();
 
         Debug.Log($"[ControllableWall] {gameObject.name} 닫힘");
     }
 
     /// <summary>
-    /// 해금된 격벽의 열림/닫힘을 전환합니다.
+    /// 해금된 격벽의 열림/닫힘을 전환
     /// </summary>
     public void ToggleWall()
     {
@@ -103,28 +113,44 @@ public class ControllableWall : MonoBehaviour
     }
 
     /// <summary>
-    /// 현재 상태를 실제 맵과 미니맵/CCTV 표시 모두에 반영합니다.
+    /// 현재 상태를 실제 벽과 미니맵/CCTV 표시용 벽에 반영
     /// </summary>
     private void ApplyWallState()
     {
-        Color currentColor = isOpen ? openColor : closedColor;
+        // 실제 벽은 색을 바꾸지 않고, 보이기/숨기기만 처리
+        bool shouldShowActualWall = !isOpen;
 
-        // 실제 격벽 충돌 처리
-        if (wallCollider != null)
+        if (actualWallRenderers != null)
         {
-            wallCollider.enabled = !isOpen;
+            for (int i = 0; i < actualWallRenderers.Length; i++)
+            {
+                if (actualWallRenderers[i] == null)
+                {
+                    continue;
+                }
+
+                actualWallRenderers[i].enabled = shouldShowActualWall;
+            }
         }
 
-        // 실제 맵 격벽 색상
-        if (wallRenderer != null)
+        // 실제 벽 Collider도 열리면 OFF, 닫히면 ON
+        if (actualWallColliders != null)
         {
-            wallRenderer.material.color = currentColor;
+            for (int i = 0; i < actualWallColliders.Length; i++)
+            {
+                if (actualWallColliders[i] == null)
+                {
+                    continue;
+                }
+
+                actualWallColliders[i].enabled = !isOpen;
+            }
         }
 
-        // 미니맵 / CCTV용 격벽 색상
+        // 미니맵/CCTV 표시용 벽만 색상 변경
         if (minimapWallRenderer != null)
         {
-            minimapWallRenderer.material.color = currentColor;
+            minimapWallRenderer.material.color = isOpen ? minimapOpenColor : minimapClosedColor;
         }
     }
 }
