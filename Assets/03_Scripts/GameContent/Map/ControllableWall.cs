@@ -6,10 +6,12 @@ using UnityEngine;
 /// 담당:
 /// - 실제 맵에 있는 격벽의 해금 상태 관리
 /// - 격벽 열림/닫힘 상태 관리
-/// - 열림 상태면 Collider를 끄고, 닫힘 상태면 Collider를 켬
+/// - 실제 Collider ON/OFF
+/// - 실제 벽 색상 변경
+/// - CCTV/미니맵용 벽 표시 색상 변경
 ///
 /// 사용 위치:
-/// - 실제 맵의 Gate_01, Gate_02 같은 격벽 오브젝트에 붙임
+/// - 실제 맵의 Wall_01, Wall_02 같은 격벽 오브젝트에 붙임
 /// </summary>
 public class ControllableWall : MonoBehaviour
 {
@@ -17,13 +19,16 @@ public class ControllableWall : MonoBehaviour
     [SerializeField] private bool isUnlocked;
     [SerializeField] private bool isOpen;
 
-    [Header("Components")]
+    [Header("Actual Wall")]
     [SerializeField] private Collider wallCollider;
     [SerializeField] private Renderer wallRenderer;
 
-    [Header("World Colors")]
-    [SerializeField] private Color closedColor = Color.red;
-    [SerializeField] private Color openColor = Color.blue;
+    [Header("Minimap / CCTV Visual")]
+    [SerializeField] private Renderer minimapWallRenderer;
+
+    [Header("Colors")]
+    [SerializeField] private Color closedColor = new Color(1f, 0.15f, 0.1f, 1f);
+    [SerializeField] private Color openColor = new Color(0.1f, 0.55f, 1f, 1f);
 
     public bool IsUnlocked => isUnlocked;
     public bool IsOpen => isOpen;
@@ -44,16 +49,18 @@ public class ControllableWall : MonoBehaviour
     }
 
     /// <summary>
-    /// 격벽을 해금 상태로 변경
+    /// 격벽을 해금 상태로 변경합니다.
     /// </summary>
     public void Unlock()
     {
         isUnlocked = true;
         Debug.Log($"[ControllableWall] {gameObject.name} 해금 완료");
+
+        ApplyWallState();
     }
 
     /// <summary>
-    /// 격벽 열기
+    /// 격벽을 엽니다.
     /// </summary>
     public void OpenWall()
     {
@@ -64,7 +71,7 @@ public class ControllableWall : MonoBehaviour
     }
 
     /// <summary>
-    /// 격벽 닫기
+    /// 격벽을 닫습니다.
     /// </summary>
     public void CloseWall()
     {
@@ -75,7 +82,7 @@ public class ControllableWall : MonoBehaviour
     }
 
     /// <summary>
-    /// 현재 열림/닫힘 상태 변경
+    /// 해금된 격벽의 열림/닫힘을 전환합니다.
     /// </summary>
     public void ToggleWall()
     {
@@ -96,18 +103,28 @@ public class ControllableWall : MonoBehaviour
     }
 
     /// <summary>
-    /// Collider와 색상에 현재 상태를 반영
+    /// 현재 상태를 실제 맵과 미니맵/CCTV 표시 모두에 반영합니다.
     /// </summary>
     private void ApplyWallState()
     {
+        Color currentColor = isOpen ? openColor : closedColor;
+
+        // 실제 격벽 충돌 처리
         if (wallCollider != null)
         {
             wallCollider.enabled = !isOpen;
         }
 
+        // 실제 맵 격벽 색상
         if (wallRenderer != null)
         {
-            wallRenderer.material.color = isOpen ? openColor : closedColor;
+            wallRenderer.material.color = currentColor;
+        }
+
+        // 미니맵 / CCTV용 격벽 색상
+        if (minimapWallRenderer != null)
+        {
+            minimapWallRenderer.material.color = currentColor;
         }
     }
 }
