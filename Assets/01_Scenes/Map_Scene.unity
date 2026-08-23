@@ -1258,11 +1258,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ControllableWall
   isUnlocked: 0
   isOpen: 0
-  wallCollider: {fileID: 38537797}
-  wallRenderer: {fileID: 0}
+  actualWallRenderers: []
+  actualWallColliders: []
   minimapWallRenderer: {fileID: 897765660}
-  closedColor: {r: 1, g: 0, b: 0, a: 1}
-  openColor: {r: 0, g: 0, b: 1, a: 1}
+  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
 --- !u!65 &38537797
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2009,11 +2009,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ControllableWall
   isUnlocked: 0
   isOpen: 0
-  wallCollider: {fileID: 73395844}
-  wallRenderer: {fileID: 0}
+  actualWallRenderers: []
+  actualWallColliders: []
   minimapWallRenderer: {fileID: 1371443514}
-  closedColor: {r: 1, g: 0, b: 0, a: 1}
-  openColor: {r: 0, g: 0, b: 1, a: 1}
+  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
 --- !u!65 &73395844
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5793,11 +5793,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ControllableWall
   isUnlocked: 0
   isOpen: 0
-  wallCollider: {fileID: 330340927}
-  wallRenderer: {fileID: 0}
+  actualWallRenderers: []
+  actualWallColliders: []
   minimapWallRenderer: {fileID: 1115078565}
-  closedColor: {r: 1, g: 0, b: 0, a: 1}
-  openColor: {r: 0, g: 0, b: 1, a: 1}
+  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
 --- !u!65 &330340927
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11899,11 +11899,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ControllableWall
   isUnlocked: 0
   isOpen: 0
-  wallCollider: {fileID: 677409147}
-  wallRenderer: {fileID: 0}
+  actualWallRenderers: []
+  actualWallColliders: []
   minimapWallRenderer: {fileID: 915995994}
-  closedColor: {r: 1, g: 0, b: 0, a: 1}
-  openColor: {r: 0, g: 0, b: 1, a: 1}
+  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
 --- !u!65 &677409147
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17679,7 +17679,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1537552911}
   - {fileID: 1225244093}
   - {fileID: 1266709027}
   - {fileID: 1483303667}
@@ -23830,6 +23829,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1280060526}
+  - component: {fileID: 1280060527}
   m_Layer: 5
   m_Name: Page_Position
   m_TagString: Untagged
@@ -23856,6 +23856,23 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1280060527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280060525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58fdb1685ba9b2842b118fe4a5608c72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPositionManager
+  mapCamera: {fileID: 1537552913}
+  mapRect: {fileID: 1617148567}
+  markerParent: {fileID: 1280060526}
+  playerMarkerPrefab: {fileID: 3403184055321891525, guid: 9598f08872ce14e45bd420f344b4bc26, type: 3}
+  hideMarkerOutsideMap: 1
 --- !u!1 &1287474605
 GameObject:
   m_ObjectHideFlags: 0
@@ -29013,15 +29030,15 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1537552910}
   m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 0, z: -50}
+  m_LocalPosition: {x: 0, y: 0, z: 442.0145}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 978495725}
+  m_Father: {fileID: 2001068473}
   m_LocalEulerAnglesHint: {x: 90, y: 90, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 1650, y: 500}
+  m_AnchoredPosition: {x: -1145.0078, y: -40.00006}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1537552912
@@ -36788,6 +36805,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1537552911}
   - {fileID: 2076490574}
   m_Father: {fileID: 1830229170}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
