@@ -62,6 +62,10 @@ public class MainbaseControlUI : MonoBehaviour
         {
             root.SetActive(true);
         }
+    
+        ShowPositionTab();
+
+        GameplayInputBlocker.SetBlocked(true);
 
         Debug.Log("[MainbaseControlUI] UI 열림");
     }
@@ -76,7 +80,7 @@ public class MainbaseControlUI : MonoBehaviour
             root.SetActive(false);
         }
 
-        ShowPositionTab();
+        GameplayInputBlocker.SetBlocked(false);
 
         Debug.Log("[MainbaseControlUI] UI 닫힘");
     }
