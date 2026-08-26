@@ -41,9 +41,9 @@ namespace Pawntom.Enemy.Adapters
                 return false;
             }
 
-            float range = Settings.SightRange;
+            float range = Settings.Perception.SightRange;
             float sqrRange = range * range;
-            float halfAngle = Settings.SightAngle * 0.5f;
+            float halfAngle = Settings.Perception.SightAngle * 0.5f;
 
             Vector3 eyePosition = _eyeTransform.position;
             Vector3 forward = _eyeTransform.forward;
@@ -144,7 +144,7 @@ namespace Pawntom.Enemy.Adapters
             }
 
             Transform eye = _eye != null ? _eye : transform;
-            DrawSightCone(eye, settings.SightRange, settings.SightAngle);
+            DrawSightCone(eye, settings.Perception.SightRange, settings.Perception.SightAngle);
         }
 
         /// <summary>

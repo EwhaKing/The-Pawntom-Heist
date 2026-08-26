@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Pawntom.Enemy.Adapters
 {
     /// <summary>
-    /// 접촉·초근접 감지. 대상이 <c>K9Settings.ContactDistance</c> 안으로 들어오면 보고한다.
+    /// 접촉·초근접 감지. 대상이 <c>K9Settings.Perception.ContactDistance</c> 안으로 들어오면 보고한다.
     /// 보고 종류는 <see cref="K9DetectionKind.Contact"/> 이며 경계(Alert) 를 유발한다.
     /// </summary>
     [AddComponentMenu("Pawntom/Enemy/K9 Contact Perception Source")]
@@ -34,7 +34,7 @@ namespace Pawntom.Enemy.Adapters
                 return false;
             }
 
-            float contactDistance = Settings.ContactDistance;
+            float contactDistance = Settings.Perception.ContactDistance;
             float sqrContact = contactDistance * contactDistance;
             Vector3 origin = _originTransform.position;
 
@@ -92,7 +92,7 @@ namespace Pawntom.Enemy.Adapters
                 return;
             }
 
-            float radius = settings.ContactDistance;
+            float radius = settings.Perception.ContactDistance;
             if (radius <= 0f)
             {
                 return;

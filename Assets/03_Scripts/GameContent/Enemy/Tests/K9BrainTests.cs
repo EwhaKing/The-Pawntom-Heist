@@ -79,7 +79,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Motor.Destinations);
 
             Assert.AreEqual(K9State.Patrol, rig.Brain.State);
-            Assert.AreEqual(rig.Settings.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [Test]
@@ -188,8 +188,8 @@ namespace Pawntom.Enemy.Tests
 
             Assert.AreEqual(moveCountAfterEnter + 2, rig.Motor.MoveToCount, "시야 유지 중 매 틱 갱신되어야 한다");
             Assert.AreEqual(third, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
-            Assert.AreNotEqual(rig.Settings.PatrolSpeed, rig.Motor.LastSpeed);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreNotEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed);
         }
 
         [Test]
@@ -201,7 +201,7 @@ namespace Pawntom.Enemy.Tests
 
             // 도달 상태로 두고 시간을 흘려보낸다.
             rig.Motor.Arrived = true;
-            rig.Brain.Tick(rig.Settings.InvestigateGiveUpSeconds);
+            rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds);
 
             Assert.AreEqual(K9State.Patrol, rig.Brain.State, "도달로 타이머가 초기화되면 안 된다");
         }
@@ -299,7 +299,7 @@ namespace Pawntom.Enemy.Tests
 
             // 유지 시간이 0(기본값)이면 시야가 들어온 첫 틱에 이미 Chase 라 "직전/직후"가 나뉘지 않는다.
             // 두 구간을 구분하기 위해 유지 시간을 명시한다(TASK-008 4.1).
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", rig.Settings.HowlDurationSeconds);
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", rig.Settings.Alert.HowlDurationSeconds);
 
             EnterAlert(rig);
 
@@ -307,19 +307,19 @@ namespace Pawntom.Enemy.Tests
             rig.Source.Report(K9Detection.Sight(seen));
 
             // 유지 시간 안에는 시야가 있어도 Chase 로 가지 않는다.
-            bool early = rig.Brain.Tick(rig.Settings.AlertHoldSeconds * 0.5f);
+            bool early = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds * 0.5f);
 
             Assert.IsFalse(early, "유지 시간 안의 시야는 상태를 바꾸지 않는다");
             Assert.AreEqual(K9State.Alert, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount);
 
             // 유지 시간이 경과하는 틱에 시야가 있으면 Chase 로 간다.
-            bool changed = rig.Brain.Tick(rig.Settings.AlertHoldSeconds);
+            bool changed = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [Test]
@@ -670,7 +670,7 @@ namespace Pawntom.Enemy.Tests
 
             // 측정 틱에서 실제로 배회 지점을 고르도록 주기와 같은 간격으로 흘린다.
             // 5회 x 2초 = 10초라 무감지 제한 시간(20초) 안에 머무른다.
-            float interval = rig.Settings.InvestigateWanderIntervalSeconds;
+            float interval = rig.Settings.Investigate.WanderIntervalSeconds;
             for (int i = 0; i < 4; i++)
             {
                 rig.Brain.Tick(interval);
@@ -709,15 +709,15 @@ namespace Pawntom.Enemy.Tests
             Rig rig = new Rig();
 
             // TASK-005 에서는 하울링 시간이 이 구속을 만들었다. 이제는 경계 유지 시간이 만든다(TASK-008 2.4).
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", rig.Settings.HowlDurationSeconds);
-            Assert.Greater(rig.Settings.AlertHoldSeconds, 0f, "사전 조건: 유지 시간이 0보다 커야 한다");
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", rig.Settings.Alert.HowlDurationSeconds);
+            Assert.Greater(rig.Settings.Alert.HoldSeconds, 0f, "사전 조건: 유지 시간이 0보다 커야 한다");
 
             EnterAlert(rig);
 
             // 유지 시간 내내 시야가 유지되는 상태로 둔다.
             rig.Source.Report(K9Detection.Sight(new Vector3(2f, 0f, 5f)));
 
-            float slice = rig.Settings.AlertHoldSeconds * 0.4f;
+            float slice = rig.Settings.Alert.HoldSeconds * 0.4f;
             bool first = rig.Brain.Tick(slice);
             bool second = rig.Brain.Tick(slice);
 
@@ -766,7 +766,7 @@ namespace Pawntom.Enemy.Tests
 
                 Assert.AreEqual(K9State.Chase, rig.Brain.State, "소실 제한 시간 전에는 Chase 를 유지한다");
                 Assert.AreEqual(rig.Tracker.TrackedPosition, rig.Motor.LastDestination, "매 틱 추적 좌표로 갱신되어야 한다");
-                Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+                Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
             }
 
             Assert.AreEqual(moveCountAfterEnter + 3, rig.Motor.MoveToCount, "매 틱 이동 명령이 나가야 한다");
@@ -784,7 +784,7 @@ namespace Pawntom.Enemy.Tests
             rig.Source.Clear();
             int moveCountAfterEnter = rig.Motor.MoveToCount;
 
-            bool early = rig.Brain.Tick(rig.Settings.ChaseLoseSightSeconds - 1f);
+            bool early = rig.Brain.Tick(rig.Settings.Chase.LoseSightSeconds - 1f);
 
             Assert.IsFalse(early);
             Assert.AreEqual(K9State.Chase, rig.Brain.State);
@@ -808,7 +808,7 @@ namespace Pawntom.Enemy.Tests
             rig.Wander.Active = true;
 
             int moveCountAfterEnter = rig.Motor.MoveToCount;
-            float interval = rig.Settings.InvestigateWanderIntervalSeconds;
+            float interval = rig.Settings.Investigate.WanderIntervalSeconds;
             float elapsed = 0f;
 
             for (int i = 1; i <= 3; i++)
@@ -819,15 +819,15 @@ namespace Pawntom.Enemy.Tests
 
                 Assert.AreEqual(K9State.Investigate, rig.Brain.State);
                 Assert.AreEqual(rig.Wander.Point, rig.Motor.LastDestination, "배회 지점으로 이동해야 한다");
-                Assert.AreEqual(rig.Settings.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f);
+                Assert.AreEqual(rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f);
             }
 
             Assert.AreEqual(moveCountAfterEnter + 3, rig.Motor.MoveToCount, "주기마다 한 번씩만 이동 명령이 나가야 한다");
             Assert.AreEqual(new Vector3(0f, 0f, 10f), rig.Wander.LastAnchor, "배회 기준점은 조사 목표다");
-            Assert.AreEqual(rig.Settings.InvestigateWanderRadius, rig.Wander.LastRadius, 0.0001f);
+            Assert.AreEqual(rig.Settings.Investigate.WanderRadius, rig.Wander.LastRadius, 0.0001f);
 
             // 배회가 무감지 타이머를 초기화했다면 여기서 Patrol 로 가지 못한다.
-            bool changed = rig.Brain.Tick(rig.Settings.InvestigateGiveUpSeconds - elapsed);
+            bool changed = rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds - elapsed);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Patrol, rig.Brain.State, "배회는 무감지 타이머를 건드리면 안 된다");
@@ -850,10 +850,10 @@ namespace Pawntom.Enemy.Tests
 
             // 유지 시간이 0(기본값)이면 첫 틱에 Chase 로 나가 조준을 여러 틱 볼 수 없다.
             // 조준만 떼어 보기 위해 유지 시간을 하울링 시간과 같게 올린다(TASK-008 4.1).
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", rig.Settings.HowlDurationSeconds);
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", rig.Settings.Alert.HowlDurationSeconds);
 
             // 유지 시간 안에 머무르도록 그 시간의 일부씩만 흘린다(0.3 x 3 = 0.9 < 1).
-            float slice = rig.Settings.AlertHoldSeconds * 0.3f;
+            float slice = rig.Settings.Alert.HoldSeconds * 0.3f;
 
             for (int i = 1; i <= 3; i++)
             {
@@ -863,7 +863,7 @@ namespace Pawntom.Enemy.Tests
                 Assert.AreEqual(i, rig.Motor.FaceCount, "경계 유지 중 매 틱 조준해야 한다");
                 Assert.AreEqual(seen, rig.Motor.LastFaceTarget, "시야가 있으면 시야 좌표를 향한다");
                 Assert.AreEqual(
-                    rig.Settings.AlertTurnSpeedDegrees, rig.Motor.LastFaceDegreesPerSecond, 0.0001f);
+                    rig.Settings.Alert.TurnSpeedDegrees, rig.Motor.LastFaceDegreesPerSecond, 0.0001f);
                 Assert.AreEqual(slice, rig.Motor.LastFaceDeltaTime, 0.0001f);
             }
 
@@ -882,12 +882,12 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             rig.Source.Clear();
 
-            rig.Brain.Tick(rig.Settings.HowlDurationSeconds * 0.5f);
+            rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.5f);
 
             Assert.AreEqual(1, rig.Motor.FaceCount);
             Assert.AreEqual(contact, rig.Motor.LastFaceTarget, "시야가 없으면 경보 지점을 향한다");
             Assert.AreEqual(
-                rig.Settings.AlertTurnSpeedDegrees, rig.Motor.LastFaceDegreesPerSecond, 0.0001f);
+                rig.Settings.Alert.TurnSpeedDegrees, rig.Motor.LastFaceDegreesPerSecond, 0.0001f);
             Assert.AreEqual(0, rig.Motor.MoveToCount, "조준 중에도 이동 명령은 없다");
         }
 
@@ -898,16 +898,16 @@ namespace Pawntom.Enemy.Tests
             Rig rig = new Rig();
 
             // 유지 시간을 하울링 시간보다 길게 준다 — 하울링 경과만으로는 풀리지 않아야 한다.
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", rig.Settings.HowlDurationSeconds * 2f);
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", rig.Settings.Alert.HowlDurationSeconds * 2f);
             Assert.Greater(
-                rig.Settings.AlertHoldSeconds, rig.Settings.HowlDurationSeconds,
+                rig.Settings.Alert.HoldSeconds, rig.Settings.Alert.HowlDurationSeconds,
                 "사전 조건: 유지 시간이 하울링 시간보다 길어야 한다");
 
             EnterAlert(rig);
             rig.Source.Clear();
             rig.Source.Report(K9Detection.Sight(new Vector3(2f, 0f, 5f)));
 
-            bool changed = rig.Brain.Tick(rig.Settings.HowlDurationSeconds);
+            bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsFalse(changed, "하울링 경과만으로는 유지 시간이 풀리지 않는다");
             Assert.AreEqual(K9State.Alert, rig.Brain.State, "유지 시간이 남았는데 Chase 로 가면 안 된다");
@@ -920,7 +920,7 @@ namespace Pawntom.Enemy.Tests
         public void Alert_ToChase_WhenAlertHoldElapses_WithSight()
         {
             Rig rig = new Rig();
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", rig.Settings.HowlDurationSeconds * 2f);
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", rig.Settings.Alert.HowlDurationSeconds * 2f);
 
             EnterAlert(rig);
             rig.Source.Clear();
@@ -928,15 +928,15 @@ namespace Pawntom.Enemy.Tests
             Vector3 seen = new Vector3(2f, 0f, 5f);
             rig.Source.Report(K9Detection.Sight(seen));
 
-            bool early = rig.Brain.Tick(rig.Settings.HowlDurationSeconds);
+            bool early = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
             Assert.IsFalse(early, "사전 조건: 아직 유지 시간 안");
 
-            bool changed = rig.Brain.Tick(rig.Settings.AlertHoldSeconds - rig.Settings.HowlDurationSeconds);
+            bool changed = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds - rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [Test]
@@ -945,7 +945,7 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Assert.AreEqual(
-                0f, rig.Settings.AlertHoldSeconds, 0.0001f,
+                0f, rig.Settings.Alert.HoldSeconds, 0.0001f,
                 "경계 유지 시간의 기본값은 0 이어야 한다(TASK-008 2.4)");
 
             EnterAlert(rig);
@@ -955,12 +955,12 @@ namespace Pawntom.Enemy.Tests
             rig.Source.Report(K9Detection.Sight(seen));
 
             // 하울링 시간의 아주 일부만 흘린다 — 종전 규칙이었다면 여기서 Alert 를 유지했다.
-            bool changed = rig.Brain.Tick(rig.Settings.HowlDurationSeconds * 0.1f);
+            bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.1f);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [TestCase("Patrol")]
@@ -970,7 +970,7 @@ namespace Pawntom.Enemy.Tests
         public void Summon_SpreadsDestination_OnAllThreeEntryPaths(string path)
         {
             Rig rig = new Rig();
-            Assert.Greater(rig.Settings.SummonSpreadRadius, 0f, "사전 조건: 분산 반경이 0보다 커야 한다");
+            Assert.Greater(rig.Settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 분산 반경이 0보다 커야 한다");
 
             Vector3 summon = new Vector3(-6f, 0f, 2f);
             Vector3 spread = new Vector3(-4.5f, 0f, 3.5f);
@@ -1005,10 +1005,10 @@ namespace Pawntom.Enemy.Tests
                 rig.Alert.HasSummon = true;
                 rig.Alert.SummonTarget = summon;
 
-                rig.Brain.Tick(rig.Settings.HowlDurationSeconds * 0.5f);
+                rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.5f);
                 Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 소집을 보관한 채 경계 유지");
 
-                bool changed = rig.Brain.Tick(rig.Settings.HowlDurationSeconds);
+                bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
                 Assert.IsTrue(changed);
                 Assert.AreEqual(K9State.Investigate, rig.Brain.State);
@@ -1017,7 +1017,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(spread, rig.Motor.LastDestination, "목적지는 분산 지점이어야 한다");
             Assert.AreEqual(spread, rig.Brain.CurrentTarget);
             Assert.AreEqual(summon, rig.Wander.LastAnchor, "분산 기준점은 소집 좌표다");
-            Assert.AreEqual(rig.Settings.SummonSpreadRadius, rig.Wander.LastRadius, 0.0001f);
+            Assert.AreEqual(rig.Settings.Alert.SummonSpreadRadius, rig.Wander.LastRadius, 0.0001f);
         }
 
         [TestCase("RadiusZero")]
@@ -1038,7 +1038,7 @@ namespace Pawntom.Enemy.Tests
                 sources.Add(new FakePerceptionSource());
                 K9Brain brain = new K9Brain(settings, motor, sources, alert);
 
-                Assert.Greater(settings.SummonSpreadRadius, 0f, "사전 조건: 반경은 0보다 크다");
+                Assert.Greater(settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 반경은 0보다 크다");
                 alert.HasSummon = true;
                 alert.SummonTarget = summon;
 
@@ -1056,12 +1056,12 @@ namespace Pawntom.Enemy.Tests
             if (mode == "RadiusZero")
             {
                 rig.Wander.Active = true;
-                SetSettingsField(rig.Settings, "_summonSpreadRadius", 0f);
-                Assert.AreEqual(0f, rig.Settings.SummonSpreadRadius, 0.0001f, "사전 조건: 반경 0");
+                SetSettingsField(rig.Settings.Alert, "_summonSpreadRadius", 0f);
+                Assert.AreEqual(0f, rig.Settings.Alert.SummonSpreadRadius, 0.0001f, "사전 조건: 반경 0");
             }
             else
             {
-                Assert.Greater(rig.Settings.SummonSpreadRadius, 0f, "사전 조건: 반경은 0보다 크다");
+                Assert.Greater(rig.Settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 반경은 0보다 크다");
                 Assert.IsFalse(rig.Wander.Active, "사전 조건: 지점 선택이 실패한다");
             }
 
@@ -1090,12 +1090,12 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Assert.AreNotEqual(
-                rig.Settings.PatrolSpeed, rig.Settings.InvestigateSpeed,
+                rig.Settings.Movement.PatrolSpeed, rig.Settings.Movement.InvestigateSpeed,
                 "사전 조건: 두 속도가 달라야 구분된다");
 
             EnterInvestigate(rig);
             Assert.AreEqual(
-                rig.Settings.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 진입 이동");
+                rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 진입 이동");
 
             Vector3 trace = new Vector3(2f, 0f, 3f);
             rig.Source.Report(K9Detection.Trace(trace));
@@ -1104,16 +1104,16 @@ namespace Pawntom.Enemy.Tests
 
             Assert.AreEqual(trace, rig.Motor.LastDestination, "사전 조건: 목표가 갱신되었다");
             Assert.AreEqual(
-                rig.Settings.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 목표 갱신 이동");
+                rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 목표 갱신 이동");
 
             rig.Motor.Arrived = true;
             rig.Wander.Active = true;
             rig.Wander.Point = new Vector3(4f, 0f, 4f);
-            rig.Brain.Tick(rig.Settings.InvestigateWanderIntervalSeconds);
+            rig.Brain.Tick(rig.Settings.Investigate.WanderIntervalSeconds);
 
             Assert.AreEqual(rig.Wander.Point, rig.Motor.LastDestination, "사전 조건: 배회 지점으로 이동했다");
             Assert.AreEqual(
-                rig.Settings.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 배회 이동");
+                rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 배회 이동");
 
             // 순찰 속도는 그대로다 — 조사 속도가 순찰 경로까지 번지면 안 된다.
             Rig patrolRig = new Rig();
@@ -1121,7 +1121,7 @@ namespace Pawntom.Enemy.Tests
             patrolRig.Brain.Tick(0.1f);
 
             Assert.AreEqual(
-                patrolRig.Settings.PatrolSpeed, patrolRig.Motor.LastSpeed, 0.0001f, "순찰 속도는 바뀌지 않는다");
+                patrolRig.Settings.Movement.PatrolSpeed, patrolRig.Motor.LastSpeed, 0.0001f, "순찰 속도는 바뀌지 않는다");
         }
 
         [Test]
@@ -1133,7 +1133,7 @@ namespace Pawntom.Enemy.Tests
             // 분산이 가능한 조건을 전부 켜 둔다 — 그런데도 붙으면 안 된다.
             rig.Wander.Active = true;
             rig.Wander.Point = new Vector3(-4.5f, 0f, 3.5f);
-            Assert.Greater(rig.Settings.SummonSpreadRadius, 0f, "사전 조건: 분산 반경이 0보다 커야 한다");
+            Assert.Greater(rig.Settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 분산 반경이 0보다 커야 한다");
 
             Vector3 contact = new Vector3(3f, 0f, -2f);
             rig.Source.Report(K9Detection.Contact(contact));
@@ -1141,7 +1141,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             rig.Source.Clear();
 
-            bool changed = rig.Brain.Tick(rig.Settings.HowlDurationSeconds);
+            bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Investigate, rig.Brain.State);
@@ -1246,7 +1246,7 @@ namespace Pawntom.Enemy.Tests
         public void Alert_ToChase_OnWarmSightMemory_WhenSightLostBeforeDecision()
         {
             Rig rig = new Rig();
-            float memorySeconds = rig.Settings.SightMemorySeconds;
+            float memorySeconds = rig.Settings.Perception.SightMemorySeconds;
             Assert.Greater(memorySeconds, 0f, "사전 조건: 시야 기억 기본값이 0보다 커야 한다");
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
@@ -1255,7 +1255,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(K9State.Chase, rig.Brain.State, "기억이 따뜻하면 추격한다");
             Assert.AreEqual(seen, rig.Brain.CurrentTarget, "마지막 목격 좌표를 쫓아야 한다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [Test]
@@ -1263,7 +1263,7 @@ namespace Pawntom.Enemy.Tests
         public void Alert_ToInvestigate_WhenSightMemoryExpired()
         {
             Rig rig = new Rig();
-            float memorySeconds = rig.Settings.SightMemorySeconds;
+            float memorySeconds = rig.Settings.Perception.SightMemorySeconds;
 
             HowlThenLoseSightAtDecision(rig, new Vector3(2f, 0f, 5f), memorySeconds * 2f);
 
@@ -1277,9 +1277,9 @@ namespace Pawntom.Enemy.Tests
             Rig rig = new Rig();
 
             // 기준2 와 같은 간격을 쓰기 위해 기본값을 먼저 읽고 끈다.
-            float memorySeconds = rig.Settings.SightMemorySeconds;
-            SetSettingsField(rig.Settings, "_sightMemorySeconds", 0f);
-            Assert.AreEqual(0f, rig.Settings.SightMemorySeconds, 0.0001f, "사전 조건: 기억이 꺼져 있다");
+            float memorySeconds = rig.Settings.Perception.SightMemorySeconds;
+            SetSettingsField(rig.Settings.Perception, "_sightMemorySeconds", 0f);
+            Assert.AreEqual(0f, rig.Settings.Perception.SightMemorySeconds, 0.0001f, "사전 조건: 기억이 꺼져 있다");
 
             HowlThenLoseSightAtDecision(rig, new Vector3(2f, 0f, 5f), memorySeconds * 0.5f);
 
@@ -1292,7 +1292,7 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             float sinceHowl = HowlThenDropToInvestigate(rig);
-            Assert.Less(sinceHowl, rig.Settings.HowlCooldownSeconds, "사전 조건: 쿨다운이 아직 살아 있다");
+            Assert.Less(sinceHowl, rig.Settings.Alert.HowlCooldownSeconds, "사전 조건: 쿨다운이 아직 살아 있다");
 
             int broadcasts = rig.Alert.BroadcastCount;
             Vector3 seen = new Vector3(0f, 0f, 9f);
@@ -1304,7 +1304,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(K9State.Chase, rig.Brain.State, "Alert 을 거치지 않고 바로 추격한다");
             Assert.AreEqual(broadcasts, rig.Alert.BroadcastCount, "쿨다운 중에는 하울링이 늘지 않는다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
         [Test]
@@ -1314,9 +1314,9 @@ namespace Pawntom.Enemy.Tests
             Rig rig = new Rig();
             HowlThenDropToInvestigate(rig);
 
-            float cooldown = rig.Settings.HowlCooldownSeconds;
+            float cooldown = rig.Settings.Alert.HowlCooldownSeconds;
             Assert.Less(
-                cooldown, rig.Settings.InvestigateGiveUpSeconds,
+                cooldown, rig.Settings.Investigate.GiveUpSeconds,
                 "사전 조건: 조사를 포기하기 전에 쿨다운이 끝나야 한다");
 
             rig.Brain.Tick(cooldown);
@@ -1340,7 +1340,7 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             float sinceHowl = HowlThenDropToInvestigate(rig);
-            Assert.Less(sinceHowl, rig.Settings.HowlCooldownSeconds, "사전 조건: 쿨다운이 아직 살아 있다");
+            Assert.Less(sinceHowl, rig.Settings.Alert.HowlCooldownSeconds, "사전 조건: 쿨다운이 아직 살아 있다");
 
             int broadcasts = rig.Alert.BroadcastCount;
             rig.Source.Report(K9Detection.Contact(new Vector3(0f, 0f, 9f)));
@@ -1362,17 +1362,17 @@ namespace Pawntom.Enemy.Tests
 
             // 기본값(가속도 30 · 회전 540)과 비교하면 SetMotionProfile 에 상수를 박은 구현도 통과한다.
             // 비기본값을 주입해 "설정을 그대로 넘겼는가"를 실제로 묻는다(TASK-009 5.7 기준4).
-            SetSettingsField(rig.Settings, "_acceleration", 17.25f);
-            SetSettingsField(rig.Settings, "_moveTurnSpeedDegrees", 213.5f);
-            Assert.AreNotEqual(30f, rig.Settings.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
+            SetSettingsField(rig.Settings.Movement, "_acceleration", 17.25f);
+            SetSettingsField(rig.Settings.Movement, "_turnSpeedDegrees", 213.5f);
+            Assert.AreNotEqual(30f, rig.Settings.Movement.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
             Assert.AreNotEqual(
-                540f, rig.Settings.MoveTurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
+                540f, rig.Settings.Movement.TurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
 
             EnterChase(rig, new Vector3(6f, 0f, 6f));
 
             Assert.AreEqual(1, rig.Motor.SetMotionProfileCount, "추격 진입에서 1회 나가야 한다");
-            Assert.AreEqual(rig.Settings.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
-            Assert.AreEqual(rig.Settings.MoveTurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.TurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
             Assert.IsFalse(
                 rig.Motor.LastBrakeNearDestination,
                 "추격의 목적지는 대상 본인이라 제동을 켜면 내내 브레이크가 걸린다");
@@ -1386,17 +1386,17 @@ namespace Pawntom.Enemy.Tests
 
             // 기본값(가속도 30 · 회전 540)과 비교하면 SetMotionProfile 에 상수를 박은 구현도 통과한다.
             // 비기본값을 주입해 "설정을 그대로 넘겼는가"를 실제로 묻는다(TASK-009 5.7 기준4).
-            SetSettingsField(rig.Settings, "_acceleration", 17.25f);
-            SetSettingsField(rig.Settings, "_moveTurnSpeedDegrees", 213.5f);
-            Assert.AreNotEqual(30f, rig.Settings.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
+            SetSettingsField(rig.Settings.Movement, "_acceleration", 17.25f);
+            SetSettingsField(rig.Settings.Movement, "_turnSpeedDegrees", 213.5f);
+            Assert.AreNotEqual(30f, rig.Settings.Movement.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
             Assert.AreNotEqual(
-                540f, rig.Settings.MoveTurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
+                540f, rig.Settings.Movement.TurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
 
             EnterInvestigate(rig);
 
             Assert.AreEqual(1, rig.Motor.SetMotionProfileCount, "조사 진입에서 1회 나가야 한다");
-            Assert.AreEqual(rig.Settings.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
-            Assert.AreEqual(rig.Settings.MoveTurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.TurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
             Assert.IsTrue(rig.Motor.LastBrakeNearDestination, "조사 지점에는 곱게 서야 한다");
         }
 
@@ -1408,23 +1408,23 @@ namespace Pawntom.Enemy.Tests
 
             // 기본값(가속도 30 · 회전 540)과 비교하면 SetMotionProfile 에 상수를 박은 구현도 통과한다.
             // 비기본값을 주입해 "설정을 그대로 넘겼는가"를 실제로 묻는다(TASK-009 5.7 기준4).
-            SetSettingsField(rig.Settings, "_acceleration", 17.25f);
-            SetSettingsField(rig.Settings, "_moveTurnSpeedDegrees", 213.5f);
-            Assert.AreNotEqual(30f, rig.Settings.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
+            SetSettingsField(rig.Settings.Movement, "_acceleration", 17.25f);
+            SetSettingsField(rig.Settings.Movement, "_turnSpeedDegrees", 213.5f);
+            Assert.AreNotEqual(30f, rig.Settings.Movement.Acceleration, "사전 조건: 가속도가 기본값이 아니다");
             Assert.AreNotEqual(
-                540f, rig.Settings.MoveTurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
+                540f, rig.Settings.Movement.TurnSpeedDegrees, "사전 조건: 회전 속도가 기본값이 아니다");
 
             EnterInvestigate(rig);
 
             int beforeReturn = rig.Motor.SetMotionProfileCount;
 
             // 무감지 20초 → 전환4 → Patrol
-            rig.Brain.Tick(rig.Settings.InvestigateGiveUpSeconds);
+            rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds);
             Assert.AreEqual(K9State.Patrol, rig.Brain.State, "사전 조건: 순찰 복귀");
 
             Assert.AreEqual(beforeReturn + 1, rig.Motor.SetMotionProfileCount, "순찰 진입에서 1회 더 나가야 한다");
-            Assert.AreEqual(rig.Settings.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
-            Assert.AreEqual(rig.Settings.MoveTurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.TurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
             Assert.IsTrue(rig.Motor.LastBrakeNearDestination, "웨이포인트에는 곱게 서야 한다");
         }
 
@@ -1435,8 +1435,8 @@ namespace Pawntom.Enemy.Tests
             Rig rig = new Rig();
 
             // 씬 실측값처럼 하울링을 길게 잡아 둔다. 종전 규칙이라면 이 시간 내내 제자리였다(TASK-008 2.4).
-            SetSettingsField(rig.Settings, "_howlDurationSeconds", rig.Settings.HowlDurationSeconds * 5f);
-            Assert.AreEqual(0f, rig.Settings.AlertHoldSeconds, 0.0001f, "사전 조건: 유지 시간 기본값 0");
+            SetSettingsField(rig.Settings.Alert, "_howlDurationSeconds", rig.Settings.Alert.HowlDurationSeconds * 5f);
+            Assert.AreEqual(0f, rig.Settings.Alert.HoldSeconds, 0.0001f, "사전 조건: 유지 시간 기본값 0");
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
             rig.Source.Report(K9Detection.Sight(seen));
@@ -1451,7 +1451,7 @@ namespace Pawntom.Enemy.Tests
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Chase, rig.Brain.State, "하울링이 남아 있어도 시야가 있으면 즉시 추격이다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "추격으로 넘어가며 다시 짖지 않는다");
         }
 
@@ -1461,22 +1461,22 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
 
-            float hold = rig.Settings.HowlDurationSeconds * 0.25f;
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", hold);
+            float hold = rig.Settings.Alert.HowlDurationSeconds * 0.25f;
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", hold);
             Assert.Less(
-                rig.Settings.AlertHoldSeconds, rig.Settings.HowlDurationSeconds,
+                rig.Settings.Alert.HoldSeconds, rig.Settings.Alert.HowlDurationSeconds,
                 "사전 조건: 유지 시간이 하울링 시간보다 짧다");
 
             EnterAlert(rig);
             rig.Source.Clear();
 
-            bool early = rig.Brain.Tick(rig.Settings.AlertHoldSeconds);
+            bool early = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds);
 
             Assert.IsFalse(early, "유지 시간이 지나도 조사 전환이 앞당겨지면 안 된다");
             Assert.AreEqual(K9State.Alert, rig.Brain.State);
 
             bool changed = rig.Brain.Tick(
-                rig.Settings.HowlDurationSeconds - rig.Settings.AlertHoldSeconds);
+                rig.Settings.Alert.HowlDurationSeconds - rig.Settings.Alert.HoldSeconds);
 
             Assert.IsTrue(changed);
             Assert.AreEqual(K9State.Investigate, rig.Brain.State, "하울링 시간을 다 채운 뒤에 조사로 간다");
@@ -1488,11 +1488,11 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
 
-            float memorySeconds = rig.Settings.SightMemorySeconds;
+            float memorySeconds = rig.Settings.Perception.SightMemorySeconds;
             Assert.Greater(memorySeconds, 0f, "사전 조건: 시야 기억 기본값이 0보다 커야 한다");
 
-            float hold = rig.Settings.HowlDurationSeconds * 2f;
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", hold);
+            float hold = rig.Settings.Alert.HowlDurationSeconds * 2f;
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", hold);
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
             rig.Source.Report(K9Detection.Sight(seen));
@@ -1567,7 +1567,7 @@ namespace Pawntom.Enemy.Tests
             // 진입 틱은 무감지 타이머를 세지 않는다. 여기서부터 흐른 시간만 센다.
             rig.Motor.Arrived = true;
             int beforePicks = rig.Wander.TryGetPointCount;
-            float interval = rig.Settings.InvestigateWanderIntervalSeconds;
+            float interval = rig.Settings.Investigate.WanderIntervalSeconds;
             float elapsed = 0f;
 
             for (int i = 0; i < 5; i++)
@@ -1578,17 +1578,17 @@ namespace Pawntom.Enemy.Tests
                 Assert.AreEqual(K9State.Investigate, rig.Brain.State, "아직 포기 시간 전이다");
                 Assert.AreEqual(trace, rig.Wander.LastAnchor, "배회 기준점은 조사 지점에 머문다");
                 Assert.AreEqual(
-                    rig.Settings.InvestigateWanderRadius, rig.Wander.LastRadius, 0.0001f,
+                    rig.Settings.Investigate.WanderRadius, rig.Wander.LastRadius, 0.0001f,
                     "배회 반경은 설정값 그대로다");
             }
 
             Assert.Greater(rig.Wander.TryGetPointCount, beforePicks, "체류하는 동안 실제로 배회했다");
             Assert.AreEqual(rig.Wander.Point, rig.Motor.LastDestination, "배회 지점으로 이동했다");
             Assert.AreEqual(
-                rig.Settings.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "배회도 조사 속도로 움직인다");
+                rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "배회도 조사 속도로 움직인다");
 
             // 배회는 무감지 타이머를 되돌리지 않는다 — 남은 시간을 채우면 그대로 순찰로 복귀한다.
-            rig.Brain.Tick(rig.Settings.InvestigateGiveUpSeconds - elapsed);
+            rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds - elapsed);
             Assert.AreEqual(K9State.Patrol, rig.Brain.State, "배회했다고 조사에 갇히지 않는다");
         }
 
@@ -1605,7 +1605,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(route[0], rig.Motor.LastDestination);
 
             // 아직 도착하지 않았다 — 여러 틱을 흘려도 명령이 반복되거나 번호가 넘어가지 않는다.
-            float wait = rig.Settings.WaypointWaitSeconds;
+            float wait = rig.Settings.Patrol.WaitSeconds;
             for (int i = 0; i < 5; i++)
             {
                 rig.Brain.Tick(wait);
@@ -1627,8 +1627,52 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(2, rig.Motor.MoveToCount);
             Assert.AreEqual(1, rig.Brain.WaypointIndex);
             Assert.AreEqual(route[1], rig.Motor.LastDestination);
-            Assert.AreEqual(rig.Settings.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
+            Assert.AreEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
             Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+        }
+
+        // ── TASK-010: 회전 속도 두 개가 교차하지 않는다 ────────────────
+
+        [Test]
+        [Description("TASK-010 기준3 - 이동 회전 속도는 SetMotionProfile 로, 경계 조준 회전 속도는 Face 로 간다. 둘을 맞바꾼 구현이면 실패한다")]
+        public void Task010_TurnSpeeds_DoNotCross_BetweenMotionProfileAndFace()
+        {
+            Rig rig = new Rig();
+
+            // 그룹으로 나뉜 뒤 두 값의 잎 이름이 똑같이 TurnSpeedDegrees 가 됐다.
+            // 둘 다 float 이라 맞바꿔도 컴파일러가 잡지 못하므로, 서로 다른 비기본값을 넣어
+            // 어느 쪽이 어디로 나갔는지를 값으로 구분한다(TASK-010 5.4).
+            const float moveTurn = 213.5f;
+            const float alertTurn = 77.25f;
+
+            SetSettingsField(rig.Settings.Movement, "_turnSpeedDegrees", moveTurn);
+            SetSettingsField(rig.Settings.Alert, "_turnSpeedDegrees", alertTurn);
+
+            Assert.AreNotEqual(540f, rig.Settings.Movement.TurnSpeedDegrees, "사전 조건: 이동 회전이 기본값이 아니다");
+            Assert.AreNotEqual(360f, rig.Settings.Alert.TurnSpeedDegrees, "사전 조건: 경계 회전이 기본값이 아니다");
+            Assert.AreNotEqual(
+                rig.Settings.Movement.TurnSpeedDegrees,
+                rig.Settings.Alert.TurnSpeedDegrees,
+                "사전 조건: 두 값이 서로 달라야 교차를 구분할 수 있다");
+
+            // 이 한 번의 진입에서 Face(경계 조준)와 SetMotionProfile(추격 진입)이 모두 나간다.
+            EnterChase(rig, new Vector3(6f, 0f, 6f));
+
+            Assert.AreEqual(1, rig.Motor.FaceCount, "사전 조건: 경계 틱에서 조준이 1회 나갔다");
+            Assert.AreEqual(1, rig.Motor.SetMotionProfileCount, "사전 조건: 추격 진입에서 이동 프로파일이 1회 나갔다");
+
+            Assert.AreEqual(
+                moveTurn, rig.Motor.LastTurnSpeedDegrees, 0.0001f,
+                "SetMotionProfile 은 Movement.TurnSpeedDegrees 를 받아야 한다");
+            Assert.AreEqual(
+                alertTurn, rig.Motor.LastFaceDegreesPerSecond, 0.0001f,
+                "Face 는 Alert.TurnSpeedDegrees 를 받아야 한다");
+
+            // 설정 접근자로도 같은 단언을 남긴다 — 상수만 맞춘 구현을 걸러 낸다.
+            Assert.AreEqual(
+                rig.Settings.Movement.TurnSpeedDegrees, rig.Motor.LastTurnSpeedDegrees, 0.0001f);
+            Assert.AreEqual(
+                rig.Settings.Alert.TurnSpeedDegrees, rig.Motor.LastFaceDegreesPerSecond, 0.0001f);
         }
 
         // ── 조립 도우미 ─────────────────────────────────────────────
@@ -1640,15 +1684,20 @@ namespace Pawntom.Enemy.Tests
         /// 그 대신 테스트 안에서만 리플렉션으로 값을 넣는다.
         /// 필드명이 바뀌면 조용히 넘어가지 않고 큰 소리로 깨지게 둔다.
         /// </para>
+        /// <para>
+        /// 수치가 그룹으로 나뉜 뒤로는 <paramref name="group"/> 에 그룹 객체를 넘긴다 —
+        /// 예: <c>SetSettingsField(rig.Settings.Alert, "_holdSeconds", 1f)</c>.
+        /// 타입을 박아 두지 않고 넘겨받은 객체의 실제 타입에서 필드를 찾는다.
+        /// </para>
         /// </summary>
-        private static void SetSettingsField(K9Settings settings, string fieldName, float value)
+        private static void SetSettingsField(object group, string fieldName, float value)
         {
-            FieldInfo field = typeof(K9Settings).GetField(
+            FieldInfo field = group.GetType().GetField(
                 fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
-            Assert.IsNotNull(field, "K9Settings 에서 필드를 찾지 못했다: " + fieldName);
+            Assert.IsNotNull(field, group.GetType().Name + " 에서 필드를 찾지 못했다: " + fieldName);
 
-            field.SetValue(settings, value);
+            field.SetValue(group, value);
         }
 
         private static List<Vector3> MakeRoute(int count)
@@ -1688,14 +1737,14 @@ namespace Pawntom.Enemy.Tests
 
             // 판정 시점 전에 시야를 잃을 여유를 만든다. 하울링이 간격보다 짧으면 잃을 틈이 없다.
             float howlSeconds = gapSeconds * 4f;
-            SetSettingsField(rig.Settings, "_howlDurationSeconds", howlSeconds);
+            SetSettingsField(rig.Settings.Alert, "_howlDurationSeconds", howlSeconds);
 
             // TASK-008 4.2 처방 — 시야 유지 구간에 들어가기 전에 경계 유지 시간을 하울링 시간과 같게 올린다.
             // 새 규칙에서는 시야가 있으면 유지 시간이 지나는 즉시 추격하므로,
             // 유지 시간을 올려 두지 않으면 아래 "판정 시점 직전" 구간에서 이미 Chase 로 나가 버린다.
             // 유지 구간은 _alertTimer(howl - gap) < hold(howl) 로 막히고,
             // 시야를 끊은 뒤의 틱은 _alertTimer(howl) >= hold(howl) 이라 그대로 판정 시점이 된다.
-            SetSettingsField(rig.Settings, "_alertHoldSeconds", howlSeconds);
+            SetSettingsField(rig.Settings.Alert, "_holdSeconds", howlSeconds);
 
             rig.Source.Report(K9Detection.Sight(seen));
             rig.Brain.Tick(0.1f);
@@ -1726,7 +1775,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "사전 조건: 하울링 1회");
 
             rig.Source.Clear();
-            float elapsed = rig.Settings.HowlDurationSeconds;
+            float elapsed = rig.Settings.Alert.HowlDurationSeconds;
             rig.Brain.Tick(elapsed);
             Assert.AreEqual(
                 K9State.Investigate, rig.Brain.State,
@@ -1742,7 +1791,7 @@ namespace Pawntom.Enemy.Tests
 
             // 경계 유지 시간(기본 0)이 지나면 시야가 있는 즉시 Chase 다(TASK-008 2.4).
             // 시간은 숫자로 쓰지 않고 설정값에서 읽는다.
-            rig.Brain.Tick(rig.Settings.HowlDurationSeconds);
+            rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
             Assert.AreEqual(K9State.Chase, rig.Brain.State, "사전 조건: Chase 진입");
         }
 

@@ -254,12 +254,12 @@ namespace Pawntom.Enemy.Core
         {
             Vector3 destination;
             K9PatrolAction action = _patrol.Advance(
-                deltaTime, _motor.HasArrived, _settings.WaypointWaitSeconds, out destination);
+                deltaTime, _motor.HasArrived, _settings.Patrol.WaitSeconds, out destination);
 
             if (action == K9PatrolAction.MoveTo)
             {
                 SetTarget(destination);
-                _motor.MoveTo(destination, _settings.PatrolSpeed);
+                _motor.MoveTo(destination, _settings.Movement.PatrolSpeed);
                 return;
             }
 
@@ -293,7 +293,7 @@ namespace Pawntom.Enemy.Core
             {
                 // 방금 하울링했다면 동료는 이미 불렀다. 다시 짖지 않고 바로 달려든다(TASK-007 2.3 원인 E).
                 // 이 우회가 없으면 콘 경계의 대상 앞에서 Alert → Investigate → Alert 이 무한히 반복된다.
-                if (_howl.HowledWithin(_settings.HowlCooldownSeconds))
+                if (_howl.HowledWithin(_settings.Alert.HowlCooldownSeconds))
                 {
                     return EnterChase(_snapshot.SightPosition);
                 }
@@ -324,7 +324,7 @@ namespace Pawntom.Enemy.Core
             _noDetectionTimer += deltaTime;
 
             // 전환 4: 20초간 신규 감지 없음 → Patrol
-            if (_noDetectionTimer >= _settings.InvestigateGiveUpSeconds)
+            if (_noDetectionTimer >= _settings.Investigate.GiveUpSeconds)
             {
                 return EnterPatrol();
             }
@@ -341,7 +341,7 @@ namespace Pawntom.Enemy.Core
         {
             _wanderCursor.SetAnchor(destination);
             SetTarget(destination);
-            _motor.MoveTo(destination, _settings.InvestigateSpeed);
+            _motor.MoveTo(destination, _settings.Movement.InvestigateSpeed);
         }
 
         /// <summary>
@@ -356,7 +356,7 @@ namespace Pawntom.Enemy.Core
         /// </summary>
         private Vector3 SpreadSummon(Vector3 summon)
         {
-            return _wanderCursor.Spread(summon, _settings.SummonSpreadRadius);
+            return _wanderCursor.Spread(summon, _settings.Alert.SummonSpreadRadius);
         }
 
         /// <summary>
@@ -372,8 +372,8 @@ namespace Pawntom.Enemy.Core
             bool picked = _wanderCursor.TryAdvance(
                 deltaTime,
                 _motor.HasArrived,
-                _settings.InvestigateWanderIntervalSeconds,
-                _settings.InvestigateWanderRadius,
+                _settings.Investigate.WanderIntervalSeconds,
+                _settings.Investigate.WanderRadius,
                 out point);
 
             if (!picked)
@@ -382,7 +382,7 @@ namespace Pawntom.Enemy.Core
             }
 
             SetTarget(point);
-            _motor.MoveTo(point, _settings.InvestigateSpeed);
+            _motor.MoveTo(point, _settings.Movement.InvestigateSpeed);
         }
 
         // 경계 -----------------------------------------------------------
@@ -400,11 +400,11 @@ namespace Pawntom.Enemy.Core
             _alertTimer += deltaTime;
 
             // 경계 내내 경보 지점 쪽으로 몸만 돌린다(TASK-006 요구 A). 위치는 그대로다.
-            _motor.Face(SelectAlertAim(), _settings.AlertTurnSpeedDegrees, deltaTime);
+            _motor.Face(SelectAlertAim(), _settings.Alert.TurnSpeedDegrees, deltaTime);
 
             // 경계 유지 시간 안에는 어디로도 가지 않는다. 0 이면 이 구속이 사실상 없다.
             // 조준은 위에서 이미 했다 — 여기서 막는 것은 이동 명령뿐이다(조준은 이동이 아니다).
-            if (_alertTimer < _settings.AlertHoldSeconds)
+            if (_alertTimer < _settings.Alert.HoldSeconds)
             {
                 return false;
             }
@@ -420,16 +420,16 @@ namespace Pawntom.Enemy.Core
             // 판정이 단 한 틱만 열려 있으면 차폐 레이 한 번, 각도 흔들림 한 번에
             // 기다린 하울링이 통째로 무효가 된다. 기억이 그 창을 넓힌다.
             // 마지막으로 본 좌표를 향해 달린다 — Chase 의 시야 소실 타이머가 여기서부터 돈다.
-            if (_sight.IsWarm(_settings.SightMemorySeconds))
+            if (_sight.IsWarm(_settings.Perception.SightMemorySeconds))
             {
                 return EnterChase(_sight.LastSeenPosition);
             }
 
             // 전환 7: 시야도 기억도 없다 — 하울링 시간을 다 채운 뒤에 조사로 넘어간다.
-            // 이 게이트만 HowlDurationSeconds 를 쓴다.
-            // 두 게이트가 순차 평가되므로 실제 조사 전환 시점은 max(AlertHoldSeconds, HowlDurationSeconds) 다.
+            // 이 게이트만 Alert.HowlDurationSeconds 를 쓴다.
+            // 두 게이트가 순차 평가되므로 실제 조사 전환 시점은 max(Alert.HoldSeconds, Alert.HowlDurationSeconds) 다.
             // 유지 시간을 하울링 시간보다 크게 주면 조사 전환도 그만큼 늦어진다 — 갇히지는 않는다.
-            if (_alertTimer < _settings.HowlDurationSeconds)
+            if (_alertTimer < _settings.Alert.HowlDurationSeconds)
             {
                 return false;
             }
@@ -456,7 +456,7 @@ namespace Pawntom.Enemy.Core
                 // 시야가 유지되는 동안 매 틱 목표 좌표를 갱신한다.
                 _lostSightTimer = 0f;
                 SetTarget(_snapshot.SightPosition);
-                _motor.MoveTo(_snapshot.SightPosition, _settings.ChaseSpeed);
+                _motor.MoveTo(_snapshot.SightPosition, _settings.Movement.ChaseSpeed);
                 return false;
             }
 
@@ -465,7 +465,7 @@ namespace Pawntom.Enemy.Core
             // 전환 8: 5초 이상 시야 소실 → Investigate.
             // 이 검사는 반드시 추적 이동보다 먼저다 — 상태를 떠나는 틱에
             // 쓸모없는 이동 명령이 나가면 마지막 목격 좌표가 덮여 버린다.
-            if (_lostSightTimer >= _settings.ChaseLoseSightSeconds)
+            if (_lostSightTimer >= _settings.Chase.LoseSightSeconds)
             {
                 return EnterInvestigate(LastKnownPoint);
             }
@@ -478,7 +478,7 @@ namespace Pawntom.Enemy.Core
                 if (_tracker.TryTrack(LastKnownPoint, out tracked))
                 {
                     SetTarget(tracked);
-                    _motor.MoveTo(tracked, _settings.ChaseSpeed);
+                    _motor.MoveTo(tracked, _settings.Movement.ChaseSpeed);
                 }
             }
 
@@ -498,7 +498,7 @@ namespace Pawntom.Enemy.Core
         private void ApplyMotionProfile(bool brakeNearDestination)
         {
             _motor.SetMotionProfile(
-                _settings.Acceleration, _settings.MoveTurnSpeedDegrees, brakeNearDestination);
+                _settings.Movement.Acceleration, _settings.Movement.TurnSpeedDegrees, brakeNearDestination);
         }
 
         private bool EnterPatrol()
@@ -527,7 +527,7 @@ namespace Pawntom.Enemy.Core
             _noDetectionTimer = 0f;
             _wanderCursor.SetAnchor(target);
             SetTarget(target);
-            _motor.MoveTo(target, _settings.InvestigateSpeed);
+            _motor.MoveTo(target, _settings.Movement.InvestigateSpeed);
             return true;
         }
 
@@ -545,7 +545,7 @@ namespace Pawntom.Enemy.Core
 
             if (_alert != null)
             {
-                _alert.Broadcast(_motor.Position, _settings.HowlRadius);
+                _alert.Broadcast(_motor.Position, _settings.Alert.HowlRadius);
             }
 
             // 짖은 시각을 되돌린다. 채널이 없어도(소집을 못 보내도) 하울링 자체는 일어난 것으로 본다 —
@@ -565,7 +565,7 @@ namespace Pawntom.Enemy.Core
 
             _lostSightTimer = 0f;
             SetTarget(target);
-            _motor.MoveTo(target, _settings.ChaseSpeed);
+            _motor.MoveTo(target, _settings.Movement.ChaseSpeed);
             return true;
         }
 
@@ -599,7 +599,7 @@ namespace Pawntom.Enemy.Core
                 return _snapshot.SightPosition;
             }
 
-            if (_sight.IsWarm(_settings.SightMemorySeconds))
+            if (_sight.IsWarm(_settings.Perception.SightMemorySeconds))
             {
                 return _sight.LastSeenPosition;
             }

@@ -96,9 +96,9 @@ namespace Pawntom.Enemy.Authoring
             // 두뇌를 만들기 전에 걸어 둔다. 두뇌는 첫 Enter* 에서 상태에 맞는 값으로 다시 덮어쓴다.
             ApplyMovementSettings();
 
-            NavMeshK9Motor motor = new NavMeshK9Motor(_navMeshAgent, _settings.WaypointArriveDistance);
+            NavMeshK9Motor motor = new NavMeshK9Motor(_navMeshAgent, _settings.Patrol.ArriveDistance);
             NavMeshWanderPointProvider wander =
-                new NavMeshWanderPointProvider(_settings.InvestigateWanderSampleDistance);
+                new NavMeshWanderPointProvider(_settings.Investigate.WanderSampleDistance);
 
             _brain = new K9Brain(_settings, motor, _sources, _alertChannel, _targetTracker, wander);
         }
@@ -138,17 +138,17 @@ namespace Pawntom.Enemy.Authoring
                 return;
             }
 
-            _navMeshAgent.speed = _settings.PatrolSpeed;
+            _navMeshAgent.speed = _settings.Movement.PatrolSpeed;
 
             // 0 이하는 넣지 않는다 — 넣으면 개가 가속하지 못하거나 몸을 돌리지 못한다.
-            if (_settings.Acceleration > 0f)
+            if (_settings.Movement.Acceleration > 0f)
             {
-                _navMeshAgent.acceleration = _settings.Acceleration;
+                _navMeshAgent.acceleration = _settings.Movement.Acceleration;
             }
 
-            if (_settings.MoveTurnSpeedDegrees > 0f)
+            if (_settings.Movement.TurnSpeedDegrees > 0f)
             {
-                _navMeshAgent.angularSpeed = _settings.MoveTurnSpeedDegrees;
+                _navMeshAgent.angularSpeed = _settings.Movement.TurnSpeedDegrees;
             }
 
             _navMeshAgent.autoBraking = true;
