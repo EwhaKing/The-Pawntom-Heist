@@ -104,3 +104,27 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# ── Claude Code ──
+# 개인 설정 (팀 공유 대상 아님)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# 훅 런타임 산출물
+.claude/hooks/*.log
+.claude/hooks/*.count
+.claude/hooks/*.armed
+.claude/hooks/_probe*
+
+# L1 검증 로그·게이트 카운터 (재생성 가능)
+docs/tasks/logs/
+
+# 에이전트 구성·개인 작업 이력 (팀 저장소에 올리지 않는다)
+# 아래 훅/로그 항목들은 이제 상위 규칙에 포함되지만, 의도를 남겨 두려고 유지한다.
+.claude/
+CLAUDE.md
+docs/architecture/
+docs/research/
+docs/tasks/
+
+# docs/project/ 는 제외하지 않는다 — 노션·피그마 요약이라 팀에 유용하다.
