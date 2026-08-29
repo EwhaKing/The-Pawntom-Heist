@@ -10,15 +10,15 @@ namespace Pawntom.Enemy.Adapters
     /// 순수 클래스라 EditMode 테스트에서 단독으로 검증할 수 있다.
     /// </para>
     /// </summary>
-    public sealed class K9TargetSet
+    public sealed class EnemyTargetSet
     {
         private readonly List<Transform> _targets;
 
-        public K9TargetSet() : this(8)
+        public EnemyTargetSet() : this(8)
         {
         }
 
-        public K9TargetSet(int capacity)
+        public EnemyTargetSet(int capacity)
         {
             _targets = new List<Transform>(capacity);
         }

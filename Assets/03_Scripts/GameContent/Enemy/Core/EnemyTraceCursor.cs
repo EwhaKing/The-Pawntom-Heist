@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Pawntom.Enemy.Core
 {
     /// <summary>흔적 후보 하나. 구조체라 힙 할당이 없다.</summary>
-    public readonly struct K9TraceCandidate
+    public readonly struct EnemyTraceCandidate
     {
         /// <summary>개체 식별자. 0 은 유효한 id 로 쓰지 않는다 — 수집하는 쪽에서 걸러 넣는다.</summary>
         public readonly int Id;
@@ -15,7 +15,7 @@ namespace Pawntom.Enemy.Core
         /// <summary>생성 시점. 클수록 최근이다.</summary>
         public readonly int CreatedTick;
 
-        public K9TraceCandidate(int id, Vector3 position, int createdTick)
+        public EnemyTraceCandidate(int id, Vector3 position, int createdTick)
         {
             Id = id;
             Position = position;
@@ -30,7 +30,7 @@ namespace Pawntom.Enemy.Core
     }
 
     /// <summary>커서가 이번 틱에 내린 결정. 구조체라 힙 할당이 없다.</summary>
-    public readonly struct K9TraceStep
+    public readonly struct EnemyTraceStep
     {
         /// <summary>조사할 목표가 있는가.</summary>
         public readonly bool HasTarget;
@@ -44,7 +44,7 @@ namespace Pawntom.Enemy.Core
         /// <summary>없앨 흔적의 id. <see cref="HasConsumed"/> 가 true 일 때만 유효하다.</summary>
         public readonly int ConsumedId;
 
-        public K9TraceStep(bool hasTarget, Vector3 target, bool hasConsumed, int consumedId)
+        public EnemyTraceStep(bool hasTarget, Vector3 target, bool hasConsumed, int consumedId)
         {
             HasTarget = hasTarget;
             Target = target;
@@ -64,7 +64,7 @@ namespace Pawntom.Enemy.Core
     /// 감지 소스가 필드로 하나만 들고 재사용한다. 틱마다 새로 만들지 않으므로 힙 할당이 없다.
     /// </para>
     /// </summary>
-    public sealed class K9TraceCursor
+    public sealed class EnemyTraceCursor
     {
         // 지금 조사 중인 흔적. id 로만 들고 있으므로 좌표가 움직여도 따라간다.
         private bool _hasTarget;
@@ -100,9 +100,9 @@ namespace Pawntom.Enemy.Core
         /// <param name="candidates">이번 틱에 살아 있는 흔적 전부. 반경 판정은 이 안에서 한다.</param>
         /// <param name="detectionRadius">흔적을 발견하는 반경(m). 0 이하면 아무것도 고르지 않는다.</param>
         /// <param name="reachDistance">도달로 인정하는 거리(m).</param>
-        public K9TraceStep Advance(
+        public EnemyTraceStep Advance(
             Vector3 origin,
-            IReadOnlyList<K9TraceCandidate> candidates,
+            IReadOnlyList<EnemyTraceCandidate> candidates,
             float detectionRadius,
             float reachDistance)
         {
@@ -110,7 +110,7 @@ namespace Pawntom.Enemy.Core
             if (candidates == null || candidates.Count == 0 || detectionRadius <= 0f)
             {
                 Clear();
-                return default(K9TraceStep);
+                return default(EnemyTraceStep);
             }
 
             float sqrRadius = detectionRadius * detectionRadius;
@@ -124,7 +124,7 @@ namespace Pawntom.Enemy.Core
             {
                 for (int i = 0; i < count; i++)
                 {
-                    K9TraceCandidate candidate = candidates[i];
+                    EnemyTraceCandidate candidate = candidates[i];
 
                     if (!candidate.IsValid || candidate.Id != _targetId)
                     {
@@ -173,7 +173,7 @@ namespace Pawntom.Enemy.Core
 
                 for (int i = 0; i < count; i++)
                 {
-                    K9TraceCandidate candidate = candidates[i];
+                    EnemyTraceCandidate candidate = candidates[i];
 
                     if (!candidate.IsValid)
                     {
@@ -216,10 +216,10 @@ namespace Pawntom.Enemy.Core
             // 판정 5 — 목표가 있으면 좌표를 내보낸다.
             if (targetIndex < 0)
             {
-                return new K9TraceStep(false, Vector3.zero, hasConsumed, consumedId);
+                return new EnemyTraceStep(false, Vector3.zero, hasConsumed, consumedId);
             }
 
-            return new K9TraceStep(true, candidates[targetIndex].Position, hasConsumed, consumedId);
+            return new EnemyTraceStep(true, candidates[targetIndex].Position, hasConsumed, consumedId);
         }
 
         /// <summary>

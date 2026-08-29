@@ -6,7 +6,7 @@ namespace Pawntom.Enemy.Core
     /// 감지 단서의 종류. 값이 클수록 우선순위가 높다.
     /// 새 감지 수단(예: 흔적 추적)이 생겨도 이 열거형의 기존 값은 바뀌지 않는다.
     /// </summary>
-    public enum K9DetectionKind
+    public enum EnemyDetectionKind
     {
         /// <summary>간접 단서. 조사(Investigate) 를 유발한다.</summary>
         Trace = 0,
@@ -21,33 +21,33 @@ namespace Pawntom.Enemy.Core
     /// <summary>
     /// 감지 소스 하나가 이번 틱에 보고한 단서. 구조체라 힙 할당이 없다.
     /// </summary>
-    public readonly struct K9Detection
+    public readonly struct EnemyDetection
     {
         /// <summary>단서가 가리키는 월드 좌표.</summary>
         public readonly Vector3 Position;
 
         /// <summary>단서의 종류.</summary>
-        public readonly K9DetectionKind Kind;
+        public readonly EnemyDetectionKind Kind;
 
-        public K9Detection(Vector3 position, K9DetectionKind kind)
+        public EnemyDetection(Vector3 position, EnemyDetectionKind kind)
         {
             Position = position;
             Kind = kind;
         }
 
-        public static K9Detection Trace(Vector3 position)
+        public static EnemyDetection Trace(Vector3 position)
         {
-            return new K9Detection(position, K9DetectionKind.Trace);
+            return new EnemyDetection(position, EnemyDetectionKind.Trace);
         }
 
-        public static K9Detection Sight(Vector3 position)
+        public static EnemyDetection Sight(Vector3 position)
         {
-            return new K9Detection(position, K9DetectionKind.Sight);
+            return new EnemyDetection(position, EnemyDetectionKind.Sight);
         }
 
-        public static K9Detection Contact(Vector3 position)
+        public static EnemyDetection Contact(Vector3 position)
         {
-            return new K9Detection(position, K9DetectionKind.Contact);
+            return new EnemyDetection(position, EnemyDetectionKind.Contact);
         }
     }
 
@@ -55,7 +55,7 @@ namespace Pawntom.Enemy.Core
     /// 한 틱 동안 모든 감지 소스에서 모은 결과.
     /// 두뇌가 필드로 들고 재사용하므로 틱마다 새 인스턴스를 만들지 않는다.
     /// </summary>
-    public struct K9PerceptionSnapshot
+    public struct EnemyPerceptionSnapshot
     {
         public bool HasTrace;
         public Vector3 TracePosition;
@@ -102,21 +102,21 @@ namespace Pawntom.Enemy.Core
         }
 
         /// <summary>같은 종류가 여러 번 들어오면 마지막 것이 남는다.</summary>
-        public void Add(in K9Detection detection)
+        public void Add(in EnemyDetection detection)
         {
             switch (detection.Kind)
             {
-                case K9DetectionKind.Trace:
+                case EnemyDetectionKind.Trace:
                     HasTrace = true;
                     TracePosition = detection.Position;
                     break;
 
-                case K9DetectionKind.Sight:
+                case EnemyDetectionKind.Sight:
                     HasSight = true;
                     SightPosition = detection.Position;
                     break;
 
-                case K9DetectionKind.Contact:
+                case EnemyDetectionKind.Contact:
                     HasContact = true;
                     ContactPosition = detection.Position;
                     break;

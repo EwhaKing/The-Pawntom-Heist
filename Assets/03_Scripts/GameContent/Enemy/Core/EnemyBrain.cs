@@ -8,30 +8,30 @@ namespace Pawntom.Enemy.Core
     /// K-9 상태 머신의 본체.
     /// <para>
     /// 책임은 하나다 — <b>상태 전환을 결정하는 것</b>.
-    /// 이동은 <see cref="IK9Motor"/>, 감지는 <see cref="IK9PerceptionSource"/>,
-    /// 하울링은 <see cref="IK9AlertChannel"/> 에 위임한다(SRP).
+    /// 이동은 <see cref="IEnemyMotor"/>, 감지는 <see cref="IEnemyPerceptionSource"/>,
+    /// 하울링은 <see cref="IEnemyAlertChannel"/> 에 위임한다(SRP).
     /// </para>
     /// <para>
     /// 엔진 타입에 의존하지 않으므로 에디터 모드 테스트에서 그대로 검증된다.
     /// </para>
     /// </summary>
-    public sealed class K9Brain
+    public sealed class EnemyBrain
     {
-        private readonly K9Settings _settings;
-        private readonly IK9Motor _motor;
-        private readonly IReadOnlyList<IK9PerceptionSource> _sources;
-        private readonly IK9AlertChannel _alert;
+        private readonly EnemySettings _settings;
+        private readonly IEnemyMotor _motor;
+        private readonly IReadOnlyList<IEnemyPerceptionSource> _sources;
+        private readonly IEnemyAlertChannel _alert;
 
         // 시야 밖에서도 대상을 쫓기 위한 좌표 통로(요구 3). null 이면 추격 중 추가 이동 명령을 내지 않는다.
-        private readonly IK9TargetTracker _tracker;
+        private readonly IEnemyTargetTracker _tracker;
 
         // 순찰 경로 순회. 생성자에서 한 번만 만든다 — Tick 안에서 만들면 GC 할당이 생긴다.
-        private readonly K9PatrolCursor _patrol = new K9PatrolCursor();
+        private readonly EnemyPatrolCursor _patrol = new EnemyPatrolCursor();
 
         // 조사 배회. 지점 제공자(요구 4)를 안에 들고 있다 — 제공자가 null 이면 배회하지 않는다.
-        private readonly K9WanderCursor _wanderCursor;
+        private readonly EnemyWanderCursor _wanderCursor;
 
-        private K9State _state = K9State.Patrol;
+        private EnemyState _state = EnemyState.Patrol;
         private Vector3 _target;
         private bool _hasTarget;
 
@@ -47,23 +47,27 @@ namespace Pawntom.Enemy.Core
         private bool _hasPendingSummon;
 
         // 틱마다 재사용한다. 새로 만들지 않으므로 힙 할당이 없다.
-        private K9PerceptionSnapshot _snapshot;
+        private EnemyPerceptionSnapshot _snapshot;
 
         // 시야의 잔상. 생성자에서 한 번만 만든다 — Tick 안에서 만들면 GC 할당이 생긴다.
-        private readonly K9SightMemory _sight = new K9SightMemory();
+        private readonly EnemySightMemory _sight = new EnemySightMemory();
 
         // 하울링 이후의 경과 시계. 마찬가지로 생성자에서 한 번만 만든다.
-        private readonly K9HowlClock _howl = new K9HowlClock();
+        private readonly EnemyHowlClock _howl = new EnemyHowlClock();
+
+        // 감지했을 때 어느 상태로 넘어갈지 정하는 규칙. 생성자에서 한 번 받는다 —
+        // 틱마다 조회만 하므로 GC 할당이 없다. null 이 들어오면 K-9 기본 정책으로 채운다.
+        private readonly IEnemyEngagementPolicy _engagement;
 
         /// <param name="settings">수치 설정. null 이면 예외.</param>
         /// <param name="motor">이동 담당. null 이면 예외.</param>
         /// <param name="sources">감지 소스 목록. null 이면 감지가 없는 것으로 다룬다.</param>
         /// <param name="alert">하울링 통로. null 이면 송수신이 없는 것으로 다룬다.</param>
-        public K9Brain(
-            K9Settings settings,
-            IK9Motor motor,
-            IReadOnlyList<IK9PerceptionSource> sources,
-            IK9AlertChannel alert)
+        public EnemyBrain(
+            EnemySettings settings,
+            IEnemyMotor motor,
+            IReadOnlyList<IEnemyPerceptionSource> sources,
+            IEnemyAlertChannel alert)
             : this(settings, motor, sources, alert, null, null)
         {
         }
@@ -74,13 +78,35 @@ namespace Pawntom.Enemy.Core
         /// <param name="alert">하울링 통로. null 이면 송수신이 없는 것으로 다룬다.</param>
         /// <param name="tracker">시야 밖 추격용 좌표 제공자. null 이면 추격 중 추가 이동 명령을 내지 않는다.</param>
         /// <param name="wander">조사 배회 지점 제공자. null 이면 배회하지 않고 제자리에 선다.</param>
-        public K9Brain(
-            K9Settings settings,
-            IK9Motor motor,
-            IReadOnlyList<IK9PerceptionSource> sources,
-            IK9AlertChannel alert,
-            IK9TargetTracker tracker,
-            IK9WanderPointProvider wander)
+        public EnemyBrain(
+            EnemySettings settings,
+            IEnemyMotor motor,
+            IReadOnlyList<IEnemyPerceptionSource> sources,
+            IEnemyAlertChannel alert,
+            IEnemyTargetTracker tracker,
+            IEnemyWanderPointProvider wander)
+            : this(settings, motor, sources, alert, tracker, wander, null)
+        {
+        }
+
+        /// <param name="settings">수치 설정. null 이면 예외.</param>
+        /// <param name="motor">이동 담당. null 이면 예외.</param>
+        /// <param name="sources">감지 소스 목록. null 이면 감지가 없는 것으로 다룬다.</param>
+        /// <param name="alert">하울링 통로. null 이면 송수신이 없는 것으로 다룬다.</param>
+        /// <param name="tracker">시야 밖 추격용 좌표 제공자. null 이면 추격 중 추가 이동 명령을 내지 않는다.</param>
+        /// <param name="wander">조사 배회 지점 제공자. null 이면 배회하지 않고 제자리에 선다.</param>
+        /// <param name="engagement">
+        /// 감지 시 전이 규칙. null 이면 <see cref="HowlingEngagementPolicy"/>(K-9 기본)를 쓴다.
+        /// 기본값의 정본은 여기 한 곳뿐이다.
+        /// </param>
+        public EnemyBrain(
+            EnemySettings settings,
+            IEnemyMotor motor,
+            IReadOnlyList<IEnemyPerceptionSource> sources,
+            IEnemyAlertChannel alert,
+            IEnemyTargetTracker tracker,
+            IEnemyWanderPointProvider wander,
+            IEnemyEngagementPolicy engagement)
         {
             if (settings == null)
             {
@@ -97,11 +123,12 @@ namespace Pawntom.Enemy.Core
             _sources = sources;
             _alert = alert;
             _tracker = tracker;
-            _wanderCursor = new K9WanderCursor(wander);
+            _wanderCursor = new EnemyWanderCursor(wander);
+            _engagement = engagement ?? new HowlingEngagementPolicy();
         }
 
         /// <summary>현재 상태.</summary>
-        public K9State State
+        public EnemyState State
         {
             get { return _state; }
         }
@@ -155,16 +182,16 @@ namespace Pawntom.Enemy.Core
 
             switch (_state)
             {
-                case K9State.Patrol:
+                case EnemyState.Patrol:
                     return TickPatrol(deltaTime);
 
-                case K9State.Investigate:
+                case EnemyState.Investigate:
                     return TickInvestigate(deltaTime);
 
-                case K9State.Alert:
+                case EnemyState.Alert:
                     return TickAlert(deltaTime);
 
-                case K9State.Chase:
+                case EnemyState.Chase:
                     return TickChase(deltaTime);
 
                 default:
@@ -188,13 +215,13 @@ namespace Pawntom.Enemy.Core
             int count = _sources == null ? 0 : _sources.Count;
             for (int i = 0; i < count; i++)
             {
-                IK9PerceptionSource source = _sources[i];
+                IEnemyPerceptionSource source = _sources[i];
                 if (source == null)
                 {
                     continue;
                 }
 
-                K9Detection detection;
+                EnemyDetection detection;
                 if (source.TryDetect(out detection))
                 {
                     _snapshot.Add(detection);
@@ -212,17 +239,21 @@ namespace Pawntom.Enemy.Core
         // 순찰 -----------------------------------------------------------
         private bool TickPatrol(float deltaTime)
         {
-            // 전환 3: 접촉·초근접 감지 → Alert
+            // 전환 3: 접촉·초근접 감지 → 정책이 고른 상태.
+            // K-9 은 Alert, 곧바로 달려드는 유닛은 Chase 다.
             if (_snapshot.HasContact)
             {
-                return EnterAlert(_snapshot.ContactPosition);
+                return EnterEngagement(
+                    _engagement.OnContact(_state), _snapshot.ContactPosition);
             }
 
-            // 전환 3b: 시야 포착 → Alert.
-            // 포착은 언제나 Alert 을 거친다(TASK-005 2.3 답변 2). 접촉이 시야보다 우선한다.
+            // 전환 3b: 시야 포착 → 정책이 고른 상태.
+            // K-9 기본 정책은 순찰 중에는 하울링 이력을 보지 않고 언제나 Alert 을 거친다
+            // (TASK-005 2.3 답변 2). 접촉이 시야보다 우선한다.
             if (_snapshot.HasSight)
             {
-                return EnterAlert(_snapshot.SightPosition);
+                return EnterEngagement(
+                    _engagement.OnSighted(_state, HowledRecently()), _snapshot.SightPosition);
             }
 
             // 전환 1: 간접 단서 → Investigate
@@ -244,7 +275,7 @@ namespace Pawntom.Enemy.Core
         }
 
         /// <summary>
-        /// 순찰 커서가 고른 행동을 실행한다. 순회 규칙 자체는 <see cref="K9PatrolCursor"/> 가 안다.
+        /// 순찰 커서가 고른 행동을 실행한다. 순회 규칙 자체는 <see cref="EnemyPatrolCursor"/> 가 안다.
         /// <para>
         /// 정지에는 목표 해제가 따라붙는다. <c>_hasTarget</c> 은 커서가 모르는 두뇌 고유 필드라
         /// 커서가 대신 지워 줄 수 없다(TASK-009 5.3-8).
@@ -253,17 +284,17 @@ namespace Pawntom.Enemy.Core
         private void AdvancePatrol(float deltaTime)
         {
             Vector3 destination;
-            K9PatrolAction action = _patrol.Advance(
+            EnemyPatrolAction action = _patrol.Advance(
                 deltaTime, _motor.HasArrived, _settings.Patrol.WaitSeconds, out destination);
 
-            if (action == K9PatrolAction.MoveTo)
+            if (action == EnemyPatrolAction.MoveTo)
             {
                 SetTarget(destination);
                 _motor.MoveTo(destination, _settings.Movement.PatrolSpeed);
                 return;
             }
 
-            if (action == K9PatrolAction.Stop)
+            if (action == EnemyPatrolAction.Stop)
             {
                 _motor.Stop();
                 _hasTarget = false;
@@ -278,27 +309,25 @@ namespace Pawntom.Enemy.Core
             Vector3 summon;
             bool hasSummon = TryConsumeSummon(out summon);
 
-            // 전환 5: 접촉·초근접 감지 → Alert.
-            // 접촉은 하울링 쿨다운과 무관하게 언제나 Alert 다 —
+            // 전환 5: 접촉·초근접 감지 → 정책이 고른 상태.
+            // K-9 기본 정책에서 접촉은 하울링 쿨다운과 무관하게 언제나 Alert 다 —
             // "Chase 의 유일한 근거는 시야"라는 기획 규칙(GAME_DESIGN.md 3.3)을 깨지 않기 위해서다.
             // 그래서 이 분기가 시야 분기보다 앞에 있어야 한다.
             if (_snapshot.HasContact)
             {
-                return EnterAlert(_snapshot.ContactPosition);
+                return EnterEngagement(
+                    _engagement.OnContact(_state), _snapshot.ContactPosition);
             }
 
-            // 전환 5b: 시야 포착 → Alert.
-            // 조사 중에 다시 눈으로 확인했으면 하울링부터 다시 나간다(TASK-005 2.3 답변 2).
+            // 전환 5b: 시야 포착 → 정책이 고른 상태.
+            // K-9 기본 정책은 조사 중에 다시 눈으로 확인하면 하울링부터 다시 낸다(TASK-005 2.3 답변 2).
+            // 다만 방금 하울링했다면 동료는 이미 불렀으므로 다시 짖지 않고 바로 달려든다
+            // (TASK-007 2.3 원인 E). 이 우회가 없으면 콘 경계의 대상 앞에서
+            // Alert → Investigate → Alert 이 무한히 반복된다.
             if (_snapshot.HasSight)
             {
-                // 방금 하울링했다면 동료는 이미 불렀다. 다시 짖지 않고 바로 달려든다(TASK-007 2.3 원인 E).
-                // 이 우회가 없으면 콘 경계의 대상 앞에서 Alert → Investigate → Alert 이 무한히 반복된다.
-                if (_howl.HowledWithin(_settings.Alert.HowlCooldownSeconds))
-                {
-                    return EnterChase(_snapshot.SightPosition);
-                }
-
-                return EnterAlert(_snapshot.SightPosition);
+                return EnterEngagement(
+                    _engagement.OnSighted(_state, HowledRecently()), _snapshot.SightPosition);
             }
 
             // 신규 흔적을 받으면 목표를 갱신하고 무감지 타이머를 되돌린다.
@@ -503,7 +532,7 @@ namespace Pawntom.Enemy.Core
 
         private bool EnterPatrol()
         {
-            _state = K9State.Patrol;
+            _state = EnemyState.Patrol;
 
             // 웨이포인트에는 곱게 서야 하므로 목적지 제동을 켠다.
             ApplyMotionProfile(true);
@@ -517,9 +546,33 @@ namespace Pawntom.Enemy.Core
             return true;
         }
 
+        /// <summary>
+        /// 하울링 쿨다운 안에 있는가. 정책이 판단 재료로 쓴다.
+        /// <para>읽기만 하므로 어느 상태에서 불러도 부작용이 없다.</para>
+        /// </summary>
+        private bool HowledRecently()
+        {
+            return _howl.HowledWithin(_settings.Alert.HowlCooldownSeconds);
+        }
+
+        /// <summary>정책이 고른 상태로 진입한다. 교전 대상 좌표를 함께 넘긴다.</summary>
+        /// <remarks>
+        /// <c>Alert</c>·<c>Chase</c> 외의 값이 오면 <c>Alert</c> 로 떨어뜨린다.
+        /// 예외를 던지지 않는다 — 두뇌가 틱 중에 죽으면 개가 그 자리에서 얼어붙는다.
+        /// </remarks>
+        private bool EnterEngagement(EnemyState next, Vector3 position)
+        {
+            if (next == EnemyState.Chase)
+            {
+                return EnterChase(position);
+            }
+
+            return EnterAlert(position);
+        }
+
         private bool EnterInvestigate(Vector3 target)
         {
-            _state = K9State.Investigate;
+            _state = EnemyState.Investigate;
 
             // 조사 지점에도 곱게 선다.
             ApplyMotionProfile(true);
@@ -533,7 +586,7 @@ namespace Pawntom.Enemy.Core
 
         private bool EnterAlert(Vector3 contactPoint)
         {
-            _state = K9State.Alert;
+            _state = EnemyState.Alert;
             _lastContactPoint = contactPoint;
             _alertTimer = 0f;
             _hasPendingSummon = false;
@@ -557,7 +610,7 @@ namespace Pawntom.Enemy.Core
 
         private bool EnterChase(Vector3 target)
         {
-            _state = K9State.Chase;
+            _state = EnemyState.Chase;
 
             // 추격의 목적지는 대상 본인이라 늘 목적지 근처다. 제동을 켜면 내내 브레이크가 걸린다(TASK-008 2.3).
             // 이동 명령보다 먼저 걸어야 이번 이동부터 새 성격이 적용된다.

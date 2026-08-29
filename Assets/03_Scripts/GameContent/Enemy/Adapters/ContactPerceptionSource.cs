@@ -6,11 +6,11 @@ using UnityEngine;
 namespace Pawntom.Enemy.Adapters
 {
     /// <summary>
-    /// 접촉·초근접 감지. 대상이 <c>K9Settings.Perception.ContactDistance</c> 안으로 들어오면 보고한다.
-    /// 보고 종류는 <see cref="K9DetectionKind.Contact"/> 이며 경계(Alert) 를 유발한다.
+    /// 접촉·초근접 감지. 대상이 <c>EnemySettings.Perception.ContactDistance</c> 안으로 들어오면 보고한다.
+    /// 보고 종류는 <see cref="EnemyDetectionKind.Contact"/> 이며 경계(Alert) 를 유발한다.
     /// </summary>
-    [AddComponentMenu("Pawntom/Enemy/K9 Contact Perception Source")]
-    public sealed class ContactPerceptionSource : K9PerceptionSourceBehaviour
+    [AddComponentMenu("Pawntom/Enemy/Contact Perception Source")]
+    public sealed class ContactPerceptionSource : EnemyPerceptionSourceBehaviour
     {
         [Header("기준점")]
         [Tooltip("접촉 판정의 기준 지점. 비우면 자기 자신을 쓴다")]
@@ -19,9 +19,9 @@ namespace Pawntom.Enemy.Adapters
         private Transform _originTransform;
 
         /// <inheritdoc/>
-        public override bool TryDetect(out K9Detection detection)
+        public override bool TryDetect(out EnemyDetection detection)
         {
-            detection = default(K9Detection);
+            detection = default(EnemyDetection);
 
             if (!IsReady || _originTransform == null)
             {
@@ -65,7 +65,7 @@ namespace Pawntom.Enemy.Adapters
 
             if (found)
             {
-                detection = K9Detection.Contact(bestPosition);
+                detection = EnemyDetection.Contact(bestPosition);
             }
 
             return found;
@@ -86,7 +86,7 @@ namespace Pawntom.Enemy.Adapters
         /// </summary>
         private void OnDrawGizmos()
         {
-            K9Settings settings = ResolveSettings();
+            EnemySettings settings = ResolveSettings();
             if (settings == null)
             {
                 return;
@@ -112,8 +112,8 @@ namespace Pawntom.Enemy.Adapters
         /// 기즈모가 읽을 수치를 찾는다.
         /// <para>
         /// <c>Configure</c> 로 주입된 값이 있으면(Play 중) 그것을 쓰고,
-        /// 없으면(에디트 모드) 같은 오브젝트의 <see cref="K9Agent"/> 에서 읽는다.
-        /// 두 경로는 같은 <see cref="K9Settings"/> 인스턴스를 가리킨다.
+        /// 없으면(에디트 모드) 같은 오브젝트의 <see cref="EnemyAgent"/> 에서 읽는다.
+        /// 두 경로는 같은 <see cref="EnemySettings"/> 인스턴스를 가리킨다.
         /// </para>
         /// <para>
         /// 여기서 <c>GetComponent</c> 를 캐싱 없이 부르는 것은 캐싱 규칙 위반이 아니다 —
@@ -122,14 +122,14 @@ namespace Pawntom.Enemy.Adapters
         /// 에디트 모드에서는 <c>Awake</c> 가 돌지 않아 캐싱해 둘 시점 자체가 없다.
         /// </para>
         /// </summary>
-        private K9Settings ResolveSettings()
+        private EnemySettings ResolveSettings()
         {
             if (Settings != null)
             {
                 return Settings;
             }
 
-            K9Agent agent = GetComponent<K9Agent>();
+            EnemyAgent agent = GetComponent<EnemyAgent>();
             return agent == null ? null : agent.Settings;
         }
 #endif

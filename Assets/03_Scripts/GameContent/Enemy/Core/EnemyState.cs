@@ -3,7 +3,7 @@ namespace Pawntom.Enemy.Core
     /// <summary>
     /// K-9 순찰견의 상태. GAME_DESIGN.md 3.3 의 4종과 1:1 대응한다.
     /// </summary>
-    public enum K9State
+    public enum EnemyState
     {
         /// <summary>지정 경로를 느리게 순회한다.</summary>
         Patrol = 0,

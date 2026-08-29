@@ -9,7 +9,7 @@ namespace Pawntom.Enemy.Adapters
     /// 내비게이션 이동 어댑터. 두뇌의 이동 명령을 엔진 쪽으로 옮긴다.
     /// <para>두뇌는 이 클래스의 존재를 모른다. 다른 구현으로 갈아 끼워도 동작이 같아야 한다(LSP).</para>
     /// </summary>
-    public sealed class NavMeshK9Motor : IK9Motor
+    public sealed class NavMeshEnemyMotor : IEnemyMotor
     {
         // 방향 벡터가 사실상 0 인지 판정하는 부동소수점 방어값. SightPerceptionSource 와 같은 값을 쓴다.
         private const float DirectionEpsilon = 0.0001f;
@@ -18,7 +18,7 @@ namespace Pawntom.Enemy.Adapters
         private readonly Transform _transform;
         private readonly float _arriveDistance;
 
-        public NavMeshK9Motor(NavMeshAgent agent, float arriveDistance)
+        public NavMeshEnemyMotor(NavMeshAgent agent, float arriveDistance)
         {
             if (agent == null)
             {

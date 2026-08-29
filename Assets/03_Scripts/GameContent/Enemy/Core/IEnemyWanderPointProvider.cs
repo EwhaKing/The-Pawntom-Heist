@@ -9,7 +9,7 @@ namespace Pawntom.Enemy.Core
     /// 덕분에 두뇌는 에디터 모드 테스트에서 같은 입력에 늘 같은 결과를 낸다.
     /// </para>
     /// </summary>
-    public interface IK9WanderPointProvider
+    public interface IEnemyWanderPointProvider
     {
         /// <summary>
         /// <paramref name="anchor"/> 에서 <paramref name="radius"/> 안의 갈 수 있는 지점을 고른다.

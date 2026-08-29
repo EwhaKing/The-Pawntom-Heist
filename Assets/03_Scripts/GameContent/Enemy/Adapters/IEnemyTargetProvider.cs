@@ -11,7 +11,7 @@ namespace Pawntom.Enemy.Adapters
     /// 나중에 네트워크 스폰과 연결할 때도 이 인터페이스의 다른 구현을 넣으면 된다.
     /// </para>
     /// </summary>
-    public interface IK9TargetProvider
+    public interface IEnemyTargetProvider
     {
         /// <summary>
         /// 현재 유효한 감지 대상들. 매 프레임 호출되므로

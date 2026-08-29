@@ -9,33 +9,33 @@ namespace Pawntom.EnemyBridge
 {
     /// <summary>
     /// 털공 흔적 감지. 반경 안의 털공 중 가장 최근에 생긴 것을
-    /// <see cref="K9DetectionKind.Trace"/> 단서로 보고해 조사(Investigate) 를 유발한다.
+    /// <see cref="EnemyDetectionKind.Trace"/> 단서로 보고해 조사(Investigate) 를 유발한다.
     /// 목표에 도달하면 그 털공을 네트워크에서 없앤다.
     /// <para>
     /// 이 클래스는 <b>얇은 어댑터</b>다. 어느 흔적을 고르고 언제 없앨지는 전부
-    /// <see cref="K9TraceCursor"/> 가 판단한다 — 이 파일은 Fusion 타입을 만지므로
+    /// <see cref="EnemyTraceCursor"/> 가 판단한다 — 이 파일은 Fusion 타입을 만지므로
     /// <c>Pawntom.Enemy</c> 어셈블리에 들어갈 수 없고, 따라서 EditMode 로 검증할 수 없다.
     /// 판단 로직을 여기로 옮기지 마라.
     /// </para>
     /// </summary>
-    [AddComponentMenu("Pawntom/Enemy/K9 Fur Trace Perception Source")]
-    public sealed class FurTracePerceptionSource : K9PerceptionSourceBehaviour
+    [AddComponentMenu("Pawntom/Enemy/Fur Trace Perception Source")]
+    public sealed class FurTracePerceptionSource : EnemyPerceptionSourceBehaviour
     {
         [Header("기준점")]
         [Tooltip("흔적 탐색의 기준 지점. 비우면 자기 자신을 쓴다")]
         [SerializeField] private Transform _origin;
 
         // 매 틱 재사용한다. 틱마다 새 목록을 만들면 GC 할당이 쌓인다.
-        private readonly List<K9TraceCandidate> _candidates = new List<K9TraceCandidate>(64);
+        private readonly List<EnemyTraceCandidate> _candidates = new List<EnemyTraceCandidate>(64);
 
-        private readonly K9TraceCursor _cursor = new K9TraceCursor();
+        private readonly EnemyTraceCursor _cursor = new EnemyTraceCursor();
 
         private Transform _originTransform;
 
         /// <inheritdoc/>
-        public override bool TryDetect(out K9Detection detection)
+        public override bool TryDetect(out EnemyDetection detection)
         {
-            detection = default(K9Detection);
+            detection = default(EnemyDetection);
 
             if (!IsReady || _originTransform == null)
             {
@@ -66,13 +66,13 @@ namespace Pawntom.EnemyBridge
                     continue;
                 }
 
-                _candidates.Add(new K9TraceCandidate(
+                _candidates.Add(new EnemyTraceCandidate(
                     unchecked((int)networkObject.Id.Raw),
                     trace.transform.position,
                     trace.SpawnTick));
             }
 
-            K9TraceStep step = _cursor.Advance(
+            EnemyTraceStep step = _cursor.Advance(
                 origin,
                 _candidates,
                 Settings.Trace.DetectionRadius,
@@ -119,7 +119,7 @@ namespace Pawntom.EnemyBridge
                 return false;
             }
 
-            detection = K9Detection.Trace(step.Target);
+            detection = EnemyDetection.Trace(step.Target);
             return true;
         }
 
@@ -138,7 +138,7 @@ namespace Pawntom.EnemyBridge
         /// </summary>
         private void OnDrawGizmos()
         {
-            K9Settings settings = ResolveSettings();
+            EnemySettings settings = ResolveSettings();
             if (settings == null)
             {
                 return;
@@ -163,16 +163,16 @@ namespace Pawntom.EnemyBridge
         /// <summary>
         /// 기즈모가 읽을 수치를 찾는다. <c>ContactPerceptionSource</c> 와 같은 방식이다 —
         /// 주입된 값이 있으면(Play 중) 그것을, 없으면(에디트 모드) 같은 오브젝트의
-        /// <see cref="K9Agent"/> 에서 읽는다.
+        /// <see cref="EnemyAgent"/> 에서 읽는다.
         /// </summary>
-        private K9Settings ResolveSettings()
+        private EnemySettings ResolveSettings()
         {
             if (Settings != null)
             {
                 return Settings;
             }
 
-            K9Agent agent = GetComponent<K9Agent>();
+            EnemyAgent agent = GetComponent<EnemyAgent>();
             return agent == null ? null : agent.Settings;
         }
 #endif

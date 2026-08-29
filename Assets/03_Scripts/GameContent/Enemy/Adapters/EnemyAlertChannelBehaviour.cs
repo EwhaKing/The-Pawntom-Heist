@@ -12,15 +12,15 @@ namespace Pawntom.Enemy.Adapters
     /// </para>
     /// <para>
     /// 브루투스 등 다른 청취자가 생기면 이 클래스를 고치지 말고
-    /// <see cref="IK9AlertChannel"/> 의 다른 구현을 붙이거나 청취자 등록을 확장한다.
+    /// <see cref="IEnemyAlertChannel"/> 의 다른 구현을 붙이거나 청취자 등록을 확장한다.
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Pawntom/Enemy/K9 Alert Channel")]
-    public sealed class K9AlertChannelBehaviour : MonoBehaviour, IK9AlertChannel
+    [AddComponentMenu("Pawntom/Enemy/Alert Channel")]
+    public sealed class EnemyAlertChannelBehaviour : MonoBehaviour, IEnemyAlertChannel
     {
-        private static readonly List<K9AlertChannelBehaviour> ActiveChannels =
-            new List<K9AlertChannelBehaviour>(16);
+        private static readonly List<EnemyAlertChannelBehaviour> ActiveChannels =
+            new List<EnemyAlertChannelBehaviour>(16);
 
         private Transform _transform;
         private bool _hasSummon;
@@ -33,7 +33,7 @@ namespace Pawntom.Enemy.Adapters
 
             for (int i = 0; i < ActiveChannels.Count; i++)
             {
-                K9AlertChannelBehaviour channel = ActiveChannels[i];
+                EnemyAlertChannelBehaviour channel = ActiveChannels[i];
                 if (channel == null || ReferenceEquals(channel, this))
                 {
                     continue;

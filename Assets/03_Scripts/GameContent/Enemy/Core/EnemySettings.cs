@@ -7,7 +7,7 @@ namespace Pawntom.Enemy.Core
     /// 이동 관련 수치. 상태와 무관하게 "몸이 어떻게 움직이는가" 를 정한다.
     /// </summary>
     [Serializable]
-    public class K9MovementSettings
+    public class EnemyMovementSettings
     {
         // 속도의 정본은 아래 세 필드다. 씬의 Nav Mesh Agent 에 보이는 Speed 는 파생값이라,
         // 이동 명령이 나갈 때마다 아래 값으로 덮어써진다. 툴팁에 같은 내용을 적어 둔다.
@@ -41,7 +41,7 @@ namespace Pawntom.Enemy.Core
     /// 감지 수치. 시야·접촉 판정과 시야 기억을 함께 둔다.
     /// </summary>
     [Serializable]
-    public class K9PerceptionSettings
+    public class EnemyPerceptionSettings
     {
         [Tooltip("시야 거리(m)")]
         [SerializeField] private float _sightRange = 12f;
@@ -68,7 +68,7 @@ namespace Pawntom.Enemy.Core
     /// Patrol 상태 수치.
     /// </summary>
     [Serializable]
-    public class K9PatrolSettings
+    public class EnemyPatrolSettings
     {
         [Tooltip("웨이포인트 도달로 인정하는 거리(m)")]
         [SerializeField] private float _arriveDistance = 0.5f;
@@ -85,7 +85,7 @@ namespace Pawntom.Enemy.Core
     /// Alert 상태 수치. 하울링과 소집도 경계 중에 일어나므로 여기 둔다.
     /// </summary>
     [Serializable]
-    public class K9AlertSettings
+    public class EnemyAlertSettings
     {
         [Tooltip("하울링 지속 시간(초). 이 시간이 지나도 시야를 못 잡으면 조사로 전환한다")]
         [SerializeField] private float _howlDurationSeconds = 1.5f;
@@ -122,7 +122,7 @@ namespace Pawntom.Enemy.Core
     /// Investigate 상태 수치. 포기 시간과 배회 규칙.
     /// </summary>
     [Serializable]
-    public class K9InvestigateSettings
+    public class EnemyInvestigateSettings
     {
         [Tooltip("조사 중 신규 감지가 없을 때 순찰로 복귀하기까지의 시간(초). 기획서 명시값 20")]
         [SerializeField] private float _giveUpSeconds = 20f;
@@ -149,7 +149,7 @@ namespace Pawntom.Enemy.Core
     /// Chase 상태 수치. 지금은 하나뿐이지만 추격 수치가 늘어날 자리다.
     /// </summary>
     [Serializable]
-    public class K9ChaseSettings
+    public class EnemyChaseSettings
     {
         [Tooltip("추격 중 시야를 잃고 조사로 복귀하기까지의 시간(초). 기획서 명시값 5")]
         [SerializeField] private float _loseSightSeconds = 5f;
@@ -161,7 +161,7 @@ namespace Pawntom.Enemy.Core
     /// 흔적 추적 수치. 털공 같은 간접 단서를 언제 발견하고 언제 다 봤다고 할지 정한다.
     /// </summary>
     [Serializable]
-    public class K9TraceSettings
+    public class EnemyTraceSettings
     {
         [Tooltip("흔적을 발견하는 반경(m). 이 안에 들어온 흔적만 조사 목표가 된다")]
         [SerializeField] private float _detectionRadius = 8f;
@@ -191,28 +191,28 @@ namespace Pawntom.Enemy.Core
     /// </para>
     /// </summary>
     [Serializable]
-    public class K9Settings
+    public class EnemySettings
     {
-        [SerializeField] private K9MovementSettings _movement = new K9MovementSettings();
-        [SerializeField] private K9PerceptionSettings _perception = new K9PerceptionSettings();
-        [SerializeField] private K9PatrolSettings _patrol = new K9PatrolSettings();
-        [SerializeField] private K9AlertSettings _alert = new K9AlertSettings();
-        [SerializeField] private K9InvestigateSettings _investigate = new K9InvestigateSettings();
-        [SerializeField] private K9ChaseSettings _chase = new K9ChaseSettings();
-        [SerializeField] private K9TraceSettings _trace = new K9TraceSettings();
+        [SerializeField] private EnemyMovementSettings _movement = new EnemyMovementSettings();
+        [SerializeField] private EnemyPerceptionSettings _perception = new EnemyPerceptionSettings();
+        [SerializeField] private EnemyPatrolSettings _patrol = new EnemyPatrolSettings();
+        [SerializeField] private EnemyAlertSettings _alert = new EnemyAlertSettings();
+        [SerializeField] private EnemyInvestigateSettings _investigate = new EnemyInvestigateSettings();
+        [SerializeField] private EnemyChaseSettings _chase = new EnemyChaseSettings();
+        [SerializeField] private EnemyTraceSettings _trace = new EnemyTraceSettings();
 
-        public K9MovementSettings Movement { get { return _movement; } }
+        public EnemyMovementSettings Movement { get { return _movement; } }
 
-        public K9PerceptionSettings Perception { get { return _perception; } }
+        public EnemyPerceptionSettings Perception { get { return _perception; } }
 
-        public K9PatrolSettings Patrol { get { return _patrol; } }
+        public EnemyPatrolSettings Patrol { get { return _patrol; } }
 
-        public K9AlertSettings Alert { get { return _alert; } }
+        public EnemyAlertSettings Alert { get { return _alert; } }
 
-        public K9InvestigateSettings Investigate { get { return _investigate; } }
+        public EnemyInvestigateSettings Investigate { get { return _investigate; } }
 
-        public K9ChaseSettings Chase { get { return _chase; } }
+        public EnemyChaseSettings Chase { get { return _chase; } }
 
-        public K9TraceSettings Trace { get { return _trace; } }
+        public EnemyTraceSettings Trace { get { return _trace; } }
     }
 }

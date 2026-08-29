@@ -8,41 +8,41 @@ namespace Pawntom.Enemy.Tests
     /// <summary>
     /// TASK-009 5.7 기준6 — 두뇌에서 뽑아낸 세 부품의 <b>단독</b> 검증.
     /// <para>
-    /// 여기서는 <see cref="K9Brain"/> 을 한 번도 만들지 않는다.
+    /// 여기서는 <see cref="EnemyBrain"/> 을 한 번도 만들지 않는다.
     /// 두뇌를 거쳐야만 검증되는 부품이라면 분해한 의미가 없다.
     /// </para>
     /// </summary>
-    public sealed class K9CursorTests
+    public sealed class EnemyCursorTests
     {
-        // ── K9PatrolCursor ─────────────────────────────────────────
+        // ── EnemyPatrolCursor ─────────────────────────────────────────
 
         [Test]
         [Description("TASK-009 5.3-1 - SetRoute 는 번호를 0 으로 되돌리고 Reset 은 가던 번호를 유지한다")]
         public void PatrolCursor_SetRoute_RewindsIndex_ButReset_KeepsIt()
         {
-            K9PatrolCursor cursor = new K9PatrolCursor();
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
             List<Vector3> route = MakeRoute(3);
             cursor.SetRoute(route, true);
 
             Vector3 destination;
 
             // 0번으로 출발한 뒤 1번까지 전진시킨다.
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
             Assert.AreEqual(route[0], destination);
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
             Assert.AreEqual(route[1], destination);
             Assert.AreEqual(1, cursor.WaypointIndex, "사전 조건: 1번 지점을 향하고 있다");
 
             // 순찰 재진입 — 번호는 유지된다. 매번 앞머리로 돌아가면 경로 뒤쪽을 영영 못 밟는다.
             cursor.Reset();
             Assert.AreEqual(1, cursor.WaypointIndex, "Reset 은 번호를 되돌리지 않는다");
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
             Assert.AreEqual(route[1], destination, "복귀한 개는 가던 지점부터 이어 간다");
 
             // 경로 교체 — 이때는 처음부터 돈다.
             cursor.SetRoute(route, true);
             Assert.AreEqual(0, cursor.WaypointIndex, "SetRoute 는 번호를 0 으로 되돌린다");
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
             Assert.AreEqual(route[0], destination);
         }
 
@@ -50,28 +50,28 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 5.3-2 - 한 번의 Advance 에서 나가는 행동은 최대 하나다")]
         public void PatrolCursor_Advance_YieldsAtMostOneAction_PerCall()
         {
-            K9PatrolCursor cursor = new K9PatrolCursor();
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
             List<Vector3> route = MakeRoute(3);
             cursor.SetRoute(route, true);
 
             Vector3 destination;
 
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(0.5f, true, 2f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(0.5f, true, 2f, out destination));
             Assert.AreEqual(route[0], destination, "첫 호출은 이동 명령 하나뿐이다");
 
             // 도착했지만 대기 시간을 못 채운 틱에서는 아무 것도 하지 않는다.
-            Assert.AreEqual(K9PatrolAction.None, cursor.Advance(0.5f, true, 2f, out destination));
-            Assert.AreEqual(K9PatrolAction.None, cursor.Advance(0.5f, true, 2f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(0.5f, true, 2f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(0.5f, true, 2f, out destination));
             Assert.AreEqual(0, cursor.WaypointIndex, "대기 중에는 번호가 넘어가지 않는다");
 
             // 대기 시간을 채운 틱에서만 다음 지점으로 넘어간다.
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, true, 2f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, true, 2f, out destination));
             Assert.AreEqual(route[1], destination);
             Assert.AreEqual(1, cursor.WaypointIndex);
 
             // 아직 가는 중이면 대기 시간을 세지 않는다.
-            Assert.AreEqual(K9PatrolAction.None, cursor.Advance(5f, false, 2f, out destination));
-            Assert.AreEqual(K9PatrolAction.None, cursor.Advance(1f, true, 2f, out destination),
+            Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(5f, false, 2f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(1f, true, 2f, out destination),
                 "이동 중에 흐른 시간은 대기 시간으로 쳐 주지 않는다");
         }
 
@@ -79,17 +79,17 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 - 웨이포인트가 0개면 정지는 한 번만 나가고 그 뒤로는 조용하다")]
         public void PatrolCursor_WithZeroWaypoints_StopsOnce_ThenStaysSilent()
         {
-            K9PatrolCursor cursor = new K9PatrolCursor();
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
             cursor.SetRoute(new List<Vector3>(), true);
 
             Vector3 destination;
 
-            Assert.AreEqual(K9PatrolAction.Stop, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.Stop, cursor.Advance(1f, false, 1f, out destination));
 
             for (int i = 0; i < 5; i++)
             {
                 Assert.AreEqual(
-                    K9PatrolAction.None, cursor.Advance(1f, false, 1f, out destination),
+                    EnemyPatrolAction.None, cursor.Advance(1f, false, 1f, out destination),
                     "이미 선 개에게 정지 명령을 반복해서 내지 않는다");
             }
         }
@@ -98,25 +98,25 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 - loop 가 false 면 마지막 지점에서 순회를 끝내고 한 번만 정지한다")]
         public void PatrolCursor_WithoutLoop_FinishesRoute_AndStopsOnce()
         {
-            K9PatrolCursor cursor = new K9PatrolCursor();
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
             List<Vector3> route = MakeRoute(3);
             cursor.SetRoute(route, false);
 
             Vector3 destination;
 
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
             Assert.AreEqual(route[0], destination);
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
             Assert.AreEqual(route[1], destination);
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, true, 1f, out destination));
             Assert.AreEqual(route[2], destination);
 
-            Assert.AreEqual(K9PatrolAction.Stop, cursor.Advance(1f, true, 1f, out destination),
+            Assert.AreEqual(EnemyPatrolAction.Stop, cursor.Advance(1f, true, 1f, out destination),
                 "마지막 지점을 지나면 처음으로 돌아가지 않고 선다");
 
             for (int i = 0; i < 3; i++)
             {
-                Assert.AreEqual(K9PatrolAction.None, cursor.Advance(1f, true, 1f, out destination));
+                Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(1f, true, 1f, out destination));
             }
         }
 
@@ -124,26 +124,26 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 5.3-3 - 두뇌가 직접 세운 뒤에는 커서가 정지 명령을 다시 내지 않는다")]
         public void PatrolCursor_NotifyStopped_SuppressesRedundantStop()
         {
-            K9PatrolCursor cursor = new K9PatrolCursor();
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
             cursor.SetRoute(new List<Vector3>(), true);
 
             Vector3 destination;
 
             // 경계 진입처럼 두뇌가 커서 밖에서 세운 상황.
             cursor.NotifyStopped();
-            Assert.AreEqual(K9PatrolAction.None, cursor.Advance(1f, false, 1f, out destination),
+            Assert.AreEqual(EnemyPatrolAction.None, cursor.Advance(1f, false, 1f, out destination),
                 "이미 서 있으므로 정지 명령이 또 나가면 안 된다");
 
             // 이동 명령이 한 번 나가면 정지 래치가 다시 열린다.
             cursor.SetRoute(MakeRoute(1), false);
-            Assert.AreEqual(K9PatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
 
             cursor.SetRoute(new List<Vector3>(), false);
-            Assert.AreEqual(K9PatrolAction.Stop, cursor.Advance(1f, false, 1f, out destination),
+            Assert.AreEqual(EnemyPatrolAction.Stop, cursor.Advance(1f, false, 1f, out destination),
                 "움직인 뒤에는 다시 한 번 설 수 있어야 한다");
         }
 
-        // ── K9WanderCursor ─────────────────────────────────────────
+        // ── EnemyWanderCursor ─────────────────────────────────────────
 
         [Test]
         [Description("TASK-009 - 배회 지점은 도착한 뒤 대기 시간을 채웠을 때만 고른다")]
@@ -153,7 +153,7 @@ namespace Pawntom.Enemy.Tests
             provider.Active = true;
             provider.Point = new Vector3(3f, 0f, 4f);
 
-            K9WanderCursor cursor = new K9WanderCursor(provider);
+            EnemyWanderCursor cursor = new EnemyWanderCursor(provider);
             Vector3 anchor = new Vector3(1f, 0f, 1f);
             cursor.SetAnchor(anchor);
             Assert.AreEqual(anchor, cursor.Anchor);
@@ -186,7 +186,7 @@ namespace Pawntom.Enemy.Tests
             provider.Active = true;
             provider.Point = new Vector3(9f, 0f, 9f);
 
-            K9WanderCursor cursor = new K9WanderCursor(provider);
+            EnemyWanderCursor cursor = new EnemyWanderCursor(provider);
             cursor.SetAnchor(Vector3.zero);
 
             Vector3 point;
@@ -211,7 +211,7 @@ namespace Pawntom.Enemy.Tests
         public void WanderCursor_Spread_FallsBackToSummonPoint_OnEveryFailure()
         {
             FakeWanderPointProvider provider = new FakeWanderPointProvider();
-            K9WanderCursor cursor = new K9WanderCursor(provider);
+            EnemyWanderCursor cursor = new EnemyWanderCursor(provider);
 
             Vector3 summon = new Vector3(7f, 0f, 2f);
 
@@ -236,7 +236,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 - 지점 제공자가 없으면 배회하지 않고 분산도 하지 않는다")]
         public void WanderCursor_WithoutProvider_NeverPicks_AndNeverSpreads()
         {
-            K9WanderCursor cursor = new K9WanderCursor(null);
+            EnemyWanderCursor cursor = new EnemyWanderCursor(null);
             cursor.SetAnchor(new Vector3(2f, 0f, 2f));
 
             Vector3 point;
@@ -249,13 +249,13 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(summon, cursor.Spread(summon, 3f));
         }
 
-        // ── K9HowlClock ────────────────────────────────────────────
+        // ── EnemyHowlClock ────────────────────────────────────────────
 
         [Test]
         [Description("TASK-009 5.3-4 - 한 번도 짖지 않았으면 경과 시간을 누적하지 않는다")]
         public void HowlClock_DoesNotAccumulate_BeforeFirstHowl()
         {
-            K9HowlClock clock = new K9HowlClock();
+            EnemyHowlClock clock = new EnemyHowlClock();
 
             for (int i = 0; i < 100; i++)
             {
@@ -280,7 +280,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 5.3-5 - 정확히 그 시간이 흘렀으면 쿨다운은 끝난 것으로 본다")]
         public void HowlClock_HowledWithin_IsFalseAtTheBoundary()
         {
-            K9HowlClock clock = new K9HowlClock();
+            EnemyHowlClock clock = new EnemyHowlClock();
             clock.MarkHowled();
 
             clock.Tick(1f);
@@ -296,7 +296,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-009 - 다시 짖으면 경과 시간이 0 으로 되돌아간다")]
         public void HowlClock_MarkHowled_RewindsElapsedTime()
         {
-            K9HowlClock clock = new K9HowlClock();
+            EnemyHowlClock clock = new EnemyHowlClock();
             clock.MarkHowled();
             clock.Tick(5f);
             Assert.IsFalse(clock.HowledWithin(3f), "사전 조건: 쿨다운이 지났다");

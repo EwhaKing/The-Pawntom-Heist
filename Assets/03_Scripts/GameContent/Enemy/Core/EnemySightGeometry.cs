@@ -5,7 +5,7 @@ namespace Pawntom.Enemy.Core
     /// <summary>
     /// 시야 기하 계산. 감지 어댑터에서 떼어내 테스트 가능하게 둔다.
     /// </summary>
-    public static class K9SightGeometry
+    public static class EnemySightGeometry
     {
         // 방향 벡터를 수평에 눕혔을 때 사실상 0 인지 판정하는 부동소수점 방어값.
         // 감지·이동 어댑터가 쓰는 값과 같다.

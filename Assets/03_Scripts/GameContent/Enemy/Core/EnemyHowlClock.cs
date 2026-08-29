@@ -7,11 +7,11 @@ namespace Pawntom.Enemy.Core
     /// 무한대에 흐른 시간을 계속 더하는 누적을 만들지 않기 위해 플래그로 나눠 둔다.
     /// </para>
     /// <para>
-    /// <see cref="K9SightMemory"/> 와 같은 모양(타이머 + 유효 플래그)이다.
+    /// <see cref="EnemySightMemory"/> 와 같은 모양(타이머 + 유효 플래그)이다.
     /// 두뇌가 필드로 하나만 들고 재사용하므로 힙 할당이 없다.
     /// </para>
     /// </summary>
-    public sealed class K9HowlClock
+    public sealed class EnemyHowlClock
     {
         private float _secondsSinceHowl;
         private bool _hasHowled;

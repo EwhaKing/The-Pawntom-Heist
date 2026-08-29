@@ -13,7 +13,7 @@ namespace Pawntom.Enemy.Tests
     /// TASK-002 5.3 수용 기준 1~6 의 기계 검증.
     /// 테스트 이름의 Transition 번호는 TASK-002 5.2 상태 전환표의 행 번호와 1:1 대응한다.
     /// </summary>
-    public sealed class K9BrainTests
+    public sealed class EnemyBrainTests
     {
         // ── 기준 1: Core 는 엔진 타입에 의존하지 않는다 ──────────────
 
@@ -22,9 +22,9 @@ namespace Pawntom.Enemy.Tests
         public void Criterion1_CoreScripts_DoNotReferenceEngineTypes()
         {
             string[] anchors = Directory.GetFiles(
-                Application.dataPath, "K9Brain.cs", SearchOption.AllDirectories);
+                Application.dataPath, "EnemyBrain.cs", SearchOption.AllDirectories);
 
-            Assert.AreEqual(1, anchors.Length, "K9Brain.cs 를 정확히 하나 찾지 못했다");
+            Assert.AreEqual(1, anchors.Length, "EnemyBrain.cs 를 정확히 하나 찾지 못했다");
 
             string coreDirectory = Path.GetDirectoryName(anchors[0]);
             string[] files = Directory.GetFiles(coreDirectory, "*.cs", SearchOption.AllDirectories);
@@ -78,7 +78,7 @@ namespace Pawntom.Enemy.Tests
                 new[] { route[0], route[1], route[2], route[0], route[1] },
                 rig.Motor.Destinations);
 
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
             Assert.AreEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
 
@@ -120,7 +120,7 @@ namespace Pawntom.Enemy.Tests
 
             Assert.AreEqual(0, rig.Motor.MoveToCount);
             Assert.AreEqual(1, rig.Motor.StopCount);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
             Assert.IsNull(rig.Brain.CurrentTarget);
         }
 
@@ -142,7 +142,7 @@ namespace Pawntom.Enemy.Tests
             });
 
             Assert.AreEqual(route[0], rig.Motor.LastDestination);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
         }
 
         [Test]
@@ -150,10 +150,10 @@ namespace Pawntom.Enemy.Tests
         public void Criterion2_Alert_HoldsPosition_AndIssuesNoMoveCommand()
         {
             Rig rig = new Rig();
-            rig.Source.Report(K9Detection.Contact(new Vector3(3f, 0f, 0f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(3f, 0f, 0f)));
             rig.Brain.Tick(0.1f);
 
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(1, rig.Motor.StopCount);
             Assert.AreEqual(0, rig.Motor.MoveToCount);
 
@@ -161,7 +161,7 @@ namespace Pawntom.Enemy.Tests
             rig.Brain.Tick(0.5f);
             rig.Brain.Tick(0.5f);
 
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount, "Alert 유지 중에는 이동 명령이 없어야 한다");
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "하울링은 진입 시 1회뿐이어야 한다");
         }
@@ -179,11 +179,11 @@ namespace Pawntom.Enemy.Tests
             int moveCountAfterEnter = rig.Motor.MoveToCount;
 
             Vector3 second = new Vector3(7f, 0f, 2f);
-            rig.Source.Report(K9Detection.Sight(second));
+            rig.Source.Report(EnemyDetection.Sight(second));
             rig.Brain.Tick(0.1f);
 
             Vector3 third = new Vector3(9f, 0f, 4f);
-            rig.Source.Report(K9Detection.Sight(third));
+            rig.Source.Report(EnemyDetection.Sight(third));
             rig.Brain.Tick(0.1f);
 
             Assert.AreEqual(moveCountAfterEnter + 2, rig.Motor.MoveToCount, "시야 유지 중 매 틱 갱신되어야 한다");
@@ -203,7 +203,7 @@ namespace Pawntom.Enemy.Tests
             rig.Motor.Arrived = true;
             rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds);
 
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State, "도달로 타이머가 초기화되면 안 된다");
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State, "도달로 타이머가 초기화되면 안 된다");
         }
 
         // ── 기준 3: 전환 8개 ───────────────────────────────────────
@@ -214,12 +214,12 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Vector3 trace = new Vector3(4f, 0f, 1f);
-            rig.Source.Report(K9Detection.Trace(trace));
+            rig.Source.Report(EnemyDetection.Trace(trace));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(trace, rig.Motor.LastDestination);
             Assert.AreEqual(trace, rig.Brain.CurrentTarget);
         }
@@ -236,7 +236,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(summon, rig.Motor.LastDestination);
         }
 
@@ -246,12 +246,12 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             rig.Motor.CurrentPosition = new Vector3(1f, 2f, 3f);
-            rig.Source.Report(K9Detection.Contact(new Vector3(1.4f, 2f, 3f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(1.4f, 2f, 3f)));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(1, rig.Alert.BroadcastCount);
             Assert.AreEqual(new Vector3(1f, 2f, 3f), rig.Alert.LastOrigin, "하울링 원점은 자기 위치여야 한다");
             Assert.AreEqual(30f, rig.Alert.LastRadius, 0.0001f);
@@ -268,7 +268,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(20f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
         }
 
         [Test]
@@ -280,12 +280,12 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(0, rig.Alert.BroadcastCount);
 
             rig.Motor.CurrentPosition = new Vector3(0f, 0f, 8f);
-            rig.Source.Report(K9Detection.Contact(new Vector3(0f, 0f, 9f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(0f, 0f, 9f)));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(1, rig.Alert.BroadcastCount);
             Assert.AreEqual(new Vector3(0f, 0f, 8f), rig.Alert.LastOrigin);
             Assert.AreEqual(30f, rig.Alert.LastRadius, 0.0001f);
@@ -304,20 +304,20 @@ namespace Pawntom.Enemy.Tests
             EnterAlert(rig);
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             // 유지 시간 안에는 시야가 있어도 Chase 로 가지 않는다.
             bool early = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds * 0.5f);
 
             Assert.IsFalse(early, "유지 시간 안의 시야는 상태를 바꾸지 않는다");
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount);
 
             // 유지 시간이 경과하는 틱에 시야가 있으면 Chase 로 간다.
             bool changed = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
@@ -333,7 +333,7 @@ namespace Pawntom.Enemy.Tests
             rig.Brain.Tick(0.5f);
             rig.Brain.Tick(0.5f);
 
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "시야 없이 Chase 로 가면 안 된다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "시야 없이 Chase 로 가면 안 된다");
         }
 
         [Test]
@@ -342,15 +342,15 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Vector3 contact = new Vector3(3f, 0f, -2f);
-            rig.Source.Report(K9Detection.Contact(contact));
+            rig.Source.Report(EnemyDetection.Contact(contact));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
 
             rig.Source.Clear();
             bool changed = rig.Brain.Tick(1.5f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(contact, rig.Motor.LastDestination, "마지막 접촉 좌표로 조사해야 한다");
         }
 
@@ -365,7 +365,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(5f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(new Vector3(6f, 0f, 6f), rig.Motor.LastDestination, "마지막 목격 좌표로 조사해야 한다");
         }
 
@@ -386,7 +386,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsFalse(changed, "소집으로 상태가 바뀌면 안 된다");
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination, "목표는 시야 좌표 그대로여야 한다");
             Assert.AreEqual(seen, rig.Brain.CurrentTarget);
         }
@@ -407,17 +407,17 @@ namespace Pawntom.Enemy.Tests
             // 시야 상실 → 전환8 → Investigate
             rig.Source.Clear();
             rig.Brain.Tick(5f);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
 
             // 무감지 20초 → 전환4 → Patrol
             rig.Brain.Tick(20f);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
 
             // 소집이 채널에 남아 있었다면 여기서 Investigate 로 끌려간다.
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsFalse(changed, "폐기된 소집이 뒤늦게 발동하면 안 된다");
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
         }
 
         [Test]
@@ -428,7 +428,7 @@ namespace Pawntom.Enemy.Tests
             EnterInvestigate(rig);
 
             rig.Brain.Tick(19f);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "사전 조건: 아직 포기 전");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "사전 조건: 아직 포기 전");
 
             Vector3 summon = new Vector3(-14f, 0f, 7f);
             rig.Alert.HasSummon = true;
@@ -437,14 +437,14 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(19f);
 
             Assert.IsFalse(changed, "상태는 Investigate 로 유지된다");
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(summon, rig.Motor.LastDestination, "목표가 소집 좌표로 교체되어야 한다");
             Assert.AreEqual(summon, rig.Brain.CurrentTarget);
 
             // 리셋이 없었다면 누적 38초로 이미 Patrol 이다. 리셋 후 19 < 20 이라 유지된다.
             rig.Brain.Tick(19f);
 
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "무감지 타이머가 0 으로 되돌아가야 한다");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "무감지 타이머가 0 으로 되돌아가야 한다");
         }
 
         [Test]
@@ -455,13 +455,13 @@ namespace Pawntom.Enemy.Tests
             EnterInvestigate(rig);
 
             Vector3 trace = new Vector3(2f, 0f, 3f);
-            rig.Source.Report(K9Detection.Trace(trace));
+            rig.Source.Report(EnemyDetection.Trace(trace));
             rig.Alert.HasSummon = true;
             rig.Alert.SummonTarget = new Vector3(-25f, 0f, 1f);
 
             rig.Brain.Tick(0.1f);
 
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(trace, rig.Motor.LastDestination, "직접 본 좌표가 우선이다");
             Assert.IsFalse(rig.Alert.HasSummon, "감지가 이겨도 소집은 채널에 남지 않는다");
         }
@@ -472,9 +472,9 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Vector3 contact = new Vector3(3f, 0f, -2f);
-            rig.Source.Report(K9Detection.Contact(contact));
+            rig.Source.Report(EnemyDetection.Contact(contact));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             rig.Source.Clear();
 
             Vector3 summon = new Vector3(-8f, 0f, 12f);
@@ -484,14 +484,14 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(0.5f);
 
             Assert.IsFalse(changed, "소집으로 Alert 을 벗어나면 안 된다");
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount, "Alert 유지 중에는 이동 명령이 없어야 한다");
 
             // 전환7: 하울링 시간 경과 + 시야 미확보
             bool left = rig.Brain.Tick(1f);
 
             Assert.IsTrue(left);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(summon, rig.Motor.LastDestination, "보관해 둔 소집 좌표로 조사해야 한다");
         }
 
@@ -501,13 +501,13 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Vector3 contact = new Vector3(3f, 0f, -2f);
-            rig.Source.Report(K9Detection.Contact(contact));
+            rig.Source.Report(EnemyDetection.Contact(contact));
             rig.Brain.Tick(0.1f);
             rig.Source.Clear();
 
             rig.Brain.Tick(1.5f);
 
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(contact, rig.Motor.LastDestination);
         }
 
@@ -523,7 +523,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(19.9f);
 
             Assert.IsFalse(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
         }
 
         [Test]
@@ -537,7 +537,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(4.9f);
 
             Assert.IsFalse(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
         }
 
         [Test]
@@ -551,35 +551,35 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(1.4f);
 
             Assert.IsFalse(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
         }
 
         // ── 기준 5: OCP — 감지 소스 추가만으로 확장된다 ───────────────
 
         [Test]
-        [Description("기준5 - 새로 만든 감지 소스를 주입해도 K9Brain 수정 없이 Investigate 로 들어간다")]
+        [Description("기준5 - 새로 만든 감지 소스를 주입해도 EnemyBrain 수정 없이 Investigate 로 들어간다")]
         public void Criterion5_NewPerceptionSource_DrivesInvestigate_WithoutBrainChange()
         {
-            // K9Brain 은 이 타입의 존재를 모른다. 리스트에 넣기만 한다.
+            // EnemyBrain 은 이 타입의 존재를 모른다. 리스트에 넣기만 한다.
             FurballTraceStubSource newSource = new FurballTraceStubSource();
             newSource.TracePosition = new Vector3(12f, 0f, -3f);
             newSource.Active = true;
 
-            K9Settings settings = new K9Settings();
+            EnemySettings settings = new EnemySettings();
             FakeMotor motor = new FakeMotor();
             SpyAlertChannel alert = new SpyAlertChannel();
             FakePerceptionSource existing = new FakePerceptionSource();
 
-            List<IK9PerceptionSource> sources = new List<IK9PerceptionSource>();
+            List<IEnemyPerceptionSource> sources = new List<IEnemyPerceptionSource>();
             sources.Add(existing);
             sources.Add(newSource);
 
-            K9Brain brain = new K9Brain(settings, motor, sources, alert);
+            EnemyBrain brain = new EnemyBrain(settings, motor, sources, alert);
 
             bool changed = brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, brain.State);
+            Assert.AreEqual(EnemyState.Investigate, brain.State);
             Assert.AreEqual(newSource.TracePosition, motor.LastDestination);
             Assert.AreEqual(1, existing.TryDetectCount, "기존 소스도 그대로 호출되어야 한다");
             Assert.AreEqual(1, newSource.TryDetectCount);
@@ -592,12 +592,12 @@ namespace Pawntom.Enemy.Tests
         public void Criterion6_TickZero_ChangesNothing()
         {
             Rig rig = new Rig();
-            rig.Source.Report(K9Detection.Contact(new Vector3(1f, 0f, 0f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(1f, 0f, 0f)));
 
             bool changed = rig.Brain.Tick(0f);
 
             Assert.IsFalse(changed);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount);
             Assert.AreEqual(0, rig.Motor.StopCount);
             Assert.AreEqual(0, rig.Source.TryDetectCount);
@@ -608,12 +608,12 @@ namespace Pawntom.Enemy.Tests
         public void Criterion6_TickNegative_ChangesNothing()
         {
             Rig rig = new Rig();
-            rig.Source.Report(K9Detection.Sight(new Vector3(1f, 0f, 0f)));
+            rig.Source.Report(EnemyDetection.Sight(new Vector3(1f, 0f, 0f)));
 
             bool changed = rig.Brain.Tick(-1f);
 
             Assert.IsFalse(changed);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
             Assert.AreEqual(0, rig.Source.TryDetectCount);
         }
 
@@ -630,7 +630,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Brain.Tick(0.016f);
             }
 
-            K9Brain brain = rig.Brain;
+            EnemyBrain brain = rig.Brain;
             Assert.That(delegate { brain.Tick(0.016f); }, ConstraintIs.Not.AllocatingGCMemory());
         }
 
@@ -652,7 +652,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Brain.Tick(0.016f);
             }
 
-            K9Brain brain = rig.Brain;
+            EnemyBrain brain = rig.Brain;
             Assert.That(delegate { brain.Tick(0.016f); }, ConstraintIs.Not.AllocatingGCMemory());
         }
 
@@ -676,7 +676,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Brain.Tick(interval);
             }
 
-            K9Brain brain = rig.Brain;
+            EnemyBrain brain = rig.Brain;
             Assert.That(delegate { brain.Tick(interval); }, ConstraintIs.Not.AllocatingGCMemory());
         }
 
@@ -690,12 +690,12 @@ namespace Pawntom.Enemy.Tests
             rig.Motor.CurrentPosition = new Vector3(1f, 0f, 2f);
 
             Vector3 seen = new Vector3(5f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "시야 포착은 Investigate 가 아니라 Alert 로 간다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "시야 포착은 Investigate 가 아니라 Alert 로 간다");
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "하울링은 진입 시 1회뿐이어야 한다");
             Assert.AreEqual(new Vector3(1f, 0f, 2f), rig.Alert.LastOrigin, "하울링 원점은 자기 위치여야 한다");
             Assert.AreEqual(1, rig.Motor.StopCount, "진입 시 정지는 1회다");
@@ -715,7 +715,7 @@ namespace Pawntom.Enemy.Tests
             EnterAlert(rig);
 
             // 유지 시간 내내 시야가 유지되는 상태로 둔다.
-            rig.Source.Report(K9Detection.Sight(new Vector3(2f, 0f, 5f)));
+            rig.Source.Report(EnemyDetection.Sight(new Vector3(2f, 0f, 5f)));
 
             float slice = rig.Settings.Alert.HoldSeconds * 0.4f;
             bool first = rig.Brain.Tick(slice);
@@ -723,7 +723,7 @@ namespace Pawntom.Enemy.Tests
 
             Assert.IsFalse(first);
             Assert.IsFalse(second);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "유지 시간 안의 시야는 상태를 바꾸지 않는다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "유지 시간 안의 시야는 상태를 바꾸지 않는다");
             Assert.AreEqual(0, rig.Motor.MoveToCount, "유지 구간에는 이동 명령이 없어야 한다");
         }
 
@@ -737,12 +737,12 @@ namespace Pawntom.Enemy.Tests
 
             rig.Motor.CurrentPosition = new Vector3(0f, 0f, 4f);
             Vector3 seen = new Vector3(0f, 0f, 9f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "재발견 시 하울링이 다시 나가는 것은 의도된 결과다");
             Assert.AreEqual(new Vector3(0f, 0f, 4f), rig.Alert.LastOrigin);
         }
@@ -764,7 +764,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Tracker.TrackedPosition = new Vector3(6f + i, 0f, 6f);
                 rig.Brain.Tick(1f);
 
-                Assert.AreEqual(K9State.Chase, rig.Brain.State, "소실 제한 시간 전에는 Chase 를 유지한다");
+                Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "소실 제한 시간 전에는 Chase 를 유지한다");
                 Assert.AreEqual(rig.Tracker.TrackedPosition, rig.Motor.LastDestination, "매 틱 추적 좌표로 갱신되어야 한다");
                 Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
             }
@@ -787,13 +787,13 @@ namespace Pawntom.Enemy.Tests
             bool early = rig.Brain.Tick(rig.Settings.Chase.LoseSightSeconds - 1f);
 
             Assert.IsFalse(early);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
             Assert.AreEqual(moveCountAfterEnter, rig.Motor.MoveToCount, "추적 좌표가 없으면 이동 명령을 내지 않는다");
 
             bool changed = rig.Brain.Tick(1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination, "마지막 목격 좌표로 조사해야 한다");
         }
 
@@ -817,7 +817,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Brain.Tick(interval);
                 elapsed += interval;
 
-                Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+                Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
                 Assert.AreEqual(rig.Wander.Point, rig.Motor.LastDestination, "배회 지점으로 이동해야 한다");
                 Assert.AreEqual(rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f);
             }
@@ -830,7 +830,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds - elapsed);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State, "배회는 무감지 타이머를 건드리면 안 된다");
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State, "배회는 무감지 타이머를 건드리면 안 된다");
         }
 
         // ── TASK-006: 경계 조준 · 추격 판정 지연 · 소집 분산 · 조사 속도 ──
@@ -846,7 +846,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(0, rig.Motor.FaceCount, "사전 조건: 진입 틱에는 아직 조준이 없다");
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             // 유지 시간이 0(기본값)이면 첫 틱에 Chase 로 나가 조준을 여러 틱 볼 수 없다.
             // 조준만 떼어 보기 위해 유지 시간을 하울링 시간과 같게 올린다(TASK-008 4.1).
@@ -867,7 +867,7 @@ namespace Pawntom.Enemy.Tests
                 Assert.AreEqual(slice, rig.Motor.LastFaceDeltaTime, 0.0001f);
             }
 
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
             Assert.AreEqual(0, rig.Motor.MoveToCount, "조준은 이동 명령이 아니다");
         }
 
@@ -877,9 +877,9 @@ namespace Pawntom.Enemy.Tests
         {
             Rig rig = new Rig();
             Vector3 contact = new Vector3(3f, 0f, -2f);
-            rig.Source.Report(K9Detection.Contact(contact));
+            rig.Source.Report(EnemyDetection.Contact(contact));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             rig.Source.Clear();
 
             rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.5f);
@@ -905,12 +905,12 @@ namespace Pawntom.Enemy.Tests
 
             EnterAlert(rig);
             rig.Source.Clear();
-            rig.Source.Report(K9Detection.Sight(new Vector3(2f, 0f, 5f)));
+            rig.Source.Report(EnemyDetection.Sight(new Vector3(2f, 0f, 5f)));
 
             bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsFalse(changed, "하울링 경과만으로는 유지 시간이 풀리지 않는다");
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "유지 시간이 남았는데 Chase 로 가면 안 된다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "유지 시간이 남았는데 Chase 로 가면 안 된다");
             Assert.AreEqual(0, rig.Motor.MoveToCount, "유지 구간에도 이동 명령은 없다");
             Assert.AreEqual(1, rig.Motor.FaceCount, "유지 구간에도 조준은 계속된다");
         }
@@ -926,7 +926,7 @@ namespace Pawntom.Enemy.Tests
             rig.Source.Clear();
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             bool early = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
             Assert.IsFalse(early, "사전 조건: 아직 유지 시간 안");
@@ -934,7 +934,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds - rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
@@ -952,13 +952,13 @@ namespace Pawntom.Enemy.Tests
             rig.Source.Clear();
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             // 하울링 시간의 아주 일부만 흘린다 — 종전 규칙이었다면 여기서 Alert 를 유지했다.
             bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State);
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
         }
@@ -985,7 +985,7 @@ namespace Pawntom.Enemy.Tests
                 bool changed = rig.Brain.Tick(0.1f);
 
                 Assert.IsTrue(changed);
-                Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+                Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             }
             else if (path == "Investigate")
             {
@@ -996,7 +996,7 @@ namespace Pawntom.Enemy.Tests
                 bool changed = rig.Brain.Tick(0.1f);
 
                 Assert.IsFalse(changed, "소집으로 조사를 벗어나지 않는다");
-                Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+                Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             }
             else
             {
@@ -1006,12 +1006,12 @@ namespace Pawntom.Enemy.Tests
                 rig.Alert.SummonTarget = summon;
 
                 rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds * 0.5f);
-                Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 소집을 보관한 채 경계 유지");
+                Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 소집을 보관한 채 경계 유지");
 
                 bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
                 Assert.IsTrue(changed);
-                Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+                Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             }
 
             Assert.AreEqual(spread, rig.Motor.LastDestination, "목적지는 분산 지점이어야 한다");
@@ -1031,12 +1031,12 @@ namespace Pawntom.Enemy.Tests
             if (mode == "NoProvider")
             {
                 // 4인자 생성자 — 지점 제공자가 아예 없다.
-                K9Settings settings = new K9Settings();
+                EnemySettings settings = new EnemySettings();
                 FakeMotor motor = new FakeMotor();
                 SpyAlertChannel alert = new SpyAlertChannel();
-                List<IK9PerceptionSource> sources = new List<IK9PerceptionSource>(1);
+                List<IEnemyPerceptionSource> sources = new List<IEnemyPerceptionSource>(1);
                 sources.Add(new FakePerceptionSource());
-                K9Brain brain = new K9Brain(settings, motor, sources, alert);
+                EnemyBrain brain = new EnemyBrain(settings, motor, sources, alert);
 
                 Assert.Greater(settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 반경은 0보다 크다");
                 alert.HasSummon = true;
@@ -1045,7 +1045,7 @@ namespace Pawntom.Enemy.Tests
                 bool noProviderChanged = brain.Tick(0.1f);
 
                 Assert.IsTrue(noProviderChanged);
-                Assert.AreEqual(K9State.Investigate, brain.State);
+                Assert.AreEqual(EnemyState.Investigate, brain.State);
                 Assert.AreEqual(summon, motor.LastDestination, "제공자가 없으면 소집 좌표 그대로다");
                 return;
             }
@@ -1071,7 +1071,7 @@ namespace Pawntom.Enemy.Tests
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(summon, rig.Motor.LastDestination, "분산이 안 되면 소집 좌표 그대로다");
 
             if (mode == "RadiusZero")
@@ -1098,7 +1098,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Settings.Movement.InvestigateSpeed, rig.Motor.LastSpeed, 0.0001f, "조사 진입 이동");
 
             Vector3 trace = new Vector3(2f, 0f, 3f);
-            rig.Source.Report(K9Detection.Trace(trace));
+            rig.Source.Report(EnemyDetection.Trace(trace));
             rig.Brain.Tick(0.1f);
             rig.Source.Clear();
 
@@ -1136,15 +1136,15 @@ namespace Pawntom.Enemy.Tests
             Assert.Greater(rig.Settings.Alert.SummonSpreadRadius, 0f, "사전 조건: 분산 반경이 0보다 커야 한다");
 
             Vector3 contact = new Vector3(3f, 0f, -2f);
-            rig.Source.Report(K9Detection.Contact(contact));
+            rig.Source.Report(EnemyDetection.Contact(contact));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             rig.Source.Clear();
 
             bool changed = rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State);
             Assert.AreEqual(contact, rig.Motor.LastDestination, "마지막 접촉 좌표 그대로여야 한다");
             Assert.AreEqual(
                 0, rig.Wander.TryGetPointCount, "소집이 아닌 목적지에는 분산 제공자를 부르지 않는다");
@@ -1158,7 +1158,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-007 기준1 - 한 번도 보지 못했으면 어떤 기억 시간에도 따뜻하지 않다")]
         public void SightMemory_NeverSeen_IsNeverWarm(float withinSeconds)
         {
-            K9SightMemory memory = new K9SightMemory();
+            EnemySightMemory memory = new EnemySightMemory();
 
             Assert.IsFalse(memory.IsWarm(withinSeconds));
             Assert.IsFalse(memory.EverSeen, "본 적이 없어야 한다");
@@ -1169,7 +1169,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-007 기준1 - 본 직후에는 기억 시간 0 에서도 따뜻하고 좌표를 기억한다")]
         public void SightMemory_JustSeen_IsWarmAtZero_AndKeepsPosition()
         {
-            K9SightMemory memory = new K9SightMemory();
+            EnemySightMemory memory = new EnemySightMemory();
             Vector3 seen = new Vector3(2f, 0f, 5f);
 
             memory.Tick(0.1f, true, seen);
@@ -1183,7 +1183,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-007 기준1 - 보이지 않는 동안 경과 시간이 쌓이고 기억 시간을 넘기면 식는다")]
         public void SightMemory_WhileUnseen_AccumulatesTime_AndCoolsDown()
         {
-            K9SightMemory memory = new K9SightMemory();
+            EnemySightMemory memory = new EnemySightMemory();
             Vector3 seen = new Vector3(2f, 0f, 5f);
             memory.Tick(0.1f, true, seen);
 
@@ -1199,7 +1199,7 @@ namespace Pawntom.Enemy.Tests
         [Description("TASK-007 기준1 - Forget 은 본 적 자체를 지운다")]
         public void SightMemory_Forget_ErasesEverything()
         {
-            K9SightMemory memory = new K9SightMemory();
+            EnemySightMemory memory = new EnemySightMemory();
             memory.Tick(0.1f, true, new Vector3(2f, 0f, 5f));
 
             memory.Forget();
@@ -1224,7 +1224,7 @@ namespace Pawntom.Enemy.Tests
                 "사전 조건: 3D 각도 판정이라면 이 배치는 탈락한다");
 
             Assert.IsTrue(
-                K9SightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngleDegrees),
+                EnemySightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngleDegrees),
                 "높이 차는 각도에 반영되지 않아야 한다");
         }
 
@@ -1238,7 +1238,7 @@ namespace Pawntom.Enemy.Tests
             Vector3 toTarget = new Vector3(-3f, -2.5f, 1.5f);
             float halfAngleDegrees = 37.9f;
 
-            Assert.IsFalse(K9SightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngleDegrees));
+            Assert.IsFalse(EnemySightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngleDegrees));
         }
 
         [Test]
@@ -1252,7 +1252,7 @@ namespace Pawntom.Enemy.Tests
             Vector3 seen = new Vector3(2f, 0f, 5f);
             HowlThenLoseSightAtDecision(rig, seen, memorySeconds * 0.5f);
 
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "기억이 따뜻하면 추격한다");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "기억이 따뜻하면 추격한다");
             Assert.AreEqual(seen, rig.Brain.CurrentTarget, "마지막 목격 좌표를 쫓아야 한다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
@@ -1267,7 +1267,7 @@ namespace Pawntom.Enemy.Tests
 
             HowlThenLoseSightAtDecision(rig, new Vector3(2f, 0f, 5f), memorySeconds * 2f);
 
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "기억이 식었으면 추격하지 않는다");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "기억이 식었으면 추격하지 않는다");
         }
 
         [Test]
@@ -1283,7 +1283,7 @@ namespace Pawntom.Enemy.Tests
 
             HowlThenLoseSightAtDecision(rig, new Vector3(2f, 0f, 5f), memorySeconds * 0.5f);
 
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "기억 0 은 기존 동작과 같아야 한다");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "기억 0 은 기존 동작과 같아야 한다");
         }
 
         [Test]
@@ -1296,12 +1296,12 @@ namespace Pawntom.Enemy.Tests
 
             int broadcasts = rig.Alert.BroadcastCount;
             Vector3 seen = new Vector3(0f, 0f, 9f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "Alert 을 거치지 않고 바로 추격한다");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "Alert 을 거치지 않고 바로 추격한다");
             Assert.AreEqual(broadcasts, rig.Alert.BroadcastCount, "쿨다운 중에는 하울링이 늘지 않는다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
@@ -1320,16 +1320,16 @@ namespace Pawntom.Enemy.Tests
                 "사전 조건: 조사를 포기하기 전에 쿨다운이 끝나야 한다");
 
             rig.Brain.Tick(cooldown);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "사전 조건: 아직 조사 중이다");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "사전 조건: 아직 조사 중이다");
 
             int broadcasts = rig.Alert.BroadcastCount;
             rig.Motor.CurrentPosition = new Vector3(0f, 0f, 4f);
-            rig.Source.Report(K9Detection.Sight(new Vector3(0f, 0f, 9f)));
+            rig.Source.Report(EnemyDetection.Sight(new Vector3(0f, 0f, 9f)));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "쿨다운이 끝났으면 하울링부터 다시 나간다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "쿨다운이 끝났으면 하울링부터 다시 나간다");
             Assert.AreEqual(broadcasts + 1, rig.Alert.BroadcastCount);
             Assert.AreEqual(new Vector3(0f, 0f, 4f), rig.Alert.LastOrigin);
         }
@@ -1343,12 +1343,12 @@ namespace Pawntom.Enemy.Tests
             Assert.Less(sinceHowl, rig.Settings.Alert.HowlCooldownSeconds, "사전 조건: 쿨다운이 아직 살아 있다");
 
             int broadcasts = rig.Alert.BroadcastCount;
-            rig.Source.Report(K9Detection.Contact(new Vector3(0f, 0f, 9f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(0f, 0f, 9f)));
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "접촉은 쿨다운과 무관하다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "접촉은 쿨다운과 무관하다");
             Assert.AreEqual(broadcasts + 1, rig.Alert.BroadcastCount);
         }
 
@@ -1420,7 +1420,7 @@ namespace Pawntom.Enemy.Tests
 
             // 무감지 20초 → 전환4 → Patrol
             rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State, "사전 조건: 순찰 복귀");
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State, "사전 조건: 순찰 복귀");
 
             Assert.AreEqual(beforeReturn + 1, rig.Motor.SetMotionProfileCount, "순찰 진입에서 1회 더 나가야 한다");
             Assert.AreEqual(rig.Settings.Movement.Acceleration, rig.Motor.LastAcceleration, 0.0001f);
@@ -1439,17 +1439,17 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(0f, rig.Settings.Alert.HoldSeconds, 0.0001f, "사전 조건: 유지 시간 기본값 0");
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             bool entered = rig.Brain.Tick(0.1f);
             Assert.IsTrue(entered);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 시야 포착은 언제나 Alert 를 거친다");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 시야 포착은 언제나 Alert 를 거친다");
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "진입 시 하울링 1회");
 
             bool changed = rig.Brain.Tick(0.1f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "하울링이 남아 있어도 시야가 있으면 즉시 추격이다");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "하울링이 남아 있어도 시야가 있으면 즉시 추격이다");
             Assert.AreEqual(seen, rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.ChaseSpeed, rig.Motor.LastSpeed, 0.0001f);
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "추격으로 넘어가며 다시 짖지 않는다");
@@ -1473,13 +1473,13 @@ namespace Pawntom.Enemy.Tests
             bool early = rig.Brain.Tick(rig.Settings.Alert.HoldSeconds);
 
             Assert.IsFalse(early, "유지 시간이 지나도 조사 전환이 앞당겨지면 안 된다");
-            Assert.AreEqual(K9State.Alert, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State);
 
             bool changed = rig.Brain.Tick(
                 rig.Settings.Alert.HowlDurationSeconds - rig.Settings.Alert.HoldSeconds);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "하울링 시간을 다 채운 뒤에 조사로 간다");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "하울링 시간을 다 채운 뒤에 조사로 간다");
         }
 
         [Test]
@@ -1495,20 +1495,20 @@ namespace Pawntom.Enemy.Tests
             SetSettingsField(rig.Settings.Alert, "_holdSeconds", hold);
 
             Vector3 seen = new Vector3(2f, 0f, 5f);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 시야로 Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 시야로 Alert 진입");
 
             // 유지 시간이 끝나기 직전까지 시야를 유지한다.
             rig.Brain.Tick(hold - memorySeconds * 0.5f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 아직 유지 시간 안");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 아직 유지 시간 안");
 
             // 여기서 시야가 끊긴다. 다음 틱이 유지 시간 경과 시점이다.
             rig.Source.Clear();
             bool changed = rig.Brain.Tick(memorySeconds * 0.5f);
 
             Assert.IsTrue(changed);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "기억이 따뜻하면 추격한다(TASK-007 규칙 유지)");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "기억이 따뜻하면 추격한다(TASK-007 규칙 유지)");
             Assert.AreEqual(seen, rig.Motor.LastDestination, "마지막 목격 좌표를 쫓아야 한다");
         }
 
@@ -1539,11 +1539,11 @@ namespace Pawntom.Enemy.Tests
             // 시야를 유지한 채 여러 틱 추격한다 — 매 틱 MoveTo 는 나가지만 프로파일은 그대로여야 한다.
             for (int i = 0; i < 5; i++)
             {
-                rig.Source.Report(K9Detection.Sight(seen));
+                rig.Source.Report(EnemyDetection.Sight(seen));
                 rig.Brain.Tick(0.1f);
             }
 
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "사전 조건: 추격을 유지했다");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "사전 조건: 추격을 유지했다");
             Assert.Greater(rig.Motor.MoveToCount, 1, "사전 조건: 이동 명령은 매 틱 나갔다");
             Assert.AreEqual(1, rig.Motor.SetMotionProfileCount, "상태 진입당 정확히 1회다");
         }
@@ -1559,10 +1559,10 @@ namespace Pawntom.Enemy.Tests
             rig.Wander.Point = new Vector3(1f, 0f, 11f);
 
             Vector3 trace = new Vector3(0f, 0f, 10f);
-            rig.Source.Report(K9Detection.Trace(trace));
+            rig.Source.Report(EnemyDetection.Trace(trace));
             rig.Brain.Tick(0.1f);
             rig.Source.Clear();
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "사전 조건: 조사 진입");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "사전 조건: 조사 진입");
 
             // 진입 틱은 무감지 타이머를 세지 않는다. 여기서부터 흐른 시간만 센다.
             rig.Motor.Arrived = true;
@@ -1575,7 +1575,7 @@ namespace Pawntom.Enemy.Tests
                 rig.Brain.Tick(interval);
                 elapsed += interval;
 
-                Assert.AreEqual(K9State.Investigate, rig.Brain.State, "아직 포기 시간 전이다");
+                Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "아직 포기 시간 전이다");
                 Assert.AreEqual(trace, rig.Wander.LastAnchor, "배회 기준점은 조사 지점에 머문다");
                 Assert.AreEqual(
                     rig.Settings.Investigate.WanderRadius, rig.Wander.LastRadius, 0.0001f,
@@ -1589,7 +1589,7 @@ namespace Pawntom.Enemy.Tests
 
             // 배회는 무감지 타이머를 되돌리지 않는다 — 남은 시간을 채우면 그대로 순찰로 복귀한다.
             rig.Brain.Tick(rig.Settings.Investigate.GiveUpSeconds - elapsed);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State, "배회했다고 조사에 갇히지 않는다");
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State, "배회했다고 조사에 갇히지 않는다");
         }
 
         [Test]
@@ -1628,7 +1628,7 @@ namespace Pawntom.Enemy.Tests
             Assert.AreEqual(1, rig.Brain.WaypointIndex);
             Assert.AreEqual(route[1], rig.Motor.LastDestination);
             Assert.AreEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
-            Assert.AreEqual(K9State.Patrol, rig.Brain.State);
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
         }
 
         // ── TASK-010: 회전 속도 두 개가 교차하지 않는다 ────────────────
@@ -1680,7 +1680,7 @@ namespace Pawntom.Enemy.Tests
         /// <summary>
         /// 인스펙터 전용 수치를 테스트에서만 바꾼다.
         /// <para>
-        /// <see cref="K9Settings"/> 는 직렬화 대상이라 프로덕션 코드의 접근 범위를 넓히지 않는다 —
+        /// <see cref="EnemySettings"/> 는 직렬화 대상이라 프로덕션 코드의 접근 범위를 넓히지 않는다 —
         /// 그 대신 테스트 안에서만 리플렉션으로 값을 넣는다.
         /// 필드명이 바뀌면 조용히 넘어가지 않고 큰 소리로 깨지게 둔다.
         /// </para>
@@ -1713,17 +1713,17 @@ namespace Pawntom.Enemy.Tests
 
         private static void EnterInvestigate(Rig rig)
         {
-            rig.Source.Report(K9Detection.Trace(new Vector3(0f, 0f, 10f)));
+            rig.Source.Report(EnemyDetection.Trace(new Vector3(0f, 0f, 10f)));
             rig.Brain.Tick(0.1f);
             rig.Source.Clear();
-            Assert.AreEqual(K9State.Investigate, rig.Brain.State, "사전 조건: Investigate 진입");
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "사전 조건: Investigate 진입");
         }
 
         private static void EnterAlert(Rig rig)
         {
-            rig.Source.Report(K9Detection.Contact(new Vector3(1f, 0f, 0f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(1f, 0f, 0f)));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: Alert 진입");
         }
 
         /// <summary>
@@ -1746,13 +1746,13 @@ namespace Pawntom.Enemy.Tests
             // 시야를 끊은 뒤의 틱은 _alertTimer(howl) >= hold(howl) 이라 그대로 판정 시점이 된다.
             SetSettingsField(rig.Settings.Alert, "_holdSeconds", howlSeconds);
 
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 시야로 Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 시야로 Alert 진입");
 
             // 시야를 유지한 채 판정 시점 직전까지 간다.
             rig.Brain.Tick(howlSeconds - gapSeconds);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: 아직 판정 시점 전");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: 아직 판정 시점 전");
 
             // 여기서 시야가 끊긴다. 다음 틱이 판정 시점이다.
             rig.Source.Clear();
@@ -1769,16 +1769,16 @@ namespace Pawntom.Enemy.Tests
         /// </summary>
         private static float HowlThenDropToInvestigate(Rig rig)
         {
-            rig.Source.Report(K9Detection.Contact(new Vector3(1f, 0f, 0f)));
+            rig.Source.Report(EnemyDetection.Contact(new Vector3(1f, 0f, 0f)));
             rig.Brain.Tick(0.1f);
-            Assert.AreEqual(K9State.Alert, rig.Brain.State, "사전 조건: Alert 진입");
+            Assert.AreEqual(EnemyState.Alert, rig.Brain.State, "사전 조건: Alert 진입");
             Assert.AreEqual(1, rig.Alert.BroadcastCount, "사전 조건: 하울링 1회");
 
             rig.Source.Clear();
             float elapsed = rig.Settings.Alert.HowlDurationSeconds;
             rig.Brain.Tick(elapsed);
             Assert.AreEqual(
-                K9State.Investigate, rig.Brain.State,
+                EnemyState.Investigate, rig.Brain.State,
                 "사전 조건: 판정 시점에 시야도 기억도 없어 조사로 내려간다");
 
             return elapsed;
@@ -1787,24 +1787,24 @@ namespace Pawntom.Enemy.Tests
         private static void EnterChase(Rig rig, Vector3 seen)
         {
             EnterAlert(rig);
-            rig.Source.Report(K9Detection.Sight(seen));
+            rig.Source.Report(EnemyDetection.Sight(seen));
 
             // 경계 유지 시간(기본 0)이 지나면 시야가 있는 즉시 Chase 다(TASK-008 2.4).
             // 시간은 숫자로 쓰지 않고 설정값에서 읽는다.
             rig.Brain.Tick(rig.Settings.Alert.HowlDurationSeconds);
-            Assert.AreEqual(K9State.Chase, rig.Brain.State, "사전 조건: Chase 진입");
+            Assert.AreEqual(EnemyState.Chase, rig.Brain.State, "사전 조건: Chase 진입");
         }
 
         private sealed class Rig
         {
-            public readonly K9Settings Settings = new K9Settings();
+            public readonly EnemySettings Settings = new EnemySettings();
             public readonly FakeMotor Motor = new FakeMotor();
             public readonly SpyAlertChannel Alert = new SpyAlertChannel();
             public readonly FakePerceptionSource Source = new FakePerceptionSource();
             public readonly FakeTargetTracker Tracker = new FakeTargetTracker();
             public readonly FakeWanderPointProvider Wander = new FakeWanderPointProvider();
-            public readonly List<IK9PerceptionSource> Sources = new List<IK9PerceptionSource>(4);
-            public readonly K9Brain Brain;
+            public readonly List<IEnemyPerceptionSource> Sources = new List<IEnemyPerceptionSource>(4);
+            public readonly EnemyBrain Brain;
 
             public Rig()
             {
@@ -1812,13 +1812,13 @@ namespace Pawntom.Enemy.Tests
 
                 // 트래커와 배회 지점 제공자는 기본 비활성이다 —
                 // TryTrack / TryGetPoint 가 false 를 돌려주므로 기존 테스트의 동작은 그대로다.
-                Brain = new K9Brain(Settings, Motor, Sources, Alert, Tracker, Wander);
+                Brain = new EnemyBrain(Settings, Motor, Sources, Alert, Tracker, Wander);
             }
         }
     }
 
     /// <summary>이동 명령을 기록하는 가짜 모터.</summary>
-    internal sealed class FakeMotor : IK9Motor
+    internal sealed class FakeMotor : IEnemyMotor
     {
         public readonly List<Vector3> Destinations = new List<Vector3>(64);
         public readonly List<float> Speeds = new List<float>(64);
@@ -1895,14 +1895,14 @@ namespace Pawntom.Enemy.Tests
     }
 
     /// <summary>원하는 단서를 그대로 내보내는 가짜 감지 소스.</summary>
-    internal sealed class FakePerceptionSource : IK9PerceptionSource
+    internal sealed class FakePerceptionSource : IEnemyPerceptionSource
     {
         public int TryDetectCount;
 
         private bool _active;
-        private K9Detection _detection;
+        private EnemyDetection _detection;
 
-        public void Report(K9Detection detection)
+        public void Report(EnemyDetection detection)
         {
             _detection = detection;
             _active = true;
@@ -1913,7 +1913,7 @@ namespace Pawntom.Enemy.Tests
             _active = false;
         }
 
-        public bool TryDetect(out K9Detection detection)
+        public bool TryDetect(out EnemyDetection detection)
         {
             TryDetectCount++;
             detection = _detection;
@@ -1923,18 +1923,18 @@ namespace Pawntom.Enemy.Tests
 
     /// <summary>
     /// 기준5(OCP) 전용. 나중에 붙을 털공 흔적 추적 소스를 흉내 낸 <b>새 구현체</b>다.
-    /// 이 타입이 생겨도 K9Brain 과 기존 소스는 한 줄도 바뀌지 않는다.
+    /// 이 타입이 생겨도 EnemyBrain 과 기존 소스는 한 줄도 바뀌지 않는다.
     /// </summary>
-    internal sealed class FurballTraceStubSource : IK9PerceptionSource
+    internal sealed class FurballTraceStubSource : IEnemyPerceptionSource
     {
         public Vector3 TracePosition;
         public bool Active;
         public int TryDetectCount;
 
-        public bool TryDetect(out K9Detection detection)
+        public bool TryDetect(out EnemyDetection detection)
         {
             TryDetectCount++;
-            detection = K9Detection.Trace(TracePosition);
+            detection = EnemyDetection.Trace(TracePosition);
             return Active;
         }
     }
@@ -1943,7 +1943,7 @@ namespace Pawntom.Enemy.Tests
     /// 시야 밖 추적 좌표 통로의 가짜 구현.
     /// 기본은 비활성이라 <c>TryTrack</c> 이 false 를 돌려준다.
     /// </summary>
-    internal sealed class FakeTargetTracker : IK9TargetTracker
+    internal sealed class FakeTargetTracker : IEnemyTargetTracker
     {
         public bool Active;
         public Vector3 TrackedPosition;
@@ -1963,7 +1963,7 @@ namespace Pawntom.Enemy.Tests
     /// 배회 지점 제공자의 가짜 구현.
     /// 기본은 비활성이라 <c>TryGetPoint</c> 가 false 를 돌려준다.
     /// </summary>
-    internal sealed class FakeWanderPointProvider : IK9WanderPointProvider
+    internal sealed class FakeWanderPointProvider : IEnemyWanderPointProvider
     {
         public bool Active;
         public Vector3 Point;
@@ -1982,7 +1982,7 @@ namespace Pawntom.Enemy.Tests
     }
 
     /// <summary>하울링 호출 횟수와 인자를 기록하는 스파이 채널.</summary>
-    internal sealed class SpyAlertChannel : IK9AlertChannel
+    internal sealed class SpyAlertChannel : IEnemyAlertChannel
     {
         public int BroadcastCount;
         public Vector3 LastOrigin;

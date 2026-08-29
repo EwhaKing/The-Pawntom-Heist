@@ -8,7 +8,7 @@ namespace Pawntom.Enemy.Adapters
     /// <para>
     /// 붙는 쪽(플레이어 프리팹 등)은 <b>C# 코드를 한 줄도 늘리지 않는다.</b>
     /// 컴포넌트를 얹기만 하면 되고, 이 클래스는 구체 제공자가 아니라
-    /// <see cref="IK9TargetRegistry"/> 에만 의존한다(DIP).
+    /// <see cref="IEnemyTargetRegistry"/> 에만 의존한다(DIP).
     /// </para>
     /// <para>
     /// 스크립트 실행 순서상 제공자보다 먼저 깨어날 수 있으므로,
@@ -17,8 +17,8 @@ namespace Pawntom.Enemy.Adapters
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Pawntom/Enemy/K9 Target Registrar")]
-    public sealed class K9TargetRegistrar : MonoBehaviour
+    [AddComponentMenu("Pawntom/Enemy/Target Registrar")]
+    public sealed class EnemyTargetRegistrar : MonoBehaviour
     {
         /// <summary>창구가 꽂히기 전에 활성화된 대상들. 드레인되면 비워진다.</summary>
         private static readonly List<Transform> Pending = new List<Transform>(8);
@@ -36,13 +36,13 @@ namespace Pawntom.Enemy.Adapters
         /// <see cref="DetachRegistry"/> 안에서만 일어난다.
         /// 대입만 하고 대기 목록 드레인을 건너뛰면 먼저 깨어난 등록자가 조용히 누락된다.
         /// </summary>
-        public static IK9TargetRegistry Registry { get; private set; }
+        public static IEnemyTargetRegistry Registry { get; private set; }
 
         /// <summary>
         /// 제공자가 준비되면 자기를 꽂는다. 대기 중이던 등록분을 함께 넘긴다.
         /// <para><paramref name="registry"/> 가 null 이면 아무것도 하지 않는다.</para>
         /// </summary>
-        public static void AttachRegistry(IK9TargetRegistry registry)
+        public static void AttachRegistry(IEnemyTargetRegistry registry)
         {
             if (registry == null)
             {
@@ -69,7 +69,7 @@ namespace Pawntom.Enemy.Adapters
         /// 제공자가 사라질 때 창구를 비운다.
         /// <para>꽂아 둔 당사자만 뺄 수 있다 — 다른 제공자가 이미 꽂혀 있으면 건드리지 않는다.</para>
         /// </summary>
-        public static void DetachRegistry(IK9TargetRegistry registry)
+        public static void DetachRegistry(IEnemyTargetRegistry registry)
         {
             if (ReferenceEquals(Registry, registry))
             {

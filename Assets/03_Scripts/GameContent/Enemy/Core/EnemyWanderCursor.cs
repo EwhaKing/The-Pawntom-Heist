@@ -6,17 +6,17 @@ namespace Pawntom.Enemy.Core
     /// 조사 중의 배회 커서. <b>기준점</b>과 <b>다음 지점을 고를 때가 됐는가</b> 만 안다.
     /// <para>
     /// 지점을 실제로 고르는 무작위성과 이동 가능 판정은
-    /// <see cref="IK9WanderPointProvider"/> 뒤에 있다. 커서는 시점만 판단하므로
+    /// <see cref="IEnemyWanderPointProvider"/> 뒤에 있다. 커서는 시점만 판단하므로
     /// 두뇌 없이도 결정적으로 검증된다(SRP·DIP).
     /// </para>
     /// <para>
     /// 두뇌가 필드로 하나만 들고 재사용한다. 틱마다 새로 만들지 않으므로 힙 할당이 없다.
     /// </para>
     /// </summary>
-    public sealed class K9WanderCursor
+    public sealed class EnemyWanderCursor
     {
         // 지점 제공자. null 이면 배회하지 않고 제자리에 선다.
-        private readonly IK9WanderPointProvider _provider;
+        private readonly IEnemyWanderPointProvider _provider;
 
         // 조사 배회의 기준점. 배회는 이 점 주변에서만 일어난다.
         private Vector3 _anchor;
@@ -24,7 +24,7 @@ namespace Pawntom.Enemy.Core
         private float _waitTimer;
 
         /// <param name="provider">배회 지점 제공자. null 이면 배회하지 않는다.</param>
-        public K9WanderCursor(IK9WanderPointProvider provider)
+        public EnemyWanderCursor(IEnemyWanderPointProvider provider)
         {
             _provider = provider;
         }

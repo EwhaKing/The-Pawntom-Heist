@@ -5,7 +5,7 @@ namespace Pawntom.Enemy.Core
     /// <summary>
     /// 하울링 송수신 통로. 누가 듣는지는 두뇌가 알지 못한다.
     /// </summary>
-    public interface IK9AlertChannel
+    public interface IEnemyAlertChannel
     {
         /// <summary>반경 안의 동료에게 소집 좌표를 알린다.</summary>
         void Broadcast(Vector3 origin, float radius);

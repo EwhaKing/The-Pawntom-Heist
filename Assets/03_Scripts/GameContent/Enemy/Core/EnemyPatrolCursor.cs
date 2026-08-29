@@ -10,7 +10,7 @@ namespace Pawntom.Enemy.Core
     /// 그래야 커서가 엔진도 이동 구현도 없이 단독으로 검증된다(DIP).
     /// </para>
     /// </summary>
-    public enum K9PatrolAction
+    public enum EnemyPatrolAction
     {
         /// <summary>이번 틱에는 아무 명령도 내지 않는다.</summary>
         None = 0,
@@ -33,7 +33,7 @@ namespace Pawntom.Enemy.Core
     /// 두뇌가 필드로 하나만 들고 재사용한다. 틱마다 새로 만들지 않으므로 힙 할당이 없다.
     /// </para>
     /// </summary>
-    public sealed class K9PatrolCursor
+    public sealed class EnemyPatrolCursor
     {
         // 순찰 경로 — 씬에서 개체마다 다르게 주입된다. 코드에 좌표를 박지 않는다.
         private IReadOnlyList<Vector3> _waypoints;
@@ -109,9 +109,9 @@ namespace Pawntom.Enemy.Core
         /// <param name="hasArrived">이동 담당이 목적지에 닿았는가. 커서는 이 값을 직접 읽지 않는다.</param>
         /// <param name="waitSeconds">웨이포인트 도달 후 다음으로 넘어가기까지의 대기 시간(초).</param>
         /// <param name="destination">
-        /// <see cref="K9PatrolAction.MoveTo"/> 일 때만 유효한 목적지.
+        /// <see cref="EnemyPatrolAction.MoveTo"/> 일 때만 유효한 목적지.
         /// </param>
-        public K9PatrolAction Advance(
+        public EnemyPatrolAction Advance(
             float deltaTime, bool hasArrived, float waitSeconds, out Vector3 destination)
         {
             destination = default(Vector3);
@@ -138,13 +138,13 @@ namespace Pawntom.Enemy.Core
 
             if (!hasArrived)
             {
-                return K9PatrolAction.None;
+                return EnemyPatrolAction.None;
             }
 
             _waypointWaitTimer += deltaTime;
             if (_waypointWaitTimer < waitSeconds)
             {
-                return K9PatrolAction.None;
+                return EnemyPatrolAction.None;
             }
 
             _waypointWaitTimer = 0f;
@@ -165,24 +165,24 @@ namespace Pawntom.Enemy.Core
             return IssueWaypointMove(out destination);
         }
 
-        private K9PatrolAction IssueWaypointMove(out Vector3 destination)
+        private EnemyPatrolAction IssueWaypointMove(out Vector3 destination)
         {
             destination = _waypoints[_waypointIndex];
             _moveCommandIssued = true;
             _stopped = false;
-            return K9PatrolAction.MoveTo;
+            return EnemyPatrolAction.MoveTo;
         }
 
         /// <summary>정지 명령은 래치가 열려 있을 때 한 번만 나간다.</summary>
-        private K9PatrolAction StopOnce()
+        private EnemyPatrolAction StopOnce()
         {
             if (_stopped)
             {
-                return K9PatrolAction.None;
+                return EnemyPatrolAction.None;
             }
 
             _stopped = true;
-            return K9PatrolAction.Stop;
+            return EnemyPatrolAction.Stop;
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Pawntom.Enemy.Core
     /// 두뇌가 바깥에 내리는 이동 명령.
     /// 구현이 내비게이션 기반이든 단순 보간이든 두뇌는 알지 못한다(DIP).
     /// </summary>
-    public interface IK9Motor
+    public interface IEnemyMotor
     {
         /// <summary>목적지로 이동을 시작하거나 목적지를 갱신한다.</summary>
         void MoveTo(Vector3 destination, float speed);

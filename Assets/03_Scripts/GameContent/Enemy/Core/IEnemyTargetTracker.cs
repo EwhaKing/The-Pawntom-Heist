@@ -9,7 +9,7 @@ namespace Pawntom.Enemy.Core
     /// 씬의 실제 대상을 어떻게 찾는지는 어댑터 쪽 구현의 책임이다.
     /// </para>
     /// </summary>
-    public interface IK9TargetTracker
+    public interface IEnemyTargetTracker
     {
         /// <summary>
         /// 마지막으로 알던 좌표에 가장 가까운 대상의 현재 좌표를 돌려준다.

@@ -5,7 +5,7 @@ namespace Pawntom.Enemy.Adapters
     /// <summary>
     /// 감지 대상을 등록·해제하는 이음매.
     /// <para>
-    /// 읽기(<see cref="IK9TargetProvider"/>)와 쓰기를 분리한다 —
+    /// 읽기(<see cref="IEnemyTargetProvider"/>)와 쓰기를 분리한다 —
     /// 감지 소스는 읽기만, 등록자는 쓰기만 필요하다(ISP).
     /// </para>
     /// <para>
@@ -14,7 +14,7 @@ namespace Pawntom.Enemy.Adapters
     /// 되므로 기존 코드를 고치지 않는다(OCP).
     /// </para>
     /// </summary>
-    public interface IK9TargetRegistry
+    public interface IEnemyTargetRegistry
     {
         /// <summary>대상을 감지 목록에 넣는다. null 이거나 이미 있으면 아무 일도 없다.</summary>
         void Register(Transform target);

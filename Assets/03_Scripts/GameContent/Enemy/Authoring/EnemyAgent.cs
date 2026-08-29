@@ -9,7 +9,7 @@ namespace Pawntom.Enemy.Authoring
     /// <summary>
     /// K-9 한 마리를 조립하는 어댑터.
     /// <para>
-    /// 하는 일은 셋뿐이다 — (1) 부품을 모아 <see cref="K9Brain"/> 에 주입하고,
+    /// 하는 일은 셋뿐이다 — (1) 부품을 모아 <see cref="EnemyBrain"/> 에 주입하고,
     /// (2) 지정된 순찰 경로를 넘기고, (3) 매 프레임 시간을 흘려보낸다.
     /// <b>상태 판단은 전부 두뇌 안에 있다. 이 클래스에는 상태 분기가 없다.</b>
     /// </para>
@@ -20,13 +20,13 @@ namespace Pawntom.Enemy.Authoring
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NavMeshAgent))]
-    [RequireComponent(typeof(K9AlertChannelBehaviour))]
-    [AddComponentMenu("Pawntom/Enemy/K9 Agent")]
-    public sealed class K9Agent : MonoBehaviour
+    [RequireComponent(typeof(EnemyAlertChannelBehaviour))]
+    [AddComponentMenu("Pawntom/Enemy/Agent")]
+    public sealed class EnemyAgent : MonoBehaviour
     {
         [Header("설정")]
         [Tooltip("이 개체만의 수치. 다른 K-9 과 다르게 줘도 된다")]
-        [SerializeField] private K9Settings _settings = new K9Settings();
+        [SerializeField] private EnemySettings _settings = new EnemySettings();
 
         [Header("순찰")]
         [Tooltip("이 개체가 걸어갈 경로. 개체마다 서로 다른 경로를 지정한다")]
@@ -36,27 +36,31 @@ namespace Pawntom.Enemy.Authoring
         [Tooltip("비워 두면 씬에서 가장 먼저 활성화된 제공자를 쓴다")]
         [SerializeField] private SceneTargetProvider _targetProvider;
 
-        private readonly List<K9PerceptionSourceBehaviour> _sourceBehaviours =
-            new List<K9PerceptionSourceBehaviour>(4);
+        private readonly List<EnemyPerceptionSourceBehaviour> _sourceBehaviours =
+            new List<EnemyPerceptionSourceBehaviour>(4);
 
-        private readonly List<IK9PerceptionSource> _sources =
-            new List<IK9PerceptionSource>(4);
+        private readonly List<IEnemyPerceptionSource> _sources =
+            new List<IEnemyPerceptionSource>(4);
 
         private NavMeshAgent _navMeshAgent;
-        private K9AlertChannelBehaviour _alertChannel;
-        private K9Brain _brain;
+        private EnemyAlertChannelBehaviour _alertChannel;
+
+        // 교전 전이 규칙. 붙어 있지 않으면 null 이고, 그대로 두뇌에 넘긴다 —
+        // 기본값(하울링)을 여기서 만들지 않는다. 기본값의 정본은 EnemyBrain 한 곳이다.
+        private EnemyEngagementPolicyBehaviour _engagementPolicy;
+        private EnemyBrain _brain;
 
         // 시야 밖 추격용 좌표 통로. 대상 제공자가 뒤늦게 해결될 수 있어 재주입을 받는다.
         private readonly NearestTargetTracker _targetTracker = new NearestTargetTracker();
 
         /// <summary>현재 상태. 디버그 표시용이다.</summary>
-        public K9State State
+        public EnemyState State
         {
-            get { return _brain == null ? K9State.Patrol : _brain.State; }
+            get { return _brain == null ? EnemyState.Patrol : _brain.State; }
         }
 
         /// <summary>조립된 두뇌. 테스트 씬에서 들여다볼 때 쓴다.</summary>
-        public K9Brain Brain
+        public EnemyBrain Brain
         {
             get { return _brain; }
         }
@@ -69,7 +73,7 @@ namespace Pawntom.Enemy.Authoring
         /// 씬 편집 중에는 이 접근자를 통해야 한다.
         /// </para>
         /// </summary>
-        public K9Settings Settings
+        public EnemySettings Settings
         {
             get { return _settings; }
         }
@@ -84,7 +88,11 @@ namespace Pawntom.Enemy.Authoring
         private void Awake()
         {
             _navMeshAgent = GetComponent<NavMeshAgent>();
-            _alertChannel = GetComponent<K9AlertChannelBehaviour>();
+            _alertChannel = GetComponent<EnemyAlertChannelBehaviour>();
+
+            // 붙어 있으면 그 정책으로, 없으면 null 그대로 넘긴다.
+            // 유닛 종류를 가르는 플래그는 없다 — 이 컴포넌트의 유무가 곧 종류다(OCP).
+            _engagementPolicy = GetComponent<EnemyEngagementPolicyBehaviour>();
 
             if (_targetProvider == null)
             {
@@ -96,11 +104,18 @@ namespace Pawntom.Enemy.Authoring
             // 두뇌를 만들기 전에 걸어 둔다. 두뇌는 첫 Enter* 에서 상태에 맞는 값으로 다시 덮어쓴다.
             ApplyMovementSettings();
 
-            NavMeshK9Motor motor = new NavMeshK9Motor(_navMeshAgent, _settings.Patrol.ArriveDistance);
+            NavMeshEnemyMotor motor = new NavMeshEnemyMotor(_navMeshAgent, _settings.Patrol.ArriveDistance);
             NavMeshWanderPointProvider wander =
                 new NavMeshWanderPointProvider(_settings.Investigate.WanderSampleDistance);
 
-            _brain = new K9Brain(_settings, motor, _sources, _alertChannel, _targetTracker, wander);
+            _brain = new EnemyBrain(
+                _settings,
+                motor,
+                _sources,
+                _alertChannel,
+                _targetTracker,
+                wander,
+                _engagementPolicy == null ? null : _engagementPolicy.Policy);
         }
 
 #if UNITY_EDITOR
@@ -122,7 +137,7 @@ namespace Pawntom.Enemy.Authoring
         /// </para>
         /// <para>
         /// 여기서 넣는 값은 <b>시작값</b>이다. 실행 중에는 상태에 진입할 때마다
-        /// <see cref="K9Brain"/> 이 <see cref="IK9Motor.SetMotionProfile"/> 로 다시 지정한다.
+        /// <see cref="EnemyBrain"/> 이 <see cref="IEnemyMotor.SetMotionProfile"/> 로 다시 지정한다.
         /// 순찰이 기본 상태이므로 목적지 제동은 켜 둔다.
         /// </para>
         /// </summary>

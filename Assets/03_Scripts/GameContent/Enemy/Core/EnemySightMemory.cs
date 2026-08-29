@@ -12,7 +12,7 @@ namespace Pawntom.Enemy.Core
     /// 두뇌가 필드로 하나만 들고 재사용한다. 틱마다 새로 만들지 않으므로 힙 할당이 없다.
     /// </para>
     /// </summary>
-    public sealed class K9SightMemory
+    public sealed class EnemySightMemory
     {
         private bool _everSeen;
         private float _secondsSinceSeen;
