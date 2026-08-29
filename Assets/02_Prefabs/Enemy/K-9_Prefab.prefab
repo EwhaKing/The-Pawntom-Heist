@@ -377,6 +377,9 @@ MonoBehaviour:
       _wanderSampleDistance: 10
     _chase:
       _loseSightSeconds: 5
+    _trace:
+      _detectionRadius: 8
+      _reachDistance: 1
   _patrolRoute: {fileID: 8514146225430804699}
   _targetProvider: {fileID: 0}
 --- !u!114 &3123583727817471573
