@@ -1,13 +1,63 @@
+using System.Collections.Generic;
 using Fusion;
+using UnityEngine;
 
 /// <summary>
 /// 적 AI 등 외부 시스템이 털공의 생성 주체와 순서를 읽을 수 있게 합니다.
 /// </summary>
 public class FurBallTrace : NetworkBehaviour
 {
+    // 살아 있는 털공 전체. 감지 소스가 매 틱 물리 질의를 하지 않도록 여기에 모읍니다.
+    private static readonly List<FurBallTrace> _active = new List<FurBallTrace>(64);
+
     [Networked] public PlayerRef Creator { get; private set; }
     [Networked] public int Sequence { get; private set; }
     [Networked] public int SpawnTick { get; private set; }
+
+    /// <summary>
+    /// 현재 살아 있는 털공 전체입니다. 읽기 전용이며 스폰·디스폰에 따라 내용이 바뀝니다.
+    /// </summary>
+    public static IReadOnlyList<FurBallTrace> Active
+    {
+        get { return _active; }
+    }
+
+    /// <summary>
+    /// 도메인 리로드가 꺼진 환경에서 이전 플레이 세션의 잔재가 목록에 남는 것을 막습니다.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetActive()
+    {
+        _active.Clear();
+    }
+
+    public override void Spawned()
+    {
+        // 중복 추가 방지. 재진입이나 재스폰 경로에서 같은 개체가 두 번 들어올 수 있습니다.
+        for (int i = 0; i < _active.Count; i++)
+        {
+            if (ReferenceEquals(_active[i], this))
+            {
+                return;
+            }
+        }
+
+        _active.Add(this);
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        for (int i = 0; i < _active.Count; i++)
+        {
+            if (!ReferenceEquals(_active[i], this))
+            {
+                continue;
+            }
+
+            _active.RemoveAt(i);
+            return;
+        }
+    }
 
     /// <summary>
     /// State Authority가 털공을 네트워크 스폰하기 직전에 호출합니다.

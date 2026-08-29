@@ -158,6 +158,23 @@ namespace Pawntom.Enemy.Core
     }
 
     /// <summary>
+    /// 흔적 추적 수치. 털공 같은 간접 단서를 언제 발견하고 언제 다 봤다고 할지 정한다.
+    /// </summary>
+    [Serializable]
+    public class K9TraceSettings
+    {
+        [Tooltip("흔적을 발견하는 반경(m). 이 안에 들어온 흔적만 조사 목표가 된다")]
+        [SerializeField] private float _detectionRadius = 8f;
+
+        [Tooltip("흔적에 도달했다고 보고 없애는 거리(m). Investigate 그룹의 Wander Radius 보다 작아야 배회 중에 엉뚱한 흔적이 사라지지 않는다")]
+        [SerializeField] private float _reachDistance = 1.0f;
+
+        public float DetectionRadius { get { return _detectionRadius; } }
+
+        public float ReachDistance { get { return _reachDistance; } }
+    }
+
+    /// <summary>
     /// K-9 한 마리의 수치 설정.
     /// <para>
     /// 별도 애셋 파일 없이 인스펙터에서 개체마다 다른 값을 줄 수 있도록
@@ -182,6 +199,7 @@ namespace Pawntom.Enemy.Core
         [SerializeField] private K9AlertSettings _alert = new K9AlertSettings();
         [SerializeField] private K9InvestigateSettings _investigate = new K9InvestigateSettings();
         [SerializeField] private K9ChaseSettings _chase = new K9ChaseSettings();
+        [SerializeField] private K9TraceSettings _trace = new K9TraceSettings();
 
         public K9MovementSettings Movement { get { return _movement; } }
 
@@ -194,5 +212,7 @@ namespace Pawntom.Enemy.Core
         public K9InvestigateSettings Investigate { get { return _investigate; } }
 
         public K9ChaseSettings Chase { get { return _chase; } }
+
+        public K9TraceSettings Trace { get { return _trace; } }
     }
 }
