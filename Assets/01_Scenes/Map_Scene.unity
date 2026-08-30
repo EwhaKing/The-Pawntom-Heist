@@ -1013,9 +1013,9 @@ RectTransform:
   - {fileID: 363937209}
   m_Father: {fileID: 1182651831}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 80, y: -20}
   m_SizeDelta: {x: 160, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &34404607
@@ -20275,9 +20275,9 @@ RectTransform:
   - {fileID: 1290864787}
   m_Father: {fileID: 1182651831}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 240, y: -20}
   m_SizeDelta: {x: 160, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1118233495
@@ -25509,7 +25509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58f4df0b8988028489ead2f9277b72f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RuleManager
-  headquartersZone: {fileID: 0}
+  headquartersZone: {fileID: 1266709028}
   exitItemId: 1
   _IsDepartureStarted:
     _value: 0
@@ -26292,6 +26292,9 @@ MonoBehaviour:
   - securityLevel: 0
     gameType: 0
     gamePrefab: {fileID: 7898979953798318568, guid: f09e7510ae5720641979692f5de5e5bf, type: 3}
+  - securityLevel: 0
+    gameType: 2
+    gamePrefab: {fileID: 8543788424510351326, guid: d15f5c41b21aff14682ff8f3f4b7cbc3, type: 3}
   testSecurityLevel: 0
   testTriggerKey: 104
 --- !u!4 &1394358609
@@ -38798,7 +38801,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2076490574
 RectTransform:
   m_ObjectHideFlags: 0
