@@ -16,7 +16,7 @@ namespace Hacking
     public enum HackingGameType
     {
         CommandOverride,   // A. 시퀀스 방향키 입력
-        DigitalGaugeSync,  // B. 스페이스바 타이밍 적중
-        SignalDivide       // C. A/D 고속 교차 연타
+        SignalDivide,       // B. A/D 고속 교차 연타
+        DigitalSync  // C. 스페이스바 타이밍 적중
     }
 }
