@@ -13,11 +13,13 @@ public class LobbyBasicButton : MonoBehaviour
 {
     public async void OnClickCreateRoom()
     {
+        if (!GameManager.Instance.CanConnect) return;
         await NetworkManager.Instance.StartNetworkGame(GameMode.Host);
     }
 
     public async void OnClickJoinRoom()
     {
+        if (!GameManager.Instance.CanConnect) return;
         await NetworkManager.Instance.StartNetworkGame(GameMode.Client);
     }
 

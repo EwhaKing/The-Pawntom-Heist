@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// GameState에 따라 로비 씬의 UI 패널을 전환합니다.
@@ -20,6 +22,16 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] Button startGameButton;
     [SerializeField] GameObject readyButton;
 
+    [Header("Connection Notice")]
+    [SerializeField] private GameObject connectionNoticePanel;
+    [SerializeField] private TMP_Text connectionNoticeText;
+    [SerializeField, Min(0f)] private float connectionNoticeHoldSeconds = 3f;
+    [SerializeField, Min(0f)] private float connectionNoticeFadeSeconds = 0.4f;
+
+    private CanvasGroup _connectionNoticeGroup;
+    private Coroutine _connectionNoticeFade;
+    private bool _hasStarted;
+
     public static LobbyUI Instance { get; private set; }
 
     private void Awake()
@@ -37,15 +49,18 @@ public class LobbyUI : MonoBehaviour
     private void OnEnable()
     {
         GameManager.OnStateChanged += HandleGameStateChanged;
+        if (_hasStarted) RefreshUI(GameManager.Instance.CurrentState);
     }
 
     private void OnDisable()
     {
         GameManager.OnStateChanged -= HandleGameStateChanged;
+        StopConnectionNoticeFade();
     }
 
     private void Start()
     {
+        _hasStarted = true;
         RefreshUI(GameManager.Instance.CurrentState);
         RefreshButtons();
     }
@@ -63,6 +78,7 @@ public class LobbyUI : MonoBehaviour
         readyPanel.SetActive(state == GameState.Ready);
 
         RefreshButtons();
+        RefreshConnectionNotice(state);
     }
 
     public void RefreshButtons()
@@ -110,6 +126,68 @@ public class LobbyUI : MonoBehaviour
             $"LocalPlayer={localPlayerData.PlayerRef}, " +
             $"IsHost={isHost}"
         );
+    }
+
+    private void RefreshConnectionNotice(GameState state)
+    {
+        StopConnectionNoticeFade();
+        if (connectionNoticePanel == null) return;
+
+        string message = GameManager.Instance.ConnectionMessage;
+        bool show = state == GameState.Lobby
+            && !string.IsNullOrEmpty(message);
+
+        if (!show || connectionNoticeText == null)
+        {
+            connectionNoticePanel.SetActive(false);
+            return;
+        }
+
+        if (_connectionNoticeGroup == null)
+        {
+            _connectionNoticeGroup = connectionNoticePanel.GetComponent<CanvasGroup>();
+            if (_connectionNoticeGroup == null)
+                _connectionNoticeGroup = connectionNoticePanel.AddComponent<CanvasGroup>();
+        }
+
+        _connectionNoticeGroup.alpha = 1f;
+        _connectionNoticeGroup.interactable = true;
+        _connectionNoticeGroup.blocksRaycasts = true;
+        connectionNoticeText.text = message;
+        connectionNoticePanel.SetActive(true);
+        _connectionNoticeFade = StartCoroutine(FadeOutConnectionNotice());
+    }
+
+    private IEnumerator FadeOutConnectionNotice()
+    {
+        // UI 안내는 게임의 일시정지나 Time.timeScale에 영향받지 않습니다.
+        yield return new WaitForSecondsRealtime(connectionNoticeHoldSeconds);
+
+        float elapsed = 0f;
+        while (elapsed < connectionNoticeFadeSeconds)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            _connectionNoticeGroup.alpha = 1f - Mathf.Clamp01(elapsed / connectionNoticeFadeSeconds);
+            yield return null;
+        }
+
+        _connectionNoticeFade = null;
+        OnClickCloseConnectionNotice();
+    }
+
+    private void StopConnectionNoticeFade()
+    {
+        if (_connectionNoticeFade == null) return;
+        StopCoroutine(_connectionNoticeFade);
+        _connectionNoticeFade = null;
+    }
+
+    public void OnClickCloseConnectionNotice()
+    {
+        StopConnectionNoticeFade();
+        GameManager.Instance.DismissConnectionMessage();
+        if (connectionNoticePanel != null)
+            connectionNoticePanel.SetActive(false);
     }
 
     public void OnClickStartGame()
