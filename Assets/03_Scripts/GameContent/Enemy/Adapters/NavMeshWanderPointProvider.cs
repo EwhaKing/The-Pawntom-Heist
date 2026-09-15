@@ -11,7 +11,7 @@ namespace Pawntom.Enemy.Adapters
     /// 덕분에 두뇌는 결정적으로 남고 에디터 모드 테스트가 흔들리지 않는다(DIP).
     /// </para>
     /// </summary>
-    public sealed class NavMeshWanderPointProvider : IK9WanderPointProvider
+    public sealed class NavMeshWanderPointProvider : IEnemyWanderPointProvider
     {
         /// <summary>
         /// 표본을 몇 번까지 다시 뽑을지. 기획 수치가 아니라 구현 상수라 인스펙터에 노출하지 않는다.

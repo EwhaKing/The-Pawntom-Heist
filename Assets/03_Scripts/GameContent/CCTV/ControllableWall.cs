@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 
 /// <summary>
@@ -10,15 +11,15 @@ using UnityEngine;
 /// - 닫힌 상태에서는 실제 벽 Renderer/Collider를 켬
 /// - CCTV/미니맵용 격벽 표시만 빨강/파랑으로 변경
 ///
+/// 특징:
+/// - 상태(IsUnlocked/IsOpen)는 [Networked] 값으로 StateAuthority가 권위를 가진다
+/// - 비권위 피어의 호출은 RPC로 StateAuthority에 요청되고, 실제 반영은 StateAuthority에서만 일어난다
+///
 /// 사용 위치:
 /// - 실제 맵의 Wall_01, Wall_02 같은 격벽 오브젝트에 붙임
 /// </summary>
-public class ControllableWall : MonoBehaviour
+public class ControllableWall : NetworkBehaviour
 {
-    [Header("State")]
-    [SerializeField] private bool isUnlocked;
-    [SerializeField] private bool isOpen;
-
     [Header("Actual Wall")]
     [Tooltip("실제 맵에서 보이는 벽 Renderer")]
     [SerializeField] private Renderer[] actualWallRenderers;
@@ -34,8 +35,14 @@ public class ControllableWall : MonoBehaviour
     [SerializeField] private Color minimapClosedColor = new Color(1f, 0.15f, 0.1f, 1f);
     [SerializeField] private Color minimapOpenColor = new Color(0.1f, 0.55f, 1f, 1f);
 
-    public bool IsUnlocked => isUnlocked;
-    public bool IsOpen => isOpen;
+    [Networked, OnChangedRender(nameof(OnWallStateChanged))]
+    public NetworkBool IsUnlocked { get; private set; }
+
+    [Networked, OnChangedRender(nameof(OnWallStateChanged))]
+    public NetworkBool IsOpen { get; private set; }
+
+    /// <summary>상태가 바뀔 때마다(원격 포함) 호출된다. UI가 구독해 새로고침한다.</summary>
+    public event System.Action OnStateChanged;
 
     private void Awake()
     {
@@ -49,7 +56,14 @@ public class ControllableWall : MonoBehaviour
         {
             actualWallColliders = GetComponentsInChildren<Collider>();
         }
+    }
 
+    /// <summary>
+    /// Fusion에서 NetworkObject가 Spawn된 뒤 호출.
+    /// [Networked] 값은 이 시점에야 유효하므로 여기서 초기 상태를 반영한다.
+    /// </summary>
+    public override void Spawned()
+    {
         ApplyWallState();
     }
 
@@ -58,11 +72,26 @@ public class ControllableWall : MonoBehaviour
     /// </summary>
     public void Unlock()
     {
-        isUnlocked = true;
+        if (Object.HasStateAuthority)
+        {
+            DoUnlock();
+        }
+        else
+        {
+            RPC_RequestUnlock();
+        }
+    }
 
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_RequestUnlock()
+    {
+        DoUnlock();
+    }
+
+    private void DoUnlock()
+    {
+        IsUnlocked = true;
         Debug.Log($"[ControllableWall] {gameObject.name} 해금 완료");
-
-        ApplyWallState();
     }
 
     /// <summary>
@@ -71,11 +100,7 @@ public class ControllableWall : MonoBehaviour
     /// </summary>
     public void OpenWall()
     {
-        isOpen = true;
-
-        ApplyWallState();
-
-        Debug.Log($"[ControllableWall] {gameObject.name} 열림");
+        RequestSetOpen(true);
     }
 
     /// <summary>
@@ -84,11 +109,31 @@ public class ControllableWall : MonoBehaviour
     /// </summary>
     public void CloseWall()
     {
-        isOpen = false;
+        RequestSetOpen(false);
+    }
 
-        ApplyWallState();
+    private void RequestSetOpen(bool open)
+    {
+        if (Object.HasStateAuthority)
+        {
+            DoSetOpen(open);
+        }
+        else
+        {
+            RPC_RequestSetOpen(open);
+        }
+    }
 
-        Debug.Log($"[ControllableWall] {gameObject.name} 닫힘");
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_RequestSetOpen(NetworkBool open)
+    {
+        DoSetOpen(open);
+    }
+
+    private void DoSetOpen(bool open)
+    {
+        IsOpen = open;
+        Debug.Log($"[ControllableWall] {gameObject.name} {(open ? "열림" : "닫힘")}");
     }
 
     /// <summary>
@@ -96,20 +141,22 @@ public class ControllableWall : MonoBehaviour
     /// </summary>
     public void ToggleWall()
     {
-        if (!isUnlocked)
+        if (!IsUnlocked)
         {
             Debug.Log($"[ControllableWall] {gameObject.name} 아직 해금되지 않음");
             return;
         }
 
-        if (isOpen)
-        {
-            CloseWall();
-        }
-        else
-        {
-            OpenWall();
-        }
+        RequestSetOpen(!IsOpen);
+    }
+
+    /// <summary>
+    /// [Networked] 상태가 바뀔 때마다(로컬·원격 무관) 호출된다.
+    /// </summary>
+    private void OnWallStateChanged()
+    {
+        ApplyWallState();
+        OnStateChanged?.Invoke();
     }
 
     /// <summary>
@@ -118,7 +165,7 @@ public class ControllableWall : MonoBehaviour
     private void ApplyWallState()
     {
         // 실제 벽은 색을 바꾸지 않고, 보이기/숨기기만 처리
-        bool shouldShowActualWall = !isOpen;
+        bool shouldShowActualWall = !IsOpen;
 
         if (actualWallRenderers != null)
         {
@@ -143,14 +190,14 @@ public class ControllableWall : MonoBehaviour
                     continue;
                 }
 
-                actualWallColliders[i].enabled = !isOpen;
+                actualWallColliders[i].enabled = !IsOpen;
             }
         }
 
         // 미니맵/CCTV 표시용 벽만 색상 변경
         if (minimapWallRenderer != null)
         {
-            minimapWallRenderer.material.color = isOpen ? minimapOpenColor : minimapClosedColor;
+            minimapWallRenderer.material.color = IsOpen ? minimapOpenColor : minimapClosedColor;
         }
     }
 }

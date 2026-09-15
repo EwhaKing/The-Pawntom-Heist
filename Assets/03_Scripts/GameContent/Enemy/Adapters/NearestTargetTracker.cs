@@ -12,9 +12,9 @@ namespace Pawntom.Enemy.Adapters
     /// 추격을 끊는 판단은 두뇌의 시야 소실 타이머가 한다(SRP).
     /// </para>
     /// </summary>
-    public sealed class NearestTargetTracker : IK9TargetTracker
+    public sealed class NearestTargetTracker : IEnemyTargetTracker
     {
-        private IK9TargetProvider _targetProvider;
+        private IEnemyTargetProvider _targetProvider;
 
         /// <summary>
         /// 대상 제공자를 갈아 끼운다.
@@ -23,7 +23,7 @@ namespace Pawntom.Enemy.Adapters
         /// 생성자에서 요구하지 않고 이 메서드로 재주입을 받는다.
         /// </para>
         /// </summary>
-        public void Configure(IK9TargetProvider targetProvider)
+        public void Configure(IEnemyTargetProvider targetProvider)
         {
             _targetProvider = targetProvider;
         }

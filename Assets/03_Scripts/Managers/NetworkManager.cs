@@ -431,6 +431,10 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
         if (runner.IsServer)
         {
             SpawnManager.Instance.SpawnAllPlayers(runner);
+
+            // 플레이어 다음이어야 한다. 적의 감지 대상은 EnemyTargetRegistrar를 단 플레이어가
+            // 스스로 등록하는데, 적이 먼저 태어나 첫 틱을 돌면 대상 목록이 빈 상태로 시작한다.
+            SpawnManager.Instance.SpawnAllEnemies(runner);
         }
     }
 

@@ -56,6 +56,19 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     private void OnEnable()
     {
         RefreshUI();
+
+        if (targetWall != null)
+        {
+            targetWall.OnStateChanged += RefreshUI;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (targetWall != null)
+        {
+            targetWall.OnStateChanged -= RefreshUI;
+        }
     }
 
     /// <summary>

@@ -7,10 +7,10 @@ namespace Pawntom.Enemy.Adapters
 {
     /// <summary>
     /// 시야 감지. 거리·각도·차폐를 확인해 가장 가까운 대상을 보고한다.
-    /// 보고 종류는 <see cref="K9DetectionKind.Sight"/> 이며, 추격 전환의 유일한 근거다.
+    /// 보고 종류는 <see cref="EnemyDetectionKind.Sight"/> 이며, 추격 전환의 유일한 근거다.
     /// </summary>
-    [AddComponentMenu("Pawntom/Enemy/K9 Sight Perception Source")]
-    public sealed class SightPerceptionSource : K9PerceptionSourceBehaviour
+    [AddComponentMenu("Pawntom/Enemy/Sight Perception Source")]
+    public sealed class SightPerceptionSource : EnemyPerceptionSourceBehaviour
     {
         [Header("시점")]
         [Tooltip("시야의 기준이 되는 지점. 비우면 자기 자신을 쓴다(머리 위치를 권장)")]
@@ -26,9 +26,9 @@ namespace Pawntom.Enemy.Adapters
         private Transform _eyeTransform;
 
         /// <inheritdoc/>
-        public override bool TryDetect(out K9Detection detection)
+        public override bool TryDetect(out EnemyDetection detection)
         {
-            detection = default(K9Detection);
+            detection = default(EnemyDetection);
 
             if (!IsReady || _eyeTransform == null)
             {
@@ -74,7 +74,7 @@ namespace Pawntom.Enemy.Adapters
                 // 씬 뷰 부채꼴 정중앙에 있는 대상이 근거리에서 탈락한다.
                 // 거리·차폐 판정은 3D 그대로다.
                 if (sqrDistance > 0.0001f
-                    && !K9SightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngle))
+                    && !EnemySightGeometry.IsWithinHorizontalCone(forward, toTarget, halfAngle))
                 {
                     continue;
                 }
@@ -91,7 +91,7 @@ namespace Pawntom.Enemy.Adapters
 
             if (found)
             {
-                detection = K9Detection.Sight(bestPosition);
+                detection = EnemyDetection.Sight(bestPosition);
             }
 
             return found;
@@ -137,7 +137,7 @@ namespace Pawntom.Enemy.Adapters
         /// </summary>
         private void OnDrawGizmos()
         {
-            K9Settings settings = ResolveSettings();
+            EnemySettings settings = ResolveSettings();
             if (settings == null)
             {
                 return;
@@ -151,8 +151,8 @@ namespace Pawntom.Enemy.Adapters
         /// 기즈모가 읽을 수치를 찾는다.
         /// <para>
         /// <c>Configure</c> 로 주입된 값이 있으면(Play 중) 그것을 쓰고,
-        /// 없으면(에디트 모드) 같은 오브젝트의 <see cref="K9Agent"/> 에서 읽는다.
-        /// 두 경로는 같은 <see cref="K9Settings"/> 인스턴스를 가리키므로 값이 어긋날 여지가 없다.
+        /// 없으면(에디트 모드) 같은 오브젝트의 <see cref="EnemyAgent"/> 에서 읽는다.
+        /// 두 경로는 같은 <see cref="EnemySettings"/> 인스턴스를 가리키므로 값이 어긋날 여지가 없다.
         /// </para>
         /// <para>
         /// 여기서 <c>GetComponent</c> 를 캐싱 없이 부르는 것은 캐싱 규칙 위반이 아니다 —
@@ -161,14 +161,14 @@ namespace Pawntom.Enemy.Adapters
         /// 애초에 에디트 모드에서는 <c>Awake</c> 가 돌지 않아 캐싱해 둘 시점 자체가 없다.
         /// </para>
         /// </summary>
-        private K9Settings ResolveSettings()
+        private EnemySettings ResolveSettings()
         {
             if (Settings != null)
             {
                 return Settings;
             }
 
-            K9Agent agent = GetComponent<K9Agent>();
+            EnemyAgent agent = GetComponent<EnemyAgent>();
             return agent == null ? null : agent.Settings;
         }
 
