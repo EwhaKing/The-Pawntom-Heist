@@ -3,12 +3,18 @@ using Fusion;
 using UnityEngine;
 
 /// <summary>
-/// 적 AI 등 외부 시스템이 털공의 생성 주체와 순서를 읽을 수 있게 합니다.
+/// 털공의 생성 정보와 고정 위치를 동기화하고, 네트워크 시간으로 수명을 관리합니다.
 /// </summary>
 public class FurBallTrace : NetworkBehaviour
 {
+    public const float LifetimeSeconds = 10f;
+
     // 살아 있는 털공 전체. 감지 소스가 매 틱 물리 질의를 하지 않도록 여기에 모읍니다.
     private static readonly List<FurBallTrace> _active = new List<FurBallTrace>(64);
+
+    [Networked] private TickTimer DespawnTimer { get; set; }
+    [Networked] private Vector3 SpawnPosition { get; set; }
+    [Networked] private Quaternion SpawnRotation { get; set; }
 
     [Networked] public PlayerRef Creator { get; private set; }
     [Networked] public int Sequence { get; private set; }
@@ -33,6 +39,17 @@ public class FurBallTrace : NetworkBehaviour
 
     public override void Spawned()
     {
+        if (Object.HasStateAuthority)
+        {
+            DespawnTimer = TickTimer.CreateFromSeconds(Runner, LifetimeSeconds);
+            SpawnPosition = transform.position;
+            SpawnRotation = transform.rotation;
+        }
+
+        // Runner.Spawn의 위치/회전 인자는 원격 클라이언트에 자동 전송되지 않습니다.
+        // 생성 후 움직이지 않는 흔적이므로 최초 배치만 복원합니다.
+        transform.SetPositionAndRotation(SpawnPosition, SpawnRotation);
+
         // 중복 추가 방지. 재진입이나 재스폰 경로에서 같은 개체가 두 번 들어올 수 있습니다.
         for (int i = 0; i < _active.Count; i++)
         {
@@ -43,6 +60,14 @@ public class FurBallTrace : NetworkBehaviour
         }
 
         _active.Add(this);
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (Object.HasStateAuthority && DespawnTimer.Expired(Runner))
+        {
+            Runner.Despawn(Object);
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)

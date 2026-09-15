@@ -103,6 +103,7 @@ namespace Hacking
         {
             bool isCommandGame = currentGame is CommandOverrideGame;
             bool isSignalGame = currentGame is SignalDivideGame;
+            bool isDigitalSyncGame = currentGame is DigitalSyncGame;
 
             if (commandSequenceGroup != null)
             {
@@ -128,6 +129,10 @@ namespace Hacking
                 else if (isSignalGame)
                 {
                     guideText.text = "A와 D를 번갈아 눌러 게이지를 채우세요";
+                }
+                else if (isDigitalSyncGame)
+                {
+                    guideText.text = "회전하는 바늘이 색칠된 구간에 들어왔을 때 SPACE를 누르세요";
                 }
                 else
                 {

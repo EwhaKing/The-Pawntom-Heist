@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 플레이어가 일정 거리를 이동할 때마다 바닥에 털공 흔적을 생성합니다.
-/// 생성 판정과 네트워크 스폰은 State Authority에서만 수행합니다.
+/// 각 플레이어의 Input Authority가 생성을 요청하고, State Authority가 검증 후 스폰합니다.
 /// </summary>
 [RequireComponent(typeof(PlayerData))]
 public class FurTrailSpawner : NetworkBehaviour
@@ -49,7 +49,10 @@ public class FurTrailSpawner : NetworkBehaviour
     [Networked] private int NextSequence { get; set; }
 
     private PlayerData _playerData;
-    private Vector3 _lastSpawnPosition;
+    [Networked] private Vector3 LastSpawnPosition { get; set; }
+
+    // 요청 후 승인 상태가 도착하기 전까지 매 틱 RPC를 보내지 않도록 제한합니다.
+    private TickTimer _requestCooldown;
 
     private void Awake()
     {
@@ -58,40 +61,57 @@ public class FurTrailSpawner : NetworkBehaviour
 
     public override void Spawned()
     {
-        _lastSpawnPosition = transform.position;
+        _requestCooldown = TickTimer.None;
 
         if (Object.HasStateAuthority)
         {
+            LastSpawnPosition = transform.position;
             NextSequence = 1;
         }
     }
 
     public override void FixedUpdateNetwork()
     {
-        if (!Object.HasStateAuthority || furBallPrefab == null)
+        // 재시뮬레이션에서는 같은 요청을 다시 보내지 않습니다.
+        if (!Object.HasInputAuthority || !Runner.IsForward ||
+            furBallPrefab == null || _playerData.IsDead ||
+            !_requestCooldown.ExpiredOrNotRunning(Runner))
         {
             return;
         }
 
-        float requiredDistance = _playerData.IsSprinting
-            ? sprintSpawnDistance
-            : walkSpawnDistance;
+        if (!HasMovedSpawnDistance(transform.position)) return;
 
+        _requestCooldown = TickTimer.CreateFromSeconds(Runner, 0.2f);
+        RPC_RequestFurBall();
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_RequestFurBall()
+    {
+        if (!Object.HasStateAuthority || furBallPrefab == null || _playerData.IsDead)
+            return;
+
+        // Client가 보내는 좌표 대신 Host가 알고 있는 해당 플레이어의 위치를 사용합니다.
         Vector3 currentPosition = transform.position;
-        Vector2 horizontalDelta = new(
-            currentPosition.x - _lastSpawnPosition.x,
-            currentPosition.z - _lastSpawnPosition.z
-        );
-
-        if (horizontalDelta.sqrMagnitude < requiredDistance * requiredDistance)
-        {
-            return;
-        }
+        if (!HasMovedSpawnDistance(currentPosition)) return;
 
         if (TrySpawnFurBall(currentPosition))
         {
-            _lastSpawnPosition = currentPosition;
+            LastSpawnPosition = currentPosition;
         }
+    }
+
+    private bool HasMovedSpawnDistance(Vector3 position)
+    {
+        float requiredDistance = _playerData.IsSprinting
+            ? sprintSpawnDistance
+            : walkSpawnDistance;
+        Vector2 horizontalDelta = new(
+            position.x - LastSpawnPosition.x,
+            position.z - LastSpawnPosition.z
+        );
+        return horizontalDelta.sqrMagnitude >= requiredDistance * requiredDistance;
     }
 
     private bool TrySpawnFurBall(Vector3 playerPosition)

@@ -14,11 +14,6 @@ namespace Hacking
     ///
     /// 사용 위치:
     /// - 씬에 있는 HackingManager 빈 오브젝트에 붙임
-    ///
-    /// 필요 연결:
-    /// - Popup View Prefab: HackingPopup.prefab
-    /// - Canvas Parent: HUDCanvas 안의 PopupRoot 또는 HUDCanvas
-    /// - Hacking Game Pool: CommandOverrideGamePrefab, SignalDivideGamePrefab 등
     /// </summary>
     public class HackingManager : MonoBehaviour
     {
@@ -30,33 +25,43 @@ namespace Hacking
         [SerializeField] private List<HackingGameData> hackingGamePool = new List<HackingGameData>();
 
         [Header("[TEST ONLY] 테스트 전용 설정")]
-        [Tooltip("나중에 문 상호작용 코드로 교체될 임시 설정입니다.")]
         [SerializeField] private SecurityLevel testSecurityLevel = SecurityLevel.Normal;
         [SerializeField] private KeyCode testTriggerKey = KeyCode.H;
 
         public bool IsHackingActive { get; private set; }
 
-        /// <summary>
-        /// 외부에서 해킹 결과를 받고 싶을 때 저장되는 콜백
-        /// 예: MainbaseControlUI가 해킹 성공 여부를 받아야 할 때 사용
-        /// </summary>
         private System.Action<bool> externalResultCallback;
+
+        private GameObject currentPopupObj;
+        private GameObject currentGameObj;
 
         private void Update()
         {
-            // [TEST ONLY]
-            // H 키를 누르면 테스트용으로 해킹 미니게임을 실행
-            // 이 경우 외부 콜백은 사용하지 않습니다.
-            if (Input.GetKeyDown(testTriggerKey) && !IsHackingActive)
+            if (!Input.GetKeyDown(testTriggerKey))
             {
-                OpenHackingPopup(testSecurityLevel);
+                return;
             }
+
+            Debug.Log($"[HackingManager] 테스트 키 입력됨: {testTriggerKey}");
+
+            if (IsHackingActive)
+            {
+                Debug.LogWarning("[HackingManager] 이미 해킹 진행 중으로 판단되어 새 팝업을 열지 않습니다.");
+
+                if (currentPopupObj == null)
+                {
+                    Debug.LogWarning("[HackingManager] 그런데 currentPopupObj가 없습니다. 상태를 강제로 초기화합니다.");
+                    ForceResetHackingState();
+                }
+
+                return;
+            }
+
+            OpenHackingPopup(testSecurityLevel);
         }
 
         /// <summary>
-        /// 지정된 보안 등급에 맞는 미니게임을 풀에서 골라 팝업으로 띄움
-        ///
-        /// 테스트용 또는 결과를 따로 받을 필요가 없는 경우 사용
+        /// 테스트용 또는 결과 콜백이 필요 없는 경우 사용합니다.
         /// </summary>
         public void OpenHackingPopup(SecurityLevel level)
         {
@@ -65,15 +70,11 @@ namespace Hacking
 
         /// <summary>
         /// 지정된 보안 등급에 맞는 미니게임을 풀에서 골라 팝업으로 띄웁니다.
-        ///
-        /// 외부에서 해킹 결과를 받아야 할 때 사용하는 함수
-        /// 예:
-        /// - MainbaseControlUI에서 조작 버튼 클릭
-        /// - 해킹 성공 시 격벽 열기
-        /// - 해킹 실패 시 아무 일도 안 함
         /// </summary>
         public void OpenHackingPopup(SecurityLevel level, System.Action<bool> resultCallback)
         {
+            Debug.Log($"[HackingManager] OpenHackingPopup 호출됨. Level={level}");
+
             if (IsHackingActive)
             {
                 Debug.LogWarning("[HackingManager] 이미 해킹이 진행 중입니다.");
@@ -92,11 +93,21 @@ namespace Hacking
                 return;
             }
 
+            if (hackingGamePool == null || hackingGamePool.Count == 0)
+            {
+                Debug.LogError("[HackingManager] Hacking Game Pool이 비어 있습니다.");
+                return;
+            }
+
+            Debug.Log($"[HackingManager] Hacking Game Pool Count = {hackingGamePool.Count}");
+
             List<HackingGameData> candidates = hackingGamePool.FindAll(data =>
                 data != null &&
                 data.securityLevel == level &&
                 data.gamePrefab != null
             );
+
+            Debug.Log($"[HackingManager] 후보 미니게임 수 = {candidates.Count}");
 
             if (candidates.Count == 0)
             {
@@ -106,69 +117,96 @@ namespace Hacking
 
             HackingGameData selected = candidates[Random.Range(0, candidates.Count)];
 
-            Debug.Log($"[HackingManager] 선택된 미니게임: {selected.gameType}");
+            Debug.Log($"[HackingManager] 선택된 미니게임: {selected.gameType}, Prefab={selected.gamePrefab.name}");
 
             IsHackingActive = true;
             externalResultCallback = resultCallback;
 
-            // [추후 연결 예정]
-            // 플레이어 이동 입력 막기, 커서 보이기 등은 나중에 여기서 처리
-            // Cursor.lockState = CursorLockMode.None;
-            // Cursor.visible = true;
+            // 팝업 생성
+            currentPopupObj = Instantiate(popupViewPrefab, canvasParent);
+            currentPopupObj.SetActive(true);
 
-            GameObject popupObj = Instantiate(popupViewPrefab, canvasParent);
+            // UI 프리팹이 부모 안에서 이상하게 배치되는 것을 방지
+            RectTransform popupRect = currentPopupObj.GetComponent<RectTransform>();
+            if (popupRect != null)
+            {
+                popupRect.anchorMin = Vector2.zero;
+                popupRect.anchorMax = Vector2.one;
+                popupRect.offsetMin = Vector2.zero;
+                popupRect.offsetMax = Vector2.zero;
+                popupRect.localScale = Vector3.one;
+                popupRect.localRotation = Quaternion.identity;
+            }
 
-            // HackingPopupView가 루트가 아니라 자식에 붙어 있어도 찾을 수 있게 처리
-            HackingPopupView popupView = popupObj.GetComponentInChildren<HackingPopupView>(true);
+            HackingPopupView popupView = currentPopupObj.GetComponentInChildren<HackingPopupView>(true);
 
             if (popupView == null)
             {
                 Debug.LogError("[HackingManager] Popup View Prefab 안에서 HackingPopupView 컴포넌트를 찾지 못했습니다.");
 
-                Destroy(popupObj);
+                Destroy(currentPopupObj);
+                currentPopupObj = null;
+
                 IsHackingActive = false;
                 externalResultCallback = null;
                 return;
             }
 
-            GameObject gameObj = Instantiate(selected.gamePrefab);
+            // 미니게임 생성
+            currentGameObj = Instantiate(selected.gamePrefab);
+            currentGameObj.SetActive(true);
 
-            // 미니게임 스크립트가 루트가 아니라 자식에 붙어 있어도 찾을 수 있게 처리
-            HackingGameBase gameInstance = gameObj.GetComponentInChildren<HackingGameBase>(true);
+            HackingGameBase gameInstance = currentGameObj.GetComponentInChildren<HackingGameBase>(true);
 
             if (gameInstance == null)
             {
                 Debug.LogError($"[HackingManager] {selected.gamePrefab.name} 프리팹 안에서 HackingGameBase를 상속한 미니게임 스크립트를 찾지 못했습니다.");
 
-                Destroy(popupObj);
-                Destroy(gameObj);
+                Destroy(currentPopupObj);
+                Destroy(currentGameObj);
+
+                currentPopupObj = null;
+                currentGameObj = null;
 
                 IsHackingActive = false;
                 externalResultCallback = null;
                 return;
             }
+
+            Debug.Log($"[HackingManager] 미니게임 인스턴스 생성 완료: {gameInstance.GetType().Name}");
 
             gameInstance.InitGame(level);
             popupView.InitializePopup(gameInstance, OnHackingFinished);
         }
 
         /// <summary>
-        /// 미니게임이 성공 또는 실패로 끝났을 때 호출
+        /// 미니게임이 성공 또는 실패로 끝났을 때 호출됩니다.
         /// </summary>
         private void OnHackingFinished(bool isSuccess)
         {
-            IsHackingActive = false;
-
             Debug.Log($"[HackingManager] 해킹 결과: {(isSuccess ? "성공" : "실패")}");
 
-            // MainbaseControlUI 같은 외부 시스템에 결과 전달
+            IsHackingActive = false;
+
             externalResultCallback?.Invoke(isSuccess);
             externalResultCallback = null;
 
-            // [추후 연결 예정]
-            // 플레이어 입력 복구, 커서 잠금 등은 나중에 여기서 처리
-            // Cursor.lockState = CursorLockMode.Locked;
-            // Cursor.visible = false;
+            currentPopupObj = null;
+            currentGameObj = null;
+        }
+
+        /// <summary>
+        /// 테스트 중 팝업이 중간에 삭제되거나 상태가 꼬였을 때 강제로 초기화합니다.
+        /// </summary>
+        private void ForceResetHackingState()
+        {
+            IsHackingActive = false;
+            externalResultCallback = null;
+
+            currentPopupObj = null;
+            currentGameObj = null;
+
+            Debug.Log("[HackingManager] 해킹 상태 강제 초기화 완료");
         }
     }
 }

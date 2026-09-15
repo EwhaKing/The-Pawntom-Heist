@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
-using Fusion;
+using System.Collections;
+using UnityEngine.SceneManagement;
 
 public enum GameState
 {
@@ -14,10 +15,17 @@ public enum GameState
 }
 
 /// <summary>
-/// 
+/// 게임 상태와 게임 시작 조건을 관리하고 네트워크 이벤트를 상태로 반영합니다.
 /// </summary>
 public class GameManager : PawntomSingleton<GameManager>
 {
+    private bool _isReturningToLobby;
+    private bool _isConnected;
+    public string ConnectionMessage { get; private set; }
+    public bool CanConnect => !_isReturningToLobby && CurrentState == GameState.Lobby;
+
+    public void DismissConnectionMessage() => ConnectionMessage = null;
+
     public GameState CurrentState { get; private set; } = GameState.Lobby; //초기 상태 : Lobby 상태
 
     /// <summary>
@@ -89,6 +97,97 @@ public class GameManager : PawntomSingleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
+        if (Instance != this) return;
+
+        NetworkManager.ConnectionStarted += HandleConnectionStarted;
+        NetworkManager.ConnectionSucceeded += HandleConnectionSucceeded;
+        NetworkManager.SessionEnding += HandleSessionEnding;
+        NetworkManager.SessionEnded += HandleSessionEnded;
+        NetworkManager.SceneLoadStarted += EnterLoading;
+        NetworkManager.SceneLoadCompleted += HandleSceneLoadCompleted;
+    }
+
+    private void OnDestroy()
+    {
+        NetworkManager.ConnectionStarted -= HandleConnectionStarted;
+        NetworkManager.ConnectionSucceeded -= HandleConnectionSucceeded;
+        NetworkManager.SessionEnding -= HandleSessionEnding;
+        NetworkManager.SessionEnded -= HandleSessionEnded;
+        NetworkManager.SceneLoadStarted -= EnterLoading;
+        NetworkManager.SceneLoadCompleted -= HandleSceneLoadCompleted;
+    }
+
+    private void HandleSceneLoadCompleted(string sceneName)
+    {
+        if (_isReturningToLobby) return;
+
+        if (sceneName == SceneNames.Map)
+        {
+            EnterInGame();
+        }
+        else if (sceneName == SceneNames.Lobby && _isConnected)
+        {
+            EnterReady();
+        }
+    }
+
+    private void HandleConnectionSucceeded()
+    {
+        if (_isReturningToLobby) return;
+        _isConnected = true;
+        if (CurrentState != GameState.InGame) EnterReady();
+    }
+
+    private void HandleConnectionStarted()
+    {
+        ConnectionMessage = null;
+        _isConnected = false;
+        EnterLoading();
+    }
+
+    private void HandleSessionEnding(string message)
+    {
+        _isReturningToLobby = true;
+        _isConnected = false;
+        ConnectionMessage = message;
+        IsEscapeUnlocked = false;
+        InputManager.Instance.DisableGameplayInput();
+        GameplayInputBlocker.SetBlocked(true);
+        EnterLoading();
+    }
+
+    private void HandleSessionEnded()
+    {
+        StartCoroutine(ReturnToLobby());
+    }
+
+    private IEnumerator ReturnToLobby()
+    {
+        int lobbyIndex = SceneUtilityHelper.GetBuildIndex(SceneNames.Lobby);
+        AsyncOperation load = null;
+        try
+        {
+            if (lobbyIndex < 0)
+                throw new InvalidOperationException("Lobby 씬이 Build Settings에 없습니다.");
+
+            // 로비에서 끊겨도 재로드하여 이전 방의 슬롯과 UI 참조를 초기화합니다.
+            load = SceneManager.LoadSceneAsync(lobbyIndex, LoadSceneMode.Single);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            ConnectionMessage = "로비를 불러오지 못했습니다. 게임을 다시 실행해 주세요.";
+        }
+
+        if (load == null) yield break;
+        yield return load;
+
+        // 파괴되는 게임 UI의 OnDisable이 입력/커서를 변경한 뒤 초기화합니다.
+        GameplayInputBlocker.SetBlocked(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        _isReturningToLobby = false;
+        EnterLobby();
     }
 
     /// <summary>
@@ -102,30 +201,16 @@ public class GameManager : PawntomSingleton<GameManager>
             return;
         }
 
-        if (NetworkManager.Instance == null)
+        if (!NetworkManager.Instance.CanLoadGameScene)
         {
-            Debug.LogError("[GameManager] NetworkManager가 존재하지 않습니다.");
-            return;
-        }
-
-        NetworkRunner runner = NetworkManager.Instance.Runner;
-
-        if (runner == null || !runner.IsRunning)
-        {
-            Debug.LogError("[GameManager] 실행 중인 NetworkRunner가 없습니다.");
-            return;
-        }
-
-        if (!runner.IsSceneAuthority)
-        {
-            Debug.LogWarning("[GameManager] Host만 게임을 시작할 수 있습니다.");
+            Debug.LogWarning("[GameManager] 실행 중인 세션의 Host만 게임을 시작할 수 있습니다.");
             return;
         }
 
         // TODO:
         // LobbyManager가 구현되면 모든 플레이어의 Ready 여부를 검사 UI 처리
 
-        if (!LobbyManager.Instance.CanStartGame())
+        if (LobbyManager.Instance == null || !LobbyManager.Instance.CanStartGame())
         {
             Debug.LogWarning("아직 준비하지 않은 플레이어가 있습니다.");
             return;
@@ -133,7 +218,6 @@ public class GameManager : PawntomSingleton<GameManager>
 
         Debug.Log("[GameManager] 게임 시작을 요청합니다.");
 
-        EnterLoading();
         NetworkManager.Instance.LoadGameScene();
     }
 
