@@ -78,6 +78,28 @@ namespace Pawntom.Enemy.Authoring
             get { return _settings; }
         }
 
+        /// <summary>
+        /// 스스로 시간을 흘려보낼지 여부. 기본값은 <c>true</c> 다.
+        /// <para>
+        /// 네트워크 어댑터가 붙으면 <c>false</c> 로 내리고, 어댑터가 <see cref="Tick"/> 을 대신 부른다.
+        /// <b>직렬화 필드로 만들지 않는다</b> — 인스펙터에서 잘못 꺼 두면 로컬 씬이 조용히 멈춘다.
+        /// </para>
+        /// </summary>
+        public bool SelfTick { get; set; } = true;
+
+        /// <summary>두뇌에 시간을 흘려보낸다. 두뇌가 없으면 아무것도 하지 않는다.</summary>
+        public void Tick(float deltaTime)
+        {
+            // 두뇌는 직렬화되지 않는다. 플레이 중에 스크립트를 고쳐 리컴파일이 걸리면
+            // 이 값이 null 이 되고 Awake 는 다시 불리지 않는다 — 그 뒤로 매 프레임 예외가 난다.
+            if (_brain == null)
+            {
+                return;
+            }
+
+            _brain.Tick(deltaTime);
+        }
+
         /// <summary>런타임에 순찰 경로를 갈아 끼운다.</summary>
         public void SetPatrolRoute(PatrolRoute route)
         {
@@ -182,14 +204,13 @@ namespace Pawntom.Enemy.Authoring
 
         private void Update()
         {
-            // 두뇌는 직렬화되지 않는다. 플레이 중에 스크립트를 고쳐 리컴파일이 걸리면
-            // 이 값이 null 이 되고 Awake 는 다시 불리지 않는다 — 그 뒤로 매 프레임 예외가 난다.
-            if (_brain == null)
+            // 외부(네트워크 어댑터)가 시간을 대신 흘려보내는 중이면 여기서는 아무것도 하지 않는다.
+            if (!SelfTick)
             {
                 return;
             }
 
-            _brain.Tick(Time.deltaTime);
+            Tick(Time.deltaTime);
         }
 
         /// <summary>

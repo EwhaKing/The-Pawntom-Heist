@@ -181,7 +181,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 50
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -386,6 +386,7 @@ GameObject:
   - component: {fileID: 2501010036201639159}
   - component: {fileID: 7693582246180369213}
   - component: {fileID: 6927131166089411136}
+  - component: {fileID: 7650601162378760883}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -403,8 +404,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7922897, z: 0, w: 0.61014515}
   m_LocalPosition: {x: 0.15635581, y: 0.07999986, z: 2.7988513}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2808064156230244262}
   - {fileID: 7023570251610067189}
@@ -496,8 +497,8 @@ MonoBehaviour:
   lookSensitivity: 0.07
   minPitch: -20
   maxPitch: 20
-  walkSpeed: 20
-  sprintSpeed: 45
+  walkSpeed: 1
+  sprintSpeed: 2.25
   jumpCutMultiplier: 0.45
 --- !u!114 &-992902756951653428
 MonoBehaviour:
@@ -640,6 +641,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerTarget
   markerTarget: {fileID: 4170410190343019040}
+--- !u!114 &7650601162378760883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a86985fab1ca4a145b4df5a7a3d80f56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.EnemyTargetRegistrar
+  _target: {fileID: 0}
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0

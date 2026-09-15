@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &287294794395490815
+--- !u!1 &1355815620388796549
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,158 +8,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7548709307951850436}
-  m_Layer: 0
-  m_Name: WP_1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7548709307951850436
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 287294794395490815}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -25, y: 0, z: -25}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8190027029749314927}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &852657396578042630
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 983368341346065336}
-  m_Layer: 0
-  m_Name: WP_2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &983368341346065336
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 852657396578042630}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -25, y: 0, z: 25}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8190027029749314927}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2164270653384833535
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3822644213683354920}
-  m_Layer: 0
-  m_Name: K-9_Prefab
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3822644213683354920
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2164270653384833535}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 804169345525969586}
-  - {fileID: 8190027029749314927}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2604878174449547016
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8190027029749314927}
-  - component: {fileID: 8514146225430804699}
-  m_Layer: 0
-  m_Name: PatrolRoute
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8190027029749314927
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2604878174449547016}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.32758, y: -0.00001, z: 7.03188}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5132228598017290603}
-  - {fileID: 7548709307951850436}
-  - {fileID: 983368341346065336}
-  - {fileID: 1129166655520751745}
-  m_Father: {fileID: 3822644213683354920}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8514146225430804699
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2604878174449547016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf5db22cd4ec7b74f8a3873618012eb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Authoring.PatrolRoute
-  _waypoints:
-  - {fileID: 5132228598017290603}
-  - {fileID: 7548709307951850436}
-  - {fileID: 983368341346065336}
-  - {fileID: 1129166655520751745}
-  _loop: 1
-  _lineColor: {r: 1, g: 0.38957706, b: 0.19999999, a: 1}
-  _handleRadius: 1.22
---- !u!1 &7135752574819544426
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5132228598017290603}
+  - component: {fileID: 8977131299750159263}
   m_Layer: 0
   m_Name: WP_0
   m_TagString: Untagged
@@ -167,22 +16,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5132228598017290603
+--- !u!4 &8977131299750159263
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7135752574819544426}
+  m_GameObject: {fileID: 1355815620388796549}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 25, y: 0, z: -25}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8190027029749314927}
+  m_Father: {fileID: 8811921074841570010}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7914696396608007156
+--- !u!1 &2692473582810266882
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -190,53 +39,120 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 804169345525969586}
-  - component: {fileID: 822113153786502364}
-  - component: {fileID: 911092610605316642}
-  - component: {fileID: 4244251171329988680}
-  - component: {fileID: 2803873201417353415}
-  - component: {fileID: 4287704740137011486}
-  - component: {fileID: 2160596645249567115}
-  - component: {fileID: 3123583727817471573}
-  - component: {fileID: 1738508605234688707}
+  - component: {fileID: 1828465354778709492}
   m_Layer: 0
-  m_Name: K-9
+  m_Name: Brutus_Prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &804169345525969586
+--- !u!4 &1828465354778709492
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 2692473582810266882}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6262616897331175911}
+  - {fileID: 8811921074841570010}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3766028848138616105
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3173646932308778433}
+  m_Layer: 0
+  m_Name: Eye
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3173646932308778433
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3766028848138616105}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.12027399, y: -0, z: -0, w: 0.99274075}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6262616897331175911}
+  m_LocalEulerAnglesHint: {x: 13.816, y: 0, z: 0}
+--- !u!1 &4185625027767195364
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6262616897331175911}
+  - component: {fileID: 2434256125627920039}
+  - component: {fileID: 1183322586596466156}
+  - component: {fileID: 2042229804635757524}
+  - component: {fileID: 1663831928387213665}
+  - component: {fileID: 8548096440161930327}
+  - component: {fileID: 173496608842039554}
+  - component: {fileID: 7643014866586572839}
+  - component: {fileID: 1645187701942184310}
+  - component: {fileID: 8279348749029618825}
+  - component: {fileID: 8400051408598465789}
+  - component: {fileID: 9218680479560068549}
+  m_Layer: 0
+  m_Name: Brutus
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6262616897331175911
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4185625027767195364}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 15.67242, y: 2.99999, z: 32.03188}
+  m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3432911939239372581}
-  m_Father: {fileID: 3822644213683354920}
+  - {fileID: 3173646932308778433}
+  m_Father: {fileID: 1828465354778709492}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &822113153786502364
+--- !u!33 &2434256125627920039
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &911092610605316642
+--- !u!23 &1183322586596466156
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -255,7 +171,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3f715c43051c87c48ae334505f7061eb, type: 2}
+  - {fileID: 2100000, guid: 79f0b44ea36afaa43b3637a9fb86bc42, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -279,13 +195,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &4244251171329988680
+--- !u!136 &2042229804635757524
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -302,13 +218,13 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!195 &2803873201417353415
+--- !u!195 &1663831928387213665
 NavMeshAgent:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
@@ -324,25 +240,25 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!114 &4287704740137011486
+--- !u!114 &8548096440161930327
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3521da164c77d140a42a6d9bd0784cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.K9AlertChannelBehaviour
---- !u!114 &2160596645249567115
+--- !u!114 &173496608842039554
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6eb5c85b9a3091346a54ba94ba8c661e, type: 3}
@@ -380,39 +296,76 @@ MonoBehaviour:
     _trace:
       _detectionRadius: 8
       _reachDistance: 1
-  _patrolRoute: {fileID: 8514146225430804699}
+  _patrolRoute: {fileID: 6464635612835959222}
   _targetProvider: {fileID: 0}
---- !u!114 &3123583727817471573
+--- !u!114 &7643014866586572839
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4ead45580fc31248951ca35b190e6a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.SightPerceptionSource
-  _eye: {fileID: 3432911939239372581}
+  _eye: {fileID: 3173646932308778433}
   _obstacleMask:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 0
   _obstacleSkin: 0.2
---- !u!114 &1738508605234688707
+--- !u!114 &1645187701942184310
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7914696396608007156}
+  m_GameObject: {fileID: 4185625027767195364}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 08e4533f67311bc45acae91548569f49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.ContactPerceptionSource
   _origin: {fileID: 0}
---- !u!1 &8022061434420455294
+--- !u!114 &8279348749029618825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4185625027767195364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8684b46be6f7122498b7d7ea68e9b8da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Pawntom.EnemyBridge.FurTracePerceptionSource
+  _origin: {fileID: 0}
+--- !u!114 &8400051408598465789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4185625027767195364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a87e1f09d6ceed4fa5c304ef9016ca5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.DirectChaseEngagementBehaviour
+--- !u!114 &9218680479560068549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4185625027767195364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d58d92d8399b94d42975eb88872e1f8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Adapters.GlobalHearingBehaviour
+--- !u!1 &4321860661878891957
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -420,57 +373,92 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3432911939239372581}
+  - component: {fileID: 7290396591885180147}
   m_Layer: 0
-  m_Name: Eye
+  m_Name: WP_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3432911939239372581
+--- !u!4 &7290396591885180147
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8022061434420455294}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.12027399, y: -0, z: -0, w: 0.99274075}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 804169345525969586}
-  m_LocalEulerAnglesHint: {x: 13.816, y: 0, z: 0}
---- !u!1 &9169330338913898817
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1129166655520751745}
-  m_Layer: 0
-  m_Name: WP_3
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1129166655520751745
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9169330338913898817}
+  m_GameObject: {fileID: 4321860661878891957}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 25, y: 0, z: 25}
+  m_LocalPosition: {x: 0, y: 0, z: 30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8190027029749314927}
+  m_Father: {fileID: 8811921074841570010}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5968575788605103816
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8811921074841570010}
+  - component: {fileID: 6464635612835959222}
+  m_Layer: 0
+  m_Name: PatrolRoute
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8811921074841570010
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5968575788605103816}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8977131299750159263}
+  - {fileID: 7290396591885180147}
+  m_Father: {fileID: 1828465354778709492}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6464635612835959222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5968575788605103816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf5db22cd4ec7b74f8a3873618012eb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Authoring.PatrolRoute
+  _waypoints:
+  - {fileID: 8977131299750159263}
+  - {fileID: 7290396591885180147}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 7290396591885180147}
+  - {fileID: 8977131299750159263}
+  _loop: 1
+  _lineColor: {r: 1, g: 0.9611634, b: 0, a: 1}
+  _handleRadius: 1.22
