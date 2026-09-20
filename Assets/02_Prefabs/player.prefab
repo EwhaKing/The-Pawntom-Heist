@@ -461,6 +461,7 @@ MonoBehaviour:
   - {fileID: 8196721981007322051}
   - {fileID: 2501010036201639159}
   - {fileID: 7693582246180369213}
+  - {fileID: 871239876451230001}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -475,9 +476,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Unity::Fusion.NetworkCharacterController
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  gravity: -100
+  gravity: -6
   fallMultiplier: 2.5
-  jumpImpulse: 60
+  jumpImpulse: 4
   acceleration: 1000
   braking: 10
   maxSpeed: 20
@@ -504,6 +505,8 @@ MonoBehaviour:
   jumpRiseSeconds: 0.6
   deriveGravityFromJump: 1
   jumpCutMultiplier: 0.45
+  _enemyContactDamage: 25
+  _contactDamageInterval: 1
 --- !u!114 &-992902756951653428
 MonoBehaviour:
   m_ObjectHideFlags: 0
