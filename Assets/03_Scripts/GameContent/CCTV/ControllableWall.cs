@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// ControllableWall
@@ -26,6 +27,11 @@ public class ControllableWall : NetworkBehaviour
 
     [Tooltip("실제 플레이어를 막는 Collider")]
     [SerializeField] private Collider[] actualWallColliders;
+
+    [Header("Navigation")]
+    [Tooltip("닫힘 상태에서만 켜지는 NavMeshObstacle(Carve). 비워 두면 자기/자식에서 자동 탐색한다. " +
+             "이 격벽은 NavMesh 굽기에서 제외(NavMeshModifier의 Ignore From Build)해야 열렸을 때 적이 지나간다")]
+    [SerializeField] private NavMeshObstacle navMeshObstacle;
 
     [Header("Minimap / CCTV Visual")]
     [Tooltip("CCTV/미니맵에 보이는 격벽 표시용 Renderer")]
@@ -55,6 +61,11 @@ public class ControllableWall : NetworkBehaviour
         if (actualWallColliders == null || actualWallColliders.Length == 0)
         {
             actualWallColliders = GetComponentsInChildren<Collider>();
+        }
+
+        if (navMeshObstacle == null)
+        {
+            navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
         }
     }
 
@@ -192,6 +203,13 @@ public class ControllableWall : NetworkBehaviour
 
                 actualWallColliders[i].enabled = !IsOpen;
             }
+        }
+
+        // 열림/닫힘은 렌더러와 콜라이더만 바꾸고 굽힌 NavMesh는 그대로다. 닫힌 채로 구우면
+        // 열어도 적의 경로가 막혀 있으므로, 굽기에서는 빼고 닫힘 동안만 장애물로 판 자리를 막는다.
+        if (navMeshObstacle != null)
+        {
+            navMeshObstacle.enabled = !IsOpen;
         }
 
         // 미니맵/CCTV 표시용 벽만 색상 변경
