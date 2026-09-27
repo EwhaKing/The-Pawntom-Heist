@@ -78,12 +78,32 @@ namespace Pawntom.EnemyBridge
         {
             if (HasStateAuthority)
             {
+                WarpToSpawnPosition();
                 return;
             }
 
             if (_navMeshAgent != null)
             {
                 _navMeshAgent.enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// 권한자의 NavMeshAgent 를 스폰 좌표로 옮긴다.
+        /// </summary>
+        private void WarpToSpawnPosition()
+        {
+            if (_navMeshAgent == null || !_navMeshAgent.enabled)
+            {
+                return;
+            }
+
+            // Fusion 기본 프로바이더가 위치 없이 Instantiate 하므로 에이전트가 프리팹 원점에서 먼저 만들어지고,
+            // 그 뒤 트랜스폼만 스폰 좌표로 옮겨져서 Warp 가 필요하다.
+            Vector3 position = transform.position;
+            if (!_navMeshAgent.Warp(position))
+            {
+                Debug.LogWarning($"[NetworkEnemyAgent] Warp 실패 — 스폰 위치가 NavMesh 밖일 수 있음: {name} {position}", this);
             }
         }
 
