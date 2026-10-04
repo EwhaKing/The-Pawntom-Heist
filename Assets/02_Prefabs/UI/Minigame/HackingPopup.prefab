@@ -4681,7 +4681,7 @@ GameObject:
   - component: {fileID: 1780617123173683431}
   - component: {fileID: 2914110705539701973}
   m_Layer: 5
-  m_Name: DButton
+  m_Name: SignalButton_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5160,6 +5160,10 @@ MonoBehaviour:
   - {fileID: 7102939387771476439}
   - {fileID: 2325335924759939284}
   signalButtonGroup: {fileID: 1357661850432685367}
+  signalButton0Button: {fileID: 731693396299486974}
+  signalButton1Button: {fileID: 1780617123173683431}
+  signalButton0Text: {fileID: 5720234512743717474}
+  signalButton1Text: {fileID: 3452674233402915882}
   gameContainer: {fileID: 8942136683148510442}
 --- !u!1 &7128236608316085276
 GameObject:
@@ -5586,7 +5590,7 @@ GameObject:
   - component: {fileID: 731693396299486974}
   - component: {fileID: 2982989249622196330}
   m_Layer: 5
-  m_Name: AButton
+  m_Name: SignalButton_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

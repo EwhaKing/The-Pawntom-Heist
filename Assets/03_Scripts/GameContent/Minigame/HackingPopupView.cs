@@ -11,6 +11,7 @@ namespace Hacking
     /// - 해킹 미니게임 팝업 UI 표시
     /// - 타이머 UI 갱신
     /// - SignalDivide 게이지 UI 갱신
+    /// - SignalDivide 랜덤 키 텍스트 표시
     /// - CommandOverride의 8개 슬롯 UI 갱신
     /// - 현재 미니게임 종류에 따라 필요한 UI만 표시
     /// </summary>
@@ -31,11 +32,26 @@ namespace Hacking
         [Header("Signal Divide UI")]
         [SerializeField] private GameObject signalButtonGroup;
 
+        [Tooltip("첫 번째 신호 버튼입니다. 예: AButton")]
+        [SerializeField] private Button signalButton0Button;
+
+        [Tooltip("두 번째 신호 버튼입니다. 예: DButton")]
+        [SerializeField] private Button signalButton1Button;
+
+        [Tooltip("첫 번째 신호 버튼의 TMP 텍스트입니다. 예: AButton 안의 Text")]
+        [SerializeField] private TextMeshProUGUI signalButton0Text;
+
+        [Tooltip("두 번째 신호 버튼의 TMP 텍스트입니다. 예: DButton 안의 Text")]
+        [SerializeField] private TextMeshProUGUI signalButton1Text;
+
         [Header("Container")]
         [SerializeField] private Transform gameContainer;
 
         private HackingGameBase currentGame;
         private System.Action<bool> onResultCallback;
+
+        private KeyCode lastDisplayedFirstKey = KeyCode.None;
+        private KeyCode lastDisplayedSecondKey = KeyCode.None;
 
         /// <summary>
         /// HackingManager가 팝업을 띄우면서 미니게임 인스턴스와 결과 콜백을 넘겨줍니다.
@@ -59,6 +75,7 @@ namespace Hacking
             currentGame.OnGameEnded += HandleGameEnded;
 
             InitializeCommandSlots();
+            AutoBindSignalDivideUI();
             SetupUIByGameType();
         }
 
@@ -72,6 +89,7 @@ namespace Hacking
             UpdateTimerUI(currentGame.CurrentTime, currentGame.TimeLimit);
             UpdateGaugeUI();
             UpdateCommandSequenceUI();
+            UpdateSignalDivideTextIfNeeded();
         }
 
         /// <summary>
@@ -93,6 +111,39 @@ namespace Hacking
                 }
 
                 commandSlots[i].Initialize(this, i);
+            }
+        }
+
+        /// <summary>
+        /// SignalDivide 버튼/텍스트 참조가 Inspector에 연결되지 않았을 때 자동으로 찾습니다.
+        /// </summary>
+        private void AutoBindSignalDivideUI()
+        {
+            if (signalButtonGroup == null)
+            {
+                return;
+            }
+
+            Button[] buttons = signalButtonGroup.GetComponentsInChildren<Button>(true);
+
+            if (signalButton0Button == null && buttons.Length > 0)
+            {
+                signalButton0Button = buttons[0];
+            }
+
+            if (signalButton1Button == null && buttons.Length > 1)
+            {
+                signalButton1Button = buttons[1];
+            }
+
+            if (signalButton0Text == null && signalButton0Button != null)
+            {
+                signalButton0Text = signalButton0Button.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            if (signalButton1Text == null && signalButton1Button != null)
+            {
+                signalButton1Text = signalButton1Button.GetComponentInChildren<TextMeshProUGUI>(true);
             }
         }
 
@@ -120,6 +171,11 @@ namespace Hacking
                 gaugeSlider.gameObject.SetActive(isSignalGame);
             }
 
+            if (isSignalGame)
+            {
+                SetupSignalDivideText();
+            }
+
             if (guideText != null)
             {
                 if (isCommandGame)
@@ -128,7 +184,7 @@ namespace Hacking
                 }
                 else if (isSignalGame)
                 {
-                    guideText.text = "A와 D를 번갈아 눌러 게이지를 채우세요";
+                    guideText.text = "표시된 두 키를 번갈아 눌러 게이지를 채우세요";
                 }
                 else if (isDigitalSyncGame)
                 {
@@ -138,6 +194,91 @@ namespace Hacking
                 {
                     guideText.text = "미니게임을 완료하세요";
                 }
+            }
+        }
+
+        /// <summary>
+        /// SignalDivideGame의 랜덤 키가 바뀌었거나,
+        /// 초기화 타이밍 때문에 아직 텍스트 반영이 안 된 경우 다시 갱신합니다.
+        /// </summary>
+        private void UpdateSignalDivideTextIfNeeded()
+        {
+            SignalDivideGame signalGame = currentGame as SignalDivideGame;
+
+            if (signalGame == null)
+            {
+                return;
+            }
+
+            if (signalGame.FirstSignalKey != lastDisplayedFirstKey ||
+                signalGame.SecondSignalKey != lastDisplayedSecondKey)
+            {
+                SetupSignalDivideText();
+            }
+        }
+
+        /// <summary>
+        /// SignalDivideGame에서 랜덤으로 선택된 두 키를 버튼 텍스트에 표시합니다.
+        /// </summary>
+        private void SetupSignalDivideText()
+        {
+            SignalDivideGame signalGame = currentGame as SignalDivideGame;
+
+            if (signalGame == null)
+            {
+                return;
+            }
+
+            AutoBindSignalDivideUI();
+
+            string firstKeyText = KeyCodeToText(signalGame.FirstSignalKey);
+            string secondKeyText = KeyCodeToText(signalGame.SecondSignalKey);
+
+            if (signalButton0Text != null)
+            {
+                signalButton0Text.text = firstKeyText;
+            }
+            else
+            {
+                Debug.LogWarning("[HackingPopupView] Signal Button 0 Text가 연결되지 않았습니다.");
+            }
+
+            if (signalButton1Text != null)
+            {
+                signalButton1Text.text = secondKeyText;
+            }
+            else
+            {
+                Debug.LogWarning("[HackingPopupView] Signal Button 1 Text가 연결되지 않았습니다.");
+            }
+
+            lastDisplayedFirstKey = signalGame.FirstSignalKey;
+            lastDisplayedSecondKey = signalGame.SecondSignalKey;
+
+            Debug.Log($"[HackingPopupView] Signal 버튼 텍스트 갱신: {firstKeyText} / {secondKeyText}");
+        }
+
+        /// <summary>
+        /// KeyCode를 UI 표시용 텍스트로 변환합니다.
+        /// </summary>
+        private string KeyCodeToText(KeyCode key)
+        {
+            switch (key)
+            {
+                case KeyCode.W:
+                    return "W";
+
+                case KeyCode.A:
+                    return "A";
+
+                case KeyCode.S:
+                    return "S";
+
+                case KeyCode.D:
+                    return "D";
+
+                default:
+                    return key.ToString();
             }
         }
 
@@ -224,7 +365,8 @@ namespace Hacking
         }
 
         /// <summary>
-        /// SignalDivideGame의 A 버튼 입력입니다.
+        /// SignalDivideGame의 첫 번째 버튼 입력입니다.
+        /// 기존 AButton OnClick과 호환하기 위해 이름을 유지합니다.
         /// </summary>
         public void PressA()
         {
@@ -232,7 +374,8 @@ namespace Hacking
         }
 
         /// <summary>
-        /// SignalDivideGame의 D 버튼 입력입니다.
+        /// SignalDivideGame의 두 번째 버튼 입력입니다.
+        /// 기존 DButton OnClick과 호환하기 위해 이름을 유지합니다.
         /// </summary>
         public void PressD()
         {
@@ -241,6 +384,8 @@ namespace Hacking
 
         /// <summary>
         /// UI 버튼 입력을 현재 미니게임에 전달합니다.
+        /// SignalDivideGame에서는 KeyCode.A를 첫 번째 랜덤 키,
+        /// KeyCode.D를 두 번째 랜덤 키로 해석합니다.
         /// </summary>
         private void SendVirtualInput(KeyCode key)
         {
@@ -255,7 +400,11 @@ namespace Hacking
 
         private void HandleGameEnded(bool isSuccess)
         {
-            currentGame.OnGameEnded -= HandleGameEnded;
+            if (currentGame != null)
+            {
+                currentGame.OnGameEnded -= HandleGameEnded;
+            }
+
             onResultCallback?.Invoke(isSuccess);
             ClosePopup();
         }
