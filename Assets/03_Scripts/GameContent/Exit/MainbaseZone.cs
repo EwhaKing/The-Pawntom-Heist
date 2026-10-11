@@ -18,9 +18,15 @@ public class MainbaseZone : MonoBehaviour
     [Header("Zone")]
     [SerializeField] private BoxCollider zoneCollider;
 
+    [Header("Enemy")]
+    [Tooltip("켜면 적(K-9)이 본부 안으로 들어오지 못한다. 안에 있는 플레이어는 감지·추적되지 않고, 적은 입구에서 추격을 끝낸다")]
+    [SerializeField] private bool blockEnemies = true;
+
     [Header("Debug")]
     [SerializeField] private bool showDebugLog = true;
 
+    /// <summary>적 출입 금지 구역. 변수 이벤트("본부에 적 진입")처럼 잠시 풀어야 할 때 SetBlocking(false).</summary>
+    public Pawntom.Enemy.Adapters.EnemySafeZone EnemyBlocker { get; private set; }
 
     /// <summary>
     /// 컴포넌트가 처음 준비될 때 BoxCollider를 자동으로 찾습니다.
@@ -30,7 +36,23 @@ public class MainbaseZone : MonoBehaviour
         if (zoneCollider == null)
         {
             zoneCollider = GetComponent<BoxCollider>();
-            Debug.LogError("[HeadquartersZone] BoxCollider가 없습니다. HeadquartersZone 오브젝트에 Box Collider를 추가하세요.");
+
+            if (zoneCollider == null)
+            {
+                Debug.LogError("[HeadquartersZone] BoxCollider가 없습니다. HeadquartersZone 오브젝트에 Box Collider를 추가하세요.");
+            }
+        }
+
+        if (blockEnemies && zoneCollider != null)
+        {
+            EnemyBlocker = GetComponent<Pawntom.Enemy.Adapters.EnemySafeZone>();
+
+            if (EnemyBlocker == null)
+            {
+                EnemyBlocker = gameObject.AddComponent<Pawntom.Enemy.Adapters.EnemySafeZone>();
+            }
+
+            EnemyBlocker.Configure(zoneCollider);
         }
     }
 
