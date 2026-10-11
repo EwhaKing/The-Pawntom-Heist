@@ -18,6 +18,17 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float sprintSpeed = 60f; //달리기 속도
 
     [Header("Jump")]
+    [Tooltip("점프 최고 높이(월드 단위 m). 플레이어 키(CharacterController 31 × 스케일 0.05 = 1.55m) 기준으로 잡는다.\n" +
+             "기본값 0.9 는 스케일을 줄이기 전 손맛(키의 약 58%)을 그대로 옮긴 값이다.")]
+    [SerializeField, Min(0.01f)] private float jumpHeight = 0.9f;
+
+    [Tooltip("최고점까지 올라가는 시간(초). 짧을수록 빠르고 묵직하다. 기본 0.6 은 스케일 다운 전과 같다.")]
+    [SerializeField, Min(0.05f)] private float jumpRiseSeconds = 0.6f;
+
+    [Tooltip("켜면 위 두 값에서 중력을 계산해 NetworkCharacterController.gravity 를 덮어쓴다(낙하도 같은 비율로 맞춰진다).\n" +
+             "끄면 NetworkCharacterController 의 중력을 그대로 두고 초기 속도만 높이에 맞춘다.")]
+    [SerializeField] private bool deriveGravityFromJump = true;
+
     [SerializeField, Range(0f, 1f)]
     private float jumpCutMultiplier = 0.45f;
 
@@ -38,6 +49,14 @@ public class PlayerController : NetworkBehaviour
     /// </summary>
     public override void Spawned()
     {
+        // 플레이어 스케일을 0.05 로 줄인 뒤에도 NetworkCharacterController 의 중력(-100)·점프 임펄스(60)는
+        // 예전 스케일 값 그대로라 최고점이 60²/(2×100) = 18m 였다(키 1.55m). 점프를 "높이·상승 시간"으로 정의하고
+        // 거기서 중력과 초기 속도를 계산해 스케일과 무관하게 맞춘다. 모든 피어의 Spawned 에서 같은 값이 들어간다.
+        if (deriveGravityFromJump)
+        {
+            _controller.gravity = -JumpGravity(jumpHeight, jumpRiseSeconds);
+        }
+
         bool isLocalPlayer = Object.HasInputAuthority;
 
         if (playerCamera != null)
@@ -154,15 +173,16 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"점프 전: {_controller.Velocity.y}");
+        // NetworkCharacterController.jumpImpulse(예전 스케일 값)는 쓰지 않는다. 목표 높이에 필요한 초기 속도를 넘긴다.
+        // v0 = sqrt(2·g·h). 중력을 직접 계산했으면 2h/t 와 같다.
+        float impulse = Mathf.Sqrt(2f * Mathf.Abs(_controller.gravity) * jumpHeight);
+        _controller.Jump(false, impulse);
+    }
 
-        _controller.Jump();
-
-        Debug.Log(
-        $"점프 후: {_controller.Velocity.y}, " +
-        $"Impulse: {_controller.jumpImpulse}, " +
-        $"Grounded: {_controller.Grounded}"
-    );
+    /// <summary>높이 h 를 t 초 만에 오르는 등감속 운동의 중력 크기: g = 2h / t².</summary>
+    private static float JumpGravity(float height, float riseSeconds)
+    {
+        return 2f * height / (riseSeconds * riseSeconds);
     }
 
     private bool CanSprint(bool wantsToSprint)
