@@ -34,6 +34,12 @@ public class InventoryManager : NetworkBehaviour
     [Networked] public int SelectedSlotIndex { get; set; }
 
     /// <summary>
+    /// 빈 슬롯이 없어 아이템 추가가 거절됐을 때(StateAuthority 쪽에서) 호출됩니다.
+    /// "가방 가득 참" 경고·튜토리얼 안내 같은 표시용 구독자를 위한 것입니다.
+    /// </summary>
+    public static event System.Action<InventoryManager> AddRejectedFull;
+
+    /// <summary>
     /// Fusion에서 Player NetworkObject가 Spawn된 후 호출
     /// 전체 인벤토리 목록에 자신을 등록
     /// 
@@ -238,6 +244,7 @@ public class InventoryManager : NetworkBehaviour
 
         // 빈 슬롯이 없을 때
         Debug.Log("[InventoryManager] 인벤토리 가득 찼습니다.");
+        AddRejectedFull?.Invoke(this);
         return false;
     }
 

@@ -30,7 +30,23 @@ namespace Hacking
 
         public bool IsHackingActive { get; private set; }
 
+        /// <summary>
+        /// 미니게임 팝업이 뜬 직후 호출됩니다. (보안 등급, 선택된 미니게임 종류)
+        /// 호출한 쪽과 무관하게 해킹 진행을 지켜봐야 하는 시스템(튜토리얼 안내 등)이 구독합니다.
+        /// </summary>
+        public static event System.Action<SecurityLevel, HackingGameType> HackingStarted;
+
+        /// <summary>미니게임이 끝났을 때 호출됩니다. (보안 등급, 성공 여부)</summary>
+        public static event System.Action<SecurityLevel, bool> HackingFinished;
+
+        /// <summary>
+        /// 설정되어 있고 후보에 해당 종류가 있으면 그 미니게임을 고릅니다. 없으면 기존처럼 무작위입니다.
+        /// 튜토리얼이 단계별 안내(방향키 / Space 타이밍)와 미니게임을 맞추기 위해 사용합니다.
+        /// </summary>
+        public static HackingGameType? PreferredGameType { get; set; }
+
         private System.Action<bool> externalResultCallback;
+        private SecurityLevel currentLevel;
 
         private GameObject currentPopupObj;
         private GameObject currentGameObj;
@@ -115,6 +131,17 @@ namespace Hacking
                 return;
             }
 
+            if (PreferredGameType.HasValue)
+            {
+                HackingGameType preferred = PreferredGameType.Value;
+                List<HackingGameData> preferredCandidates = candidates.FindAll(data => data.gameType == preferred);
+
+                if (preferredCandidates.Count > 0)
+                {
+                    candidates = preferredCandidates;
+                }
+            }
+
             HackingGameData selected = candidates[Random.Range(0, candidates.Count)];
 
             Debug.Log($"[HackingManager] 선택된 미니게임: {selected.gameType}, Prefab={selected.gamePrefab.name}");
@@ -177,6 +204,9 @@ namespace Hacking
 
             gameInstance.InitGame(level);
             popupView.InitializePopup(gameInstance, OnHackingFinished);
+
+            currentLevel = level;
+            HackingStarted?.Invoke(level, selected.gameType);
         }
 
         /// <summary>
@@ -193,6 +223,8 @@ namespace Hacking
 
             currentPopupObj = null;
             currentGameObj = null;
+
+            HackingFinished?.Invoke(currentLevel, isSuccess);
         }
 
         /// <summary>
