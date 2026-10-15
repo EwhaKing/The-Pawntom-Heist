@@ -31,9 +31,11 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private float doubleClickInterval = 0.35f;
 
     [Header("Colors")]
-    [SerializeField] private Color closedColor = new Color(1f, 0.15f, 0.1f, 1f);
     [SerializeField] private Color openColor = new Color(0.1f, 0.55f, 1f, 1f);
     [SerializeField] private Color hackingLockedColor = new Color(1f, 0.15f, 0.1f, 1f);
+
+    [Tooltip("해금됐지만 닫혀 있을 때(UI_SPEC: 해금·열림 = 푸른색)")]
+    [SerializeField] private Color unlockedColor = new Color(0.1f, 0.45f, 0.9f, 1f);
 
     private float lastClickTime;
     private bool isHacking;
@@ -148,12 +150,11 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
         if (isSuccess)
         {
+            // GAME_DESIGN 격벽 상태 머신: 미니게임 성공 → Unlocked(푸른색, 닫힘).
+            // 여는 것은 침투조가 현장에서 상호작용 키로 한다(5초 뒤 자동으로 닫힘).
             targetWall.Unlock();
 
-            // 성공하면 즉시 열림 상태로 변경
-            targetWall.OpenWall();
-
-            Debug.Log("[WallControlButtonUI] 해킹 성공. 격벽 해금 및 열림");
+            Debug.Log("[WallControlButtonUI] 해킹 성공. 격벽 해금(푸른색) — 현장에서 열 수 있음");
         }
         else
         {
@@ -185,6 +186,7 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        wallImage.color = targetWall.IsOpen ? openColor : closedColor;
+        // 해금된 격벽은 닫혀 있어도 푸른색이다(잠김만 붉은색).
+        wallImage.color = targetWall.IsOpen ? openColor : unlockedColor;
     }
 }

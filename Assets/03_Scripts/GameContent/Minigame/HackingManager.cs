@@ -28,7 +28,41 @@ namespace Hacking
         [SerializeField] private SecurityLevel testSecurityLevel = SecurityLevel.Normal;
         [SerializeField] private KeyCode testTriggerKey = KeyCode.H;
 
-        public bool IsHackingActive { get; private set; }
+        public bool IsHackingActive
+        {
+            get { return isHackingActive; }
+            private set
+            {
+                isHackingActive = value;
+                AnyHackingActive = value;
+            }
+        }
+
+        private bool isHackingActive;
+
+        /// <summary>
+        /// 어느 HackingManager 든 미니게임이 진행 중이면 true.
+        /// 미니게임 조작(방향키·Space·A/D)이 플레이어 이동·점프로 새지 않도록 InputManager 가 확인합니다.
+        /// </summary>
+        public static bool AnyHackingActive { get; private set; }
+
+        /// <summary>팝업을 같은 캔버스의 다른 UI(본부 단말기 창 등) 위에 그리기 위한 정렬 값.</summary>
+        private const int PopupSortingOffset = 100;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            AnyHackingActive = false;
+        }
+
+        private void OnDestroy()
+        {
+            // 씬이 바뀌어 진행 중이던 팝업과 함께 사라지면 입력 차단이 남지 않게 한다.
+            if (isHackingActive)
+            {
+                AnyHackingActive = false;
+            }
+        }
 
         /// <summary>
         /// 미니게임 팝업이 뜬 직후 호출됩니다. (보안 등급, 선택된 미니게임 종류)
@@ -152,6 +186,7 @@ namespace Hacking
             // 팝업 생성
             currentPopupObj = Instantiate(popupViewPrefab, canvasParent);
             currentPopupObj.SetActive(true);
+            BringPopupToFront(currentPopupObj);
 
             // UI 프리팹이 부모 안에서 이상하게 배치되는 것을 방지
             RectTransform popupRect = currentPopupObj.GetComponent<RectTransform>();
@@ -207,6 +242,32 @@ namespace Hacking
 
             currentLevel = level;
             HackingStarted?.Invoke(level, selected.gameType);
+        }
+
+        /// <summary>
+        /// 팝업이 같은 캔버스의 형제 UI(본부 단말기 창 등)보다 뒤에 있으면 가려진다.
+        /// 계층 순서와 무관하게 항상 위에 그려지도록 팝업에 정렬 우선 캔버스를 붙인다(버튼 클릭을 위해 Raycaster 도 함께).
+        /// </summary>
+        private static void BringPopupToFront(GameObject popup)
+        {
+            Canvas parentCanvas = popup.transform.parent != null
+                ? popup.transform.parent.GetComponentInParent<Canvas>()
+                : null;
+
+            Canvas popupCanvas = popup.GetComponent<Canvas>();
+
+            if (popupCanvas == null)
+            {
+                popupCanvas = popup.AddComponent<Canvas>();
+            }
+
+            popupCanvas.overrideSorting = true;
+            popupCanvas.sortingOrder = (parentCanvas != null ? parentCanvas.rootCanvas.sortingOrder : 0) + PopupSortingOffset;
+
+            if (popup.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            {
+                popup.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            }
         }
 
         /// <summary>

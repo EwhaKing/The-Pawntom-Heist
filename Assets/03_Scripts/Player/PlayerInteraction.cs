@@ -28,6 +28,9 @@ public class PlayerInteraction : NetworkBehaviour
     [SerializeField] private float interactDistance = 100f;
     [SerializeField] private float interactRadius = 2f;
 
+    [Tooltip("격벽을 현장에서 열 수 있는 최대 거리(월드 m). 탐색 거리(interactDistance)는 멀리까지 닿으므로 격벽은 따로 제한한다")]
+    [SerializeField, Min(0.5f)] private float wallInteractDistance = 3f;
+
     private InventoryManager inventoryManager;
     private NetworkButtons previousButtons;
 
@@ -77,7 +80,7 @@ public class PlayerInteraction : NetworkBehaviour
     // UI가 열려있는 동안 플레이어의 동작을 막음
     private void Update()
     {
-        if (GameplayInputBlocker.IsBlocked)
+        if (GameplayInputBlocker.IsBlocked || Hacking.HackingManager.AnyHackingActive)
         {
             return;
         }
@@ -117,6 +120,19 @@ public class PlayerInteraction : NetworkBehaviour
 
         Debug.Log("[PlayerInteraction] 상호작용 Ray 발사");
 
+        // 가까운 격벽 먼저: 아래 넓은 SphereCast(반경 interactRadius)는 시작 지점에서 이미 겹친 콜라이더를 무시하므로
+        // 문 바로 앞에 서 있으면 격벽을 맞히지 못한다. 가는 SphereCast 로 격벽만 따로 확인한다.
+        if (Physics.SphereCast(ray, 0.25f, out RaycastHit wallHit, wallInteractDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            ControllableWall nearWall = wallHit.collider.GetComponentInParent<ControllableWall>();
+
+            if (nearWall != null)
+            {
+                nearWall.TryFieldOpen();
+                return;
+            }
+        }
+
         // SphereCast로 조금 넓게 감지
         if (!Physics.SphereCast(ray, interactRadius, out RaycastHit hit, interactDistance))
         {
@@ -145,6 +161,21 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
         
+        // 격벽인지 확인: 해금된(푸른) 격벽은 현장에서 열린다(잠시 뒤 자동으로 닫힘)
+        ControllableWall wall = hit.collider.GetComponentInParent<ControllableWall>();
+
+        if (wall != null)
+        {
+            if (hit.distance > wallInteractDistance)
+            {
+                Debug.Log("[PlayerInteraction] 격벽이 너무 멀어 열 수 없습니다.");
+                return;
+            }
+
+            wall.TryFieldOpen();
+            return;
+        }
+
         // 맞은 오브젝트 또는 부모에서 NetworkItem 찾기
         NetworkItem item = hit.collider.GetComponentInParent<NetworkItem>();
 
