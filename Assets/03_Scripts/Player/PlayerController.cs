@@ -132,7 +132,22 @@ public class PlayerController : NetworkBehaviour
         float moveSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
         _controller.maxSpeed = moveSpeed;
+
+        // NetworkCharacterController.Move 는 이동 후 속도를 "실제 이동량 × TickRate"로 다시 계산한다.
+        // 그래서 바닥 겹침 해소·계단 오르기처럼 CharacterController 가 몸을 밀어 올린 거리까지 위쪽 속도가 된다
+        // (스폰 직후 바닥에 13cm 겹친 것을 밀어내면 0.13×64 ≈ 8m/s 로 튀어 올라 공중에서 떨어졌다).
+        // 이동 전 세로 속도(점프 중이면 점프 속도)보다 큰 위쪽 속도는 입력이 만든 것이 아니므로 잘라 낸다.
+        float verticalBeforeMove = _controller.Velocity.y;
         _controller.Move(moveDirection);
+
+        Vector3 velocity = _controller.Velocity;
+        float maxUpward = Mathf.Max(verticalBeforeMove, 0f);
+
+        if (velocity.y > maxUpward)
+        {
+            velocity.y = maxUpward;
+            _controller.Velocity = velocity;
+        }
     }
 
     private void HandleLook(Vector2 lookInput)

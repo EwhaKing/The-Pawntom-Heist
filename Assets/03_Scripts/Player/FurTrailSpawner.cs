@@ -12,33 +12,35 @@ public class FurTrailSpawner : NetworkBehaviour
     [Tooltip("바닥에 생성할 네트워크 털공 프리팹입니다.")]
     [SerializeField] private NetworkObject furBallPrefab;
 
+    // 수치는 플레이어 스케일 0.05(키 1.55m, 걷기 1m/s·달리기 2.25m/s) 기준이다.
+    // 스케일 축소 전과 같은 "생성 간격(초)"이 되도록 맞췄다: 걷기 약 0.7초, 달리기 약 0.6초마다 하나.
     [Header("Spawn Distance")]
     [Tooltip("걷는 동안 털공 하나가 생성되기까지 필요한 수평 이동 거리입니다.")]
-    [SerializeField, Min(0.1f)] private float walkSpawnDistance = 15f;
+    [SerializeField, Min(0.1f)] private float walkSpawnDistance = 0.7f;
 
     [Tooltip("달리는 동안 털공 하나가 생성되기까지 필요한 수평 이동 거리입니다. 넓게 퍼지도록 걷기 값보다 크게 설정하세요.")]
-    [SerializeField, Min(0.1f)] private float sprintSpawnDistance = 25f;
+    [SerializeField, Min(0.1f)] private float sprintSpawnDistance = 1.3f;
 
     [Header("Random Scatter")]
     [Tooltip("플레이어 진행 방향을 기준으로 좌우에 무작위로 흩어지는 최대 거리입니다.")]
-    [SerializeField, Min(0f)] private float horizontalSpread = 5f;
+    [SerializeField, Min(0f)] private float horizontalSpread = 0.35f;
 
     [Tooltip("플레이어 진행 방향을 기준으로 앞뒤에 무작위로 흩어지는 최대 거리입니다.")]
-    [SerializeField, Min(0f)] private float longitudinalSpread = 5f;
+    [SerializeField, Min(0f)] private float longitudinalSpread = 0.35f;
 
     [Header("Ground Detection")]
     [Tooltip("플레이어 위치에서 레이캐스트를 시작할 높이입니다.")]
-    [SerializeField, Min(0f)] private float rayStartHeight = 5f;
+    [SerializeField, Min(0f)] private float rayStartHeight = 0.5f;
 
     [Tooltip("바닥을 찾기 위해 아래로 검사할 최대 거리입니다.")]
-    [SerializeField, Min(0.1f)] private float groundCheckDistance = 40f;
+    [SerializeField, Min(0.1f)] private float groundCheckDistance = 2f;
 
     [Tooltip("털공을 생성할 수 있는 바닥 레이어입니다.")]
     [SerializeField] private LayerMask groundLayers = ~0;
 
     [Header("Placement")]
     [Tooltip("털공이 바닥에 파묻히는 것을 방지하기 위한 표면 방향 오프셋입니다.")]
-    [SerializeField, Min(0f)] private float surfaceOffset = 0.1f;
+    [SerializeField, Min(0f)] private float surfaceOffset = 0.03f;
 
     [Tooltip("활성화하면 털공의 위쪽 방향을 경사진 바닥의 노멀에 맞춥니다.")]
     [SerializeField] private bool alignToGroundNormal = true;
