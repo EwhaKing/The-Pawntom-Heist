@@ -286,7 +286,8 @@ namespace Pawntom.TutorialBridge
 
         private void DetectJump()
         {
-            if (!_controlEnabled || _actions == null || GameplayInputBlocker.IsBlocked || TutorialInputLock.IsLocked)
+            if (!_controlEnabled || _actions == null || GameplayInputBlocker.IsBlocked || TutorialInputLock.IsLocked ||
+                HackingManager.AnyHackingActive)
             {
                 return;
             }
@@ -596,6 +597,23 @@ namespace Pawntom.TutorialBridge
             return found;
         }
 
+        private int CountWalls(bool unlocked)
+        {
+            int count = 0;
+
+            for (int i = 0; i < _walls.Length; i++)
+            {
+                ControllableWall wall = _walls[i];
+
+                if (wall != null && wall.Object != null && wall.Object.IsValid && (bool)wall.IsUnlocked == unlocked)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         /// <summary>조건에 맞는 격벽이 정확히 하나일 때만 그 경계를 준다.</summary>
         private bool TryGetSingleWallBounds(bool unlocked, out Bounds bounds)
         {
@@ -846,11 +864,13 @@ namespace Pawntom.TutorialBridge
                     continue;
                 }
 
-                if (!wall.IsUnlocked && !zoneForLocked)
+                // 영역이 없을 때의 자동 감지는 해당 격벽이 하나뿐일 때만 쓴다. 잠긴 격벽이 여럿이면(Gate A·B)
+                // 어느 것이 "복도 A 끝"인지 알 수 없어 엉뚱한 문 앞에서 2-10 이 나오기 때문이다 → TutorialZone 필요.
+                if (!wall.IsUnlocked && !zoneForLocked && CountWalls(false) == 1)
                 {
                     Emit(TutorialSignal.CorridorAEndReached);
                 }
-                else if (wall.IsUnlocked && !zoneForBlue)
+                else if (wall.IsUnlocked && !zoneForBlue && CountWalls(true) == 1)
                 {
                     Emit(TutorialSignal.BlueDoorAhead);
                 }

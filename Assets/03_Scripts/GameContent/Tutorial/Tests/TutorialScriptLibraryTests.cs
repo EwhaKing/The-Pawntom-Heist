@@ -192,14 +192,15 @@ namespace Pawntom.Tutorial.Tests
         }
 
         [Test]
-        public void CreateDefault_NoSecurityNodeInScene_TerminalStillReachable()
+        public void CreateDefault_NodeConnectedWithoutChase_TerminalStartsStageFour()
         {
-            // 분전반이 씬에 없어도(3단계 신호 없음) 단말기 앞에 가면 4단계로 넘어가야 한다.
+            // 분전반 접속(3-3)까지 마쳤으면, 경비견 추격(3-4)이 없었어도 단말기 앞에서 4단계로 넘어간다.
             TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearTerminal
+                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal
             };
 
             foreach (TutorialSignal signal in signals)
@@ -275,10 +276,56 @@ namespace Pawntom.Tutorial.Tests
         }
 
         [Test]
-        public void CreateDefault_SecurityNodeInScene_TerminalDoesNotSkipStageThree()
+        public void CreateDefault_JumpInPlace_KeepsObstacleHint()
         {
-            // 분전반이 배치돼 있으면 복도 B 가 단말기 근처를 지나도 3단계를 건너뛰면 안 된다.
-            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault(true));
+            // 제자리 점프로는 2-9 안내가 지워지지 않는다 — 상자 반대편에 도착해야 한다.
+            TutorialSequencer sequencer = StartedAtStageTwo(new List<string>());
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
+                TutorialSignal.ObstacleAhead, TutorialSignal.Jumped
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual("2-9", sequencer.Hints[sequencer.Hints.Count - 1].Line.Id);
+        }
+
+        [Test]
+        public void CreateDefault_ReachFarSideOfObstacle_ClearsObstacleHint()
+        {
+            TutorialSequencer sequencer = StartedAtStageTwo(new List<string>());
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
+                TutorialSignal.ObstacleAhead, TutorialSignal.ObstacleCleared
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            bool stillShown = false;
+
+            for (int i = 0; i < sequencer.Hints.Count; i++)
+            {
+                stillShown |= sequencer.Hints[i].Line.Id == "2-9";
+            }
+
+            Assert.IsFalse(stillShown);
+        }
+
+        [Test]
+        public void CreateDefault_StageThreePending_TerminalDoesNotSkipToStageFour()
+        {
+            // 2단계를 마친 뒤 본부 단말기 앞에 가도 분전반 접속(3단계) 없이는 4단계로 넘어가지 않는다.
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,

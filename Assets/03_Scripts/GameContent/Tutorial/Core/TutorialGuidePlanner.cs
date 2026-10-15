@@ -20,6 +20,7 @@ namespace Pawntom.Tutorial.Core
             switch (signal)
             {
                 case TutorialSignal.ObstacleAhead:
+                case TutorialSignal.ObstacleCleared:
                 case TutorialSignal.CorridorAEndReached:
                 case TutorialSignal.NearSecurityNode:
                 case TutorialSignal.NearTerminal:

@@ -190,10 +190,25 @@ namespace Pawntom.TutorialBridge
             }
 
             // TryAddItem 은 StateAuthority(Host)에서만 성공한다. 튜토리얼은 혼자 Host 로 진행하는 데모 경로다.
-            if (!inventory.TryAddItem(rewardItemId))
+            if (inventory.TryAddItem(rewardItemId))
             {
-                Debug.LogWarning("[TutorialVault] 캣닢을 가방에 넣지 못했습니다(가방이 가득 찼거나 Host 가 아님).", this);
+                return;
             }
+
+            if (!inventory.Object.HasStateAuthority)
+            {
+                Debug.LogWarning("[TutorialVault] Host 가 아니라 캣닢을 가방에 넣지 못했습니다.", this);
+                return;
+            }
+
+            // 가방이 가득 찼다. 아직 버리기(Q) 입력이 없어 칸을 비울 방법이 없으므로, 캣닢을 못 받으면 튜토리얼이 7-4 에서 멈춘다.
+            // 들고 있는 칸(없으면 마지막 칸)의 전리품을 캣닢으로 바꿔 넣는다 — 대본 5-6 "한 칸은 캣닢 자리로 비워 두십시오"의 보정.
+            int slot = inventory.SelectedSlotIndex >= 0 && inventory.SelectedSlotIndex < InventoryManager.MaxSlotCount
+                ? inventory.SelectedSlotIndex
+                : InventoryManager.MaxSlotCount - 1;
+            int replaced = inventory.Slots[slot];
+            inventory.Slots.Set(slot, rewardItemId);
+            Debug.Log($"[TutorialVault] 가방이 가득 차 {slot + 1}번 칸(ItemId={replaced})을 캣닢으로 바꿔 넣었습니다.", this);
         }
 
         private void OnDrawGizmosSelected()

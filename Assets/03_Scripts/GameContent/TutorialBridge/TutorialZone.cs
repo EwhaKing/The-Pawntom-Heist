@@ -12,7 +12,8 @@ namespace Pawntom.TutorialBridge
     /// OnTriggerEnter 가 여러 번 울릴 수 있다. 대신 수집기가 주기적으로 <see cref="Contains"/>를 묻는다.
     /// </para>
     /// <para>
-    /// 쓰는 신호: ObstacleAhead(2-9 상자 앞), CorridorAEndReached(2-10 복도 A 끝 격벽), NearSecurityNode(3-1),
+    /// 쓰는 신호: ObstacleAhead(2-9 상자 앞), ObstacleCleared(2-9 상자 반대편 — 점프 안내가 여기서 사라짐),
+    /// CorridorAEndReached(2-10 복도 A 끝 격벽), NearSecurityNode(3-1),
     /// NearTerminal(4-1), BlueDoorAhead(5-1), LootRoomEntered(5-2), LootRoomExiting(5-8),
     /// VaultCorridorEntered(6-1), VaultRoomEntered(6-5), VaultFront(7-1), PlayerInMainbase(본부 범위 덮어쓰기).
     /// 해당 신호용 영역이 하나라도 있으면 수집기의 자동 근접 감지(격벽·단말기 거리)는 그 신호에 대해 꺼진다.

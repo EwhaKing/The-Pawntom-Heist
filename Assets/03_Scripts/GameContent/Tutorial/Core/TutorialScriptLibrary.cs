@@ -21,24 +21,10 @@ namespace Pawntom.Tutorial.Core
 
         public static TutorialScript CreateDefault()
         {
-            return CreateDefault(false);
-        }
-
-        /// <param name="securityNodeInScene">
-        /// 씬에 분전반이 배치돼 있으면 true. 3-1(분전반 발견)·3-3(접속 완료)을 건너뛸 수 없게 만든다 —
-        /// 분전반이 없을 때만 단말기로 바로 넘어가는 우회로를 연다(복도 B 가 본부 단말기 근처를 지나도 3단계를 건너뛰지 않도록).
-        /// </param>
-        public static TutorialScript CreateDefault(bool securityNodeInScene)
-        {
-            return new TutorialScript(CreateDefaultBeats(securityNodeInScene));
+            return new TutorialScript(CreateDefaultBeats());
         }
 
         public static List<TutorialBeat> CreateDefaultBeats()
-        {
-            return CreateDefaultBeats(false);
-        }
-
-        public static List<TutorialBeat> CreateDefaultBeats(bool securityNodeInScene)
         {
             List<TutorialBeat> beats = new List<TutorialBeat>(48);
 
@@ -78,8 +64,9 @@ namespace Pawntom.Tutorial.Core
                 L("2-8", Hq, "숨이 차면 쉬십시오. 바닥나면 한동안 뛰지 못합니다")));
 
             beats.Add(TutorialBeat.Main("2-9", 2, TutorialSignal.ObstacleAhead,
+                // 안내는 상자 반대편(ObstacleCleared 영역)에 도착해야 사라진다 — 제자리 점프로는 지워지지 않는다.
                 L("2-9", Hq, "앞의 상자를 뛰어넘어 보십시오")
-                    .WithHint("[Space]키로 점프해봅시다", TutorialSignal.Jumped))
+                    .WithHint("[Space]키로 점프해봅시다", TutorialSignal.ObstacleCleared))
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("2-10", 2, TutorialSignal.CorridorAEndReached,
@@ -89,21 +76,19 @@ namespace Pawntom.Tutorial.Core
                 .AsSkippable());
 
             // ───────────── 3단계 첫 마주침 (복도 B, 본부) ─────────────
-            TutorialBeat nodeFound = TutorialBeat.Main("3-1", 3, TutorialSignal.NearSecurityNode,
+            // 3-1·3-3 은 건너뛸 수 없다 — 분전반 접속 없이 단말기(4단계)로 넘어가지 않는다.
+            // (분전반이 씬에 없으면 여기서 멈춘다. 디버그 F10 으로 강제 진행할 수 있다.)
+            beats.Add(TutorialBeat.Main("3-1", 3, TutorialSignal.NearSecurityNode,
                 L("3-1", Hq, "저 상자가 분전반입니다. 연결하면 금고 쪽 구역이 이쪽에 잡힙니다. 하는 동안은 움직일 수 없으니 주변부터 살피십시오")
                     .WithHint("[{Interact}]키를 길게 눌러 분전반에 접속합시다",
-                        TutorialSignal.SecurityNodeCastStarted, TutorialSignal.SecurityNodeConnected));
-
-            beats.Add(securityNodeInScene ? nodeFound : nodeFound.AsSkippable());
+                        TutorialSignal.SecurityNodeCastStarted, TutorialSignal.SecurityNodeConnected)));
 
             beats.Add(TutorialBeat.Main("3-2", 3, TutorialSignal.SecurityNodeThreatCue,
                 L("3-2", Cat, "...뭔가 오는 소리가 나요"))
                 .AsSkippable());
 
-            TutorialBeat nodeConnected = TutorialBeat.Main("3-3", 3, TutorialSignal.SecurityNodeConnected,
-                L("3-3", Hq, "연결됐습니다. 금고 쪽 구역이 잡혔습니다. 그런데..."));
-
-            beats.Add(securityNodeInScene ? nodeConnected : nodeConnected.AsSkippable());
+            beats.Add(TutorialBeat.Main("3-3", 3, TutorialSignal.SecurityNodeConnected,
+                L("3-3", Hq, "연결됐습니다. 금고 쪽 구역이 잡혔습니다. 그런데...")));
 
             beats.Add(TutorialBeat.Main("3-4", 3, TutorialSignal.EnemyChasing,
                 L("3-4", Hq, "경비견입니다! 발자국을 따라왔습니다. 한 마리가 짖으면 나머지도 몰려옵니다. 본부로 돌아오십시오, 지금 당장")

@@ -169,9 +169,13 @@ namespace Pawntom.TutorialBridge
             _audio = GetOrAdd<TutorialAudio>();
             _probe = GetOrAdd<TutorialSignalProbe>();
 
-            // 씬 로드 직후라 씬 오브젝트는 이미 있다. 분전반이 배치돼 있으면 3단계를 건너뛸 수 없게 한다.
-            bool securityNodeInScene = FindAnyObjectByType<TutorialSecurityNode>() != null;
-            TutorialScript script = TutorialScriptLibrary.CreateDefault(securityNodeInScene);
+            TutorialScript script = TutorialScriptLibrary.CreateDefault();
+
+            if (FindAnyObjectByType<TutorialSecurityNode>() == null)
+            {
+                Debug.LogWarning("[TutorialDirector] 씬에 TutorialSecurityNode(분전반)가 없습니다 — 3단계 3-1 에서 진행이 멈춥니다. " +
+                                 "분전반을 배치하거나, 미리보기는 F10 으로 강제 진행하세요.");
+            }
             BuildViews(script);
 
             _sequencer = new TutorialSequencer(script);

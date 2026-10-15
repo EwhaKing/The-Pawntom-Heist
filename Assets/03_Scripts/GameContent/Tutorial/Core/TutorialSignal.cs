@@ -105,6 +105,12 @@ namespace Pawntom.Tutorial.Core
         /// <summary>사망 판정.</summary>
         PlayerDied,
         /// <summary>사망 후 다시 움직일 수 있게 됐다(부활 또는 재스폰).</summary>
-        PlayerRespawned
+        PlayerRespawned,
+
+        // ── 추가 신호는 반드시 맨 뒤에 붙인다 ──
+        // TutorialZone 이 이 값을 정수로 직렬화하므로, 중간에 끼우면 씬에 배치된 영역의 신호가 밀린다.
+
+        /// <summary>2-9 장애물(상자)을 넘어 반대편(zoneEnd)에 도착했다.</summary>
+        ObstacleCleared
     }
 }

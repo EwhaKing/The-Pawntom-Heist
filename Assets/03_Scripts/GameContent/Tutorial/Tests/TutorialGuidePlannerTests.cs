@@ -53,6 +53,19 @@ namespace Pawntom.Tutorial.Tests
         }
 
         [Test]
+        public void Choose_JumpHintActive_PointsToFarSideOfObstacle()
+        {
+            // 2-9 "[Space]키로 점프해봅시다"가 걸려 있으면 상자 반대편(zoneEnd)을 가리킨다.
+            TutorialSequencer sequencer = StartedDefault();
+            Signal(sequencer, TutorialSignal.FirstFootprint);
+            Signal(sequencer, TutorialSignal.LookedBack);
+            Signal(sequencer, TutorialSignal.SprintStarted);
+            Signal(sequencer, TutorialSignal.ObstacleAhead);
+
+            Assert.AreEqual(TutorialSignal.ObstacleCleared, TutorialGuidePlanner.Choose(sequencer, Everything));
+        }
+
+        [Test]
         public void Choose_ObstacleNotInScene_LooksAheadToCorridorEnd()
         {
             TutorialSequencer sequencer = StartedDefault();
