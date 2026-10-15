@@ -41,14 +41,31 @@ public class ControllableWall : NetworkBehaviour
     [SerializeField] private Color minimapClosedColor = new Color(1f, 0.15f, 0.1f, 1f);
     [SerializeField] private Color minimapOpenColor = new Color(0.1f, 0.55f, 1f, 1f);
 
+    [Tooltip("해금됐지만 닫혀 있을 때(UI_SPEC: 열림·해금 = 푸른색)")]
+    [SerializeField] private Color minimapUnlockedColor = new Color(0.1f, 0.45f, 0.9f, 1f);
+
+    [Header("Field Open (현장 상호작용)")]
+    [Tooltip("현장에서 상호작용 키로 연 뒤 자동으로 닫힐 때까지의 시간. GAME_DESIGN 격벽: Open → 5초 후 Unlocked 회귀")]
+    [SerializeField, Min(0.5f)] private float fieldOpenSeconds = 5f;
+
+    [Tooltip("닫힐 차례에 문 자리에 플레이어가 있으면 이만큼 미룬다(끼임 방지)")]
+    [SerializeField, Min(0.1f)] private float closeRetrySeconds = 0.5f;
+
     [Networked, OnChangedRender(nameof(OnWallStateChanged))]
     public NetworkBool IsUnlocked { get; private set; }
 
     [Networked, OnChangedRender(nameof(OnWallStateChanged))]
     public NetworkBool IsOpen { get; private set; }
 
+    /// <summary>현장에서 연 경우 자동으로 닫힐 시각. 본부에서 연 경우(수동)는 None.</summary>
+    [Networked] private TickTimer AutoCloseTimer { get; set; }
+
     /// <summary>상태가 바뀔 때마다(원격 포함) 호출된다. UI가 구독해 새로고침한다.</summary>
     public event System.Action OnStateChanged;
+
+    // 닫혀 있을 때의 문 자리(콜라이더 경계). 열리면 콜라이더가 꺼지므로 미리 잡아 둔다.
+    private Bounds _doorwayBounds;
+    private bool _hasDoorwayBounds;
 
     private void Awake()
     {
@@ -67,6 +84,124 @@ public class ControllableWall : NetworkBehaviour
         {
             navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
         }
+
+        CacheDoorwayBounds();
+    }
+
+    private void CacheDoorwayBounds()
+    {
+        if (actualWallColliders == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < actualWallColliders.Length; i++)
+        {
+            Collider wallCollider = actualWallColliders[i];
+
+            if (wallCollider == null || !wallCollider.enabled || wallCollider.isTrigger)
+            {
+                continue;
+            }
+
+            if (!_hasDoorwayBounds)
+            {
+                _doorwayBounds = wallCollider.bounds;
+                _hasDoorwayBounds = true;
+            }
+            else
+            {
+                _doorwayBounds.Encapsulate(wallCollider.bounds);
+            }
+        }
+
+        // 문 앞뒤로 서 있는 플레이어도 "문 자리"로 본다.
+        _doorwayBounds.Expand(0.6f);
+    }
+
+    /// <summary>
+    /// 현장(침투조) 상호작용. 해금된(푸른) 격벽만 열리고, <see cref="fieldOpenSeconds"/> 뒤 자동으로 닫힌다.
+    /// 잠긴(붉은) 격벽이면 false — 본부 해킹으로 먼저 해금해야 한다.
+    /// </summary>
+    public bool TryFieldOpen()
+    {
+        if (!IsUnlocked)
+        {
+            Debug.Log($"[ControllableWall] {gameObject.name} 잠김 — 접근 거부. 본부에서 해킹으로 해금해야 합니다.");
+            return false;
+        }
+
+        if (IsOpen)
+        {
+            return false;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            DoFieldOpen();
+        }
+        else
+        {
+            RPC_RequestFieldOpen();
+        }
+
+        return true;
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_RequestFieldOpen()
+    {
+        DoFieldOpen();
+    }
+
+    private void DoFieldOpen()
+    {
+        if (!IsUnlocked || IsOpen)
+        {
+            return;
+        }
+
+        IsOpen = true;
+        AutoCloseTimer = TickTimer.CreateFromSeconds(Runner, fieldOpenSeconds);
+        Debug.Log($"[ControllableWall] {gameObject.name} 현장 개방 — {fieldOpenSeconds}초 뒤 자동으로 닫힘");
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (!Object.HasStateAuthority || !IsOpen || !AutoCloseTimer.Expired(Runner))
+        {
+            return;
+        }
+
+        if (IsDoorwayOccupied())
+        {
+            AutoCloseTimer = TickTimer.CreateFromSeconds(Runner, closeRetrySeconds);
+            return;
+        }
+
+        AutoCloseTimer = TickTimer.None;
+        IsOpen = false;
+        Debug.Log($"[ControllableWall] {gameObject.name} 자동으로 닫힘(해금 유지)");
+    }
+
+    private bool IsDoorwayOccupied()
+    {
+        if (!_hasDoorwayBounds)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < PlayerTarget.AllTargets.Count; i++)
+        {
+            PlayerTarget target = PlayerTarget.AllTargets[i];
+
+            if (target != null && _doorwayBounds.Contains(target.transform.position))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -143,6 +278,8 @@ public class ControllableWall : NetworkBehaviour
 
     private void DoSetOpen(bool open)
     {
+        // 본부에서 직접 열고 닫는 것은 수동 조작이다 — 현장 개방의 자동 닫힘 예약을 지운다.
+        AutoCloseTimer = TickTimer.None;
         IsOpen = open;
         Debug.Log($"[ControllableWall] {gameObject.name} {(open ? "열림" : "닫힘")}");
     }
@@ -215,7 +352,10 @@ public class ControllableWall : NetworkBehaviour
         // 미니맵/CCTV 표시용 벽만 색상 변경
         if (minimapWallRenderer != null)
         {
-            minimapWallRenderer.material.color = IsOpen ? minimapOpenColor : minimapClosedColor;
+            // 잠김 = 빨강, 해금(닫힘) = 파랑, 열림 = 밝은 파랑 (UI_SPEC 색 의미 규칙)
+            minimapWallRenderer.material.color = !IsUnlocked
+                ? minimapClosedColor
+                : (IsOpen ? minimapOpenColor : minimapUnlockedColor);
         }
     }
 }

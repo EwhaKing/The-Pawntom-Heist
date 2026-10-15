@@ -68,7 +68,9 @@ public class InputManager : PawntomSingleton<InputManager>
 
         // CCTV / MainbaseControlUI / 해킹 팝업 등 UI 조작 중이면
         // 이 클라이언트의 플레이어 입력만 막음
-        if (GameplayInputBlocker.IsBlocked)
+        // 해킹 미니게임 중에도 막는다 — 이동(Move)에 방향키가 묶여 있어 순서 입력(방향키)·타이밍(Space)이 이동·점프로 샌다.
+        // (GameplayInputBlocker 를 쓰지 않는 이유: 그쪽은 커서 잠금까지 바꿔, 단말기 위에서 해킹이 끝날 때 커서가 잠겨 버린다)
+        if (GameplayInputBlocker.IsBlocked || Hacking.HackingManager.AnyHackingActive)
         {
             data.Move = Vector2.zero;
             data.Look = Vector2.zero;

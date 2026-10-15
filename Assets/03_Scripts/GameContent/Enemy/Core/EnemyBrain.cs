@@ -59,6 +59,9 @@ namespace Pawntom.Enemy.Core
         // 틱마다 조회만 하므로 GC 할당이 없다. null 이 들어오면 K-9 기본 정책으로 채운다.
         private readonly IEnemyEngagementPolicy _engagement;
 
+        // 출입 금지 구역(본부). null 이면 제한 없음.
+        private IEnemySafeZone _safeZone;
+
         /// <param name="settings">수치 설정. null 이면 예외.</param>
         /// <param name="motor">이동 담당. null 이면 예외.</param>
         /// <param name="sources">감지 소스 목록. null 이면 감지가 없는 것으로 다룬다.</param>
@@ -157,6 +160,16 @@ namespace Pawntom.Enemy.Core
         /// 순찰 경로를 지정한다. 씬의 개체마다 다른 경로를 넣을 수 있다.
         /// 웨이포인트가 0개면 순찰 상태에서 제자리 대기한다.
         /// </summary>
+        /// <summary>
+        /// 출입 금지 구역을 지정한다. 이 안을 가리키는 감지 단서와 추적 좌표는 없는 것으로 다룬다 —
+        /// 대상이 구역에 들어가면 시야를 잃은 것과 같아져, 마지막으로 본 바깥 지점까지 쫓다가 Investigate 로 넘어간다.
+        /// null 이면 제한 없음. 생성자를 늘리지 않으려고 설정자로 둔다(기존 호출·테스트 무변경).
+        /// </summary>
+        public void SetSafeZone(IEnemySafeZone safeZone)
+        {
+            _safeZone = safeZone;
+        }
+
         public void SetPatrolRoute(IReadOnlyList<Vector3> waypoints, bool loop)
         {
             _patrol.SetRoute(waypoints, loop);
@@ -207,6 +220,11 @@ namespace Pawntom.Enemy.Core
         /// 기억이 한 틱에 두 번 흐를 여지가 없다.
         /// </para>
         /// </summary>
+        private bool IsInSafeZone(Vector3 point)
+        {
+            return _safeZone != null && _safeZone.Contains(point);
+        }
+
         private void Perceive(float deltaTime)
         {
             _snapshot.Clear();
@@ -222,7 +240,7 @@ namespace Pawntom.Enemy.Core
                 }
 
                 EnemyDetection detection;
-                if (source.TryDetect(out detection))
+                if (source.TryDetect(out detection) && !IsInSafeZone(detection.Position))
                 {
                     _snapshot.Add(detection);
                 }
@@ -504,7 +522,7 @@ namespace Pawntom.Enemy.Core
             if (_tracker != null)
             {
                 Vector3 tracked;
-                if (_tracker.TryTrack(LastKnownPoint, out tracked))
+                if (_tracker.TryTrack(LastKnownPoint, out tracked) && !IsInSafeZone(tracked))
                 {
                     SetTarget(tracked);
                     _motor.MoveTo(tracked, _settings.Movement.ChaseSpeed);

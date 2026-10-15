@@ -13,6 +13,28 @@ using UnityEngine;
 /// </summary>
 public class MainbaseControlUI : MonoBehaviour
 {
+    /// <summary>본부 터미널 탭. Position 이 CCTV(팀원·적 위치) 탭이다.</summary>
+    public enum Tab
+    {
+        Position,
+        Wall,
+        Sprinkler,
+        Light
+    }
+
+    /// <summary>터미널 UI가 열렸을 때. 튜토리얼 안내 등 외부 관찰용.</summary>
+    public static event System.Action Opened;
+
+    /// <summary>터미널 UI가 닫혔을 때.</summary>
+    public static event System.Action Closed;
+
+    /// <summary>탭이 바뀌었을 때.</summary>
+    public static event System.Action<Tab> TabShown;
+
+    public bool IsOpen => root != null && root.activeSelf;
+
+    public Tab CurrentTab { get; private set; }
+
     [Header("Root")]
     [SerializeField] private GameObject root;
 
@@ -68,6 +90,8 @@ public class MainbaseControlUI : MonoBehaviour
         GameplayInputBlocker.SetBlocked(true);
 
         Debug.Log("[MainbaseControlUI] UI 열림");
+
+        Opened?.Invoke();
     }
 
     /// <summary>
@@ -75,6 +99,9 @@ public class MainbaseControlUI : MonoBehaviour
     /// </summary>
     public void Close()
     {
+        // Awake 에서도 Close 를 부르므로, 실제로 열려 있다가 닫힐 때만 Closed 를 알린다.
+        bool wasOpen = IsOpen;
+
         if (root != null)
         {
             root.SetActive(false);
@@ -83,6 +110,11 @@ public class MainbaseControlUI : MonoBehaviour
         GameplayInputBlocker.SetBlocked(false);
 
         Debug.Log("[MainbaseControlUI] UI 닫힘");
+
+        if (wasOpen)
+        {
+            Closed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -125,6 +157,7 @@ public class MainbaseControlUI : MonoBehaviour
     public void ShowPositionTab()
     {
         SetLayer(layerPosition);
+        NotifyTab(Tab.Position);
 
         if (guideText != null)
         {
@@ -135,6 +168,7 @@ public class MainbaseControlUI : MonoBehaviour
     public void ShowWallTab()
     {
         SetLayer(layerWall);
+        NotifyTab(Tab.Wall);
 
         if (guideText != null)
         {
@@ -145,6 +179,7 @@ public class MainbaseControlUI : MonoBehaviour
     public void ShowSprinklerTab()
     {
         SetLayer(layerSprinkler);
+        NotifyTab(Tab.Sprinkler);
 
         if (guideText != null)
         {
@@ -155,11 +190,18 @@ public class MainbaseControlUI : MonoBehaviour
     public void ShowLightTab()
     {
         SetLayer(layerLight);
+        NotifyTab(Tab.Light);
 
         if (guideText != null)
         {
             guideText.text = "전등을 조작할 구역을 선택하세요.";
         }
+    }
+
+    private void NotifyTab(Tab tab)
+    {
+        CurrentTab = tab;
+        TabShown?.Invoke(tab);
     }
 
     private void SetLayer(GameObject targetLayer)

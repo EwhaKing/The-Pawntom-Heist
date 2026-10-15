@@ -138,6 +138,38 @@ namespace Pawntom.Enemy.Authoring
                 _targetTracker,
                 wander,
                 _engagementPolicy == null ? null : _engagementPolicy.Policy);
+
+            // 본부 등 출입 금지 구역. 구역이 하나도 없으면 판정은 늘 false 다.
+            _brain.SetSafeZone(EnemySafeZone.Registry);
+        }
+
+        private static readonly List<EnemyAgent> ActiveAgents = new List<EnemyAgent>(8);
+
+        /// <summary>
+        /// 씬에 켜져 있는 적 전체. CCTV 평면도의 적 마커처럼 적 위치를 보여 주는 쪽이 매 프레임 할당 없이 읽는다.
+        /// </summary>
+        public static IReadOnlyList<EnemyAgent> Active
+        {
+            get { return ActiveAgents; }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveAgents()
+        {
+            ActiveAgents.Clear();
+        }
+
+        private void OnEnable()
+        {
+            if (!ActiveAgents.Contains(this))
+            {
+                ActiveAgents.Add(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            ActiveAgents.Remove(this);
         }
 
 #if UNITY_EDITOR

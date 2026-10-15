@@ -494,11 +494,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   playerCamera: {fileID: 228144081064392142}
-  lookSensitivity: 0.07
+  lookSensitivity: 0.2
   minPitch: -20
   maxPitch: 20
   walkSpeed: 1
   sprintSpeed: 2.25
+  jumpHeight: 0.9
+  jumpRiseSeconds: 0.6
+  deriveGravityFromJump: 1
   jumpCutMultiplier: 0.45
 --- !u!114 &-992902756951653428
 MonoBehaviour:
@@ -515,6 +518,7 @@ MonoBehaviour:
   playerCamera: {fileID: 228144081064392142}
   interactDistance: 100
   interactRadius: 2
+  wallInteractDistance: 3
 --- !u!114 &3836724543608950607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -616,16 +620,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FurTrailSpawner
   furBallPrefab: {fileID: 1207327911143679822, guid: 7848e7833e37d0f44aed5dcb4c801b18, type: 3}
-  walkSpawnDistance: 20
-  sprintSpawnDistance: 35
-  horizontalSpread: 15
-  longitudinalSpread: 15
-  rayStartHeight: 5
-  groundCheckDistance: 40
+  walkSpawnDistance: 0.7
+  sprintSpawnDistance: 1.3
+  horizontalSpread: 0.35
+  longitudinalSpread: 0.35
+  rayStartHeight: 0.5
+  groundCheckDistance: 2
   groundLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  surfaceOffset: 0.3
+  surfaceOffset: 0.03
   alignToGroundNormal: 1
   randomizeRotation: 1
 --- !u!114 &6927131166089411136
