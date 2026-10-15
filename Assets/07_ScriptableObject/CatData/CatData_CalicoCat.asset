@@ -14,7 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatData
   catType: 3
   displayName: "\uCE7C\uB9AC\uACE0\uACE0\uC591\uC774"
-  lobbySprite: {fileID: 21300000, guid: 3e3941f618da8a14e9bae39549c2bc81, type: 3}
+  lobbySprite: {fileID: 531873602, guid: e34aa79ca2eef594d9ff0830c3fbe01f, type: 3}
   characterSelectIllustration: {fileID: 21300000, guid: e315166f14aa47642860c69aa1c51e41, type: 3}
   playerPrefab: {fileID: 0}
+  maxHealth: 100
+  maxStamina: 100
+  staminaRegenRate: 20
+  sprintStaminaCost: 10
+  jumpStaminaCost: 15
+  parkourStaminaCost: 35
+  exhaustedDuration: 3
   description: CalicoCatDescription
