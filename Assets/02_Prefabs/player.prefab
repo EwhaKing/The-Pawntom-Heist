@@ -516,9 +516,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   playerCamera: {fileID: 228144081064392142}
-  interactDistance: 100
-  interactRadius: 2
-  wallInteractDistance: 3
+  interactDistance: 20
+  interactRadius: 0.5
+  wallInteractDistance: 5
 --- !u!114 &3836724543608950607
 MonoBehaviour:
   m_ObjectHideFlags: 0
