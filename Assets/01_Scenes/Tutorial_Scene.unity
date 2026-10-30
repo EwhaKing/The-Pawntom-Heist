@@ -37900,6 +37900,7 @@ GameObject:
   - component: {fileID: 1272361101}
   - component: {fileID: 1272361100}
   - component: {fileID: 1272361099}
+  - component: {fileID: 1272361103}
   m_Layer: 0
   m_Name: MinimapCamera
   m_TagString: Untagged
@@ -38000,7 +38001,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 30
+  orthographic size: 6
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -38031,6 +38032,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 270, z: 0}
+--- !u!114 &1272361103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272361098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d29c137e0c894949b4faa5deb645f90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MinimapCameraStyle
+  usePlayerStyle: 1
 --- !u!1 &1273662104
 GameObject:
   m_ObjectHideFlags: 0

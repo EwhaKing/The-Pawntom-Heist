@@ -12,7 +12,8 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USEPLAYERSTYLE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -26,7 +27,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _ShowInPerspective: 0
+    - _UsePlayerStyle: 1
     m_Colors:
     - _BaseColor: {r: 0.9647059, g: 0.972549, b: 0.9647059, a: 1}
+    - _PlayerColor: {r: 0.23921569, g: 0.92156863, b: 0.23921569, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
