@@ -18,7 +18,43 @@ namespace Pawntom.Enemy.Adapters
         private readonly Transform _transform;
         private readonly float _arriveDistance;
 
+        // 겹침 방지: 다른 적들의 현재 위치를 채워 주는 공급자. null 이면 비키지 않는다.
+        private readonly Action<Transform, System.Collections.Generic.List<Vector3>> _fillOthers;
+        private readonly System.Collections.Generic.List<Vector3> _others = new System.Collections.Generic.List<Vector3>(8);
+        private readonly float _separation;
+
+        // 플레이어(살아 있는 추격 대상) 앞 멈춤 거리. 흔적·웨이포인트에는 쓰지 않는다 —
+        // 흔적은 "도달 거리(ReachDistance) 안에 들어가야" 지워지므로 그 앞에서 멈추면 영영 못 지운다.
+        private readonly float _targetStopDistance;
+        private readonly Func<Vector3, bool> _isLiveTarget;
+
         public NavMeshEnemyMotor(NavMeshAgent agent, float arriveDistance)
+            : this(agent, arriveDistance, 0f, null, 0f, null)
+        {
+        }
+
+        /// <param name="targetStopDistance">
+        /// 목적지가 플레이어일 때 그 앞에서 멈추는 거리. 0 이면 대상 몸 안까지 파고들어 CharacterController 가 계속 밀려난다.
+        /// </param>
+        /// <param name="isLiveTarget">목적지가 플레이어 위치인지 판정. null 이면 멈춤 거리를 쓰지 않는다.</param>
+        /// <param name="separation">다른 적과 목적지가 겹칠 때 둘 최소 간격. 0 이면 비키지 않는다.</param>
+        /// <param name="fillOthers">(나, 결과 버퍼) → 다른 적들의 현재 위치를 버퍼에 채운다. 할당 없이 재사용 버퍼를 쓴다.</param>
+        public NavMeshEnemyMotor(
+            NavMeshAgent agent,
+            float arriveDistance,
+            float targetStopDistance,
+            Func<Vector3, bool> isLiveTarget,
+            float separation,
+            Action<Transform, System.Collections.Generic.List<Vector3>> fillOthers)
+            : this(agent, arriveDistance, true)
+        {
+            _targetStopDistance = Mathf.Max(0f, targetStopDistance);
+            _isLiveTarget = isLiveTarget;
+            _separation = Mathf.Max(0f, separation);
+            _fillOthers = fillOthers;
+        }
+
+        private NavMeshEnemyMotor(NavMeshAgent agent, float arriveDistance, bool _)
         {
             if (agent == null)
             {
@@ -77,6 +113,20 @@ namespace Pawntom.Enemy.Adapters
 
             _agent.speed = speed;
             _agent.isStopped = false;
+
+            // 플레이어를 쫓을 때만 그 앞에서 멈춘다(몸으로 밀어붙여 플레이어가 못 움직이게 되는 것 방지).
+            _agent.stoppingDistance = _targetStopDistance > 0f && _isLiveTarget != null && _isLiveTarget(destination)
+                ? _targetStopDistance
+                : 0f;
+
+            // 같은 지점을 노리는 다른 적이 이미 그 근처에 있으면 그 앞에서 멈추도록 비켜 준다(겹침 방지).
+            if (_fillOthers != null && _separation > 0f)
+            {
+                _others.Clear();
+                _fillOthers(_transform, _others);
+                destination = EnemySeparation.AdjustDestination(_transform.position, destination, _others, _separation);
+            }
+
             _agent.SetDestination(destination);
         }
 
