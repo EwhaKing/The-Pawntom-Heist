@@ -35,6 +35,9 @@ public class PlayerController : NetworkBehaviour
     private NetworkCharacterController _controller;
     private PlayerData _playerData;
 
+    public float WalkSpeed => walkSpeed;
+    public float SprintSpeed => sprintSpeed;
+
     private float _pitch; // 카메라의 위아래 회전값
     private NetworkButtons _previousButtons; // 이전 프레임의 버튼 상태를 저장하는 변수
 

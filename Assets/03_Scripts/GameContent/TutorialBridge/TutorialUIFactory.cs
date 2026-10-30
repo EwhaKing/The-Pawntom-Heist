@@ -192,6 +192,33 @@ namespace Pawntom.TutorialBridge
             return texture;
         }
 
+        /// <summary>
+        /// 아래를 가리키는 흰 삼각형(가장자리 부드럽게). 대사 "다음" 표시용 — 폰트에 ▼ 글리프가 없어도 깨지지 않도록 그림으로 만든다.
+        /// </summary>
+        public Texture2D CreateDownTriangleTexture(int width, int height)
+        {
+            Texture2D texture = NewTexture(width, height, "TutorialNextArrow");
+            Color32[] pixels = new Color32[width * height];
+
+            for (int y = 0; y < height; y++)
+            {
+                // y = 0 이 아래(꼭짓점), y = height - 1 이 위(밑변)
+                float row = (y + 0.5f) / height;
+                float halfWidth = row * width * 0.5f;
+
+                for (int x = 0; x < width; x++)
+                {
+                    float fromCenter = Mathf.Abs(x + 0.5f - width * 0.5f);
+                    float alpha = Mathf.Clamp01(halfWidth - fromCenter + 0.5f);
+                    pixels[y * width + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
+        }
+
         /// <summary>가로 주사선. RawImage.uvRect 로 세로 반복해 쓴다.</summary>
         public Texture2D CreateScanlineTexture()
         {

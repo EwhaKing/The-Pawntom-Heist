@@ -126,7 +126,15 @@ namespace Pawntom.Enemy.Authoring
             // 두뇌를 만들기 전에 걸어 둔다. 두뇌는 첫 Enter* 에서 상태에 맞는 값으로 다시 덮어쓴다.
             ApplyMovementSettings();
 
-            NavMeshEnemyMotor motor = new NavMeshEnemyMotor(_navMeshAgent, _settings.Patrol.ArriveDistance);
+            // 멈춤 거리: 추격 대상 몸 안까지 파고들어 플레이어를 계속 밀어내지 않도록.
+            // 겹침 방지: 같은 지점을 노리는 다른 적이 있으면 그 앞에서 멈추도록 목적지를 비킨다.
+            NavMeshEnemyMotor motor = new NavMeshEnemyMotor(
+                _navMeshAgent,
+                _settings.Patrol.ArriveDistance,
+                _settings.Movement.StopDistance,
+                IsLiveTargetPosition,
+                _settings.Movement.SeparationDistance,
+                FillOtherAgentPositions);
             NavMeshWanderPointProvider wander =
                 new NavMeshWanderPointProvider(_settings.Investigate.WanderSampleDistance);
 
@@ -164,6 +172,69 @@ namespace Pawntom.Enemy.Authoring
             if (!ActiveAgents.Contains(this))
             {
                 ActiveAgents.Add(this);
+            }
+
+            // 회피 우선순위가 모두 같으면(기본 50) 마주친 두 마리가 서로 양보하지 못해 겹친다.
+            // 개체마다 다른 값을 줘 한쪽이 비켜 가게 한다(낮을수록 우선 — 30~68 사이에서 겹치지 않게 분산).
+            if (_navMeshAgent == null)
+            {
+                _navMeshAgent = GetComponent<NavMeshAgent>();
+            }
+
+            if (_navMeshAgent != null)
+            {
+                _navMeshAgent.avoidancePriority = 30 + (ActiveAgents.IndexOf(this) * 13) % 39;
+            }
+        }
+
+        /// <summary>
+        /// 이 좌표가 지금 플레이어(감지 대상)가 서 있는 곳인가. 추격 목적지일 때만 멈춤 거리를 쓰기 위한 판정(할당 없음).
+        /// 시야 좌표는 대상의 현재 위치라 수평 거리로 비교한다.
+        /// </summary>
+        private bool IsLiveTargetPosition(Vector3 position)
+        {
+            if (_targetProvider == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<Transform> targets = _targetProvider.Targets;
+            const float matchDistance = 0.75f;
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Transform target = targets[i];
+
+                if (target == null)
+                {
+                    continue;
+                }
+
+                Vector3 delta = target.position - position;
+                delta.y = 0f;
+
+                if (delta.sqrMagnitude <= matchDistance * matchDistance)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>나를 뺀 다른 활성 적들의 위치를 버퍼에 채운다(이동 모터의 겹침 방지용, 할당 없음).</summary>
+        private static void FillOtherAgentPositions(Transform self, List<Vector3> buffer)
+        {
+            for (int i = 0; i < ActiveAgents.Count; i++)
+            {
+                EnemyAgent other = ActiveAgents[i];
+
+                if (other == null || other.transform == self || !other.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                buffer.Add(other.transform.position);
             }
         }
 

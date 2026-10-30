@@ -15,6 +15,18 @@ namespace Hacking
         protected float currentTime;
         protected bool isActive;
 
+        /// <summary>
+        /// 다른 화면(튜토리얼 대사 등)이 미니게임을 잠시 멈춰 둔다. 멈춘 동안 타이머·입력·UI 버튼 입력이 모두 멈춘다.
+        /// 대사를 읽는 동안 제한 시간이 흘러 조작도 못 하고 실패하는 것을 막는다.
+        /// </summary>
+        public static bool Paused { get; set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Paused = false;
+        }
+
         /// <summary>HackingPopupView가 타이머 UI를 갱신할 때 참조합니다.</summary>
         public float CurrentTime => currentTime;
         public float TimeLimit => timeLimit;
@@ -56,7 +68,7 @@ namespace Hacking
 
         protected virtual void Update()
         {
-            if (!isActive) return;
+            if (!isActive || Paused) return;
 
             UpdateTimer();
             if (!isActive) return; // 타이머 종료로 이미 FinishGame이 호출됐을 수 있음

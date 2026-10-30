@@ -173,6 +173,12 @@ namespace Pawntom.Tutorial.Core
             get { return _hasCurrent ? _current.Line : null; }
         }
 
+        /// <summary>지금 표시 중인 대사가 속한 비트. 없으면 null. 메인 대사인지(클릭으로 넘기는지) 가르는 데 쓴다.</summary>
+        public TutorialBeat CurrentBeat
+        {
+            get { return _hasCurrent ? _current.Owner : null; }
+        }
+
         /// <summary>표시 중인 대사도, 기다리는 대사도 없다. 키 안내 문구는 이때만 보인다.</summary>
         public bool IsDialogueIdle
         {

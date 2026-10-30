@@ -26,7 +26,18 @@ namespace Pawntom.Enemy.Core
         [Tooltip("이동 중 몸이 도는 속도(도/초). 이동 명령과 함께 나간다. 경계(Alert) 그룹의 Turn Speed Degrees — 제자리 조준 회전 — 와는 다른 값이다")]
         [SerializeField] private float _turnSpeedDegrees = 540f;
 
+        [Tooltip("플레이어를 쫓을 때 그 앞에서 멈추는 거리(m). 0 이면 대상 몸 안까지 파고들어 플레이어를 계속 밀어낸다. " +
+                 "에이전트 반지름 + 플레이어 반지름보다 조금 크게 둔다. 흔적·웨이포인트에는 쓰지 않는다(흔적은 도달 거리 안에 들어가야 지워진다)")]
+        [SerializeField] private float _stopDistance = 1.1f;
+
+        [Tooltip("다른 적과 목적지가 겹칠 때 둘 최소 간격(m). 0 이면 비키지 않는다(같은 웨이포인트·소집 좌표에서 겹침)")]
+        [SerializeField] private float _separationDistance = 1.3f;
+
         public float PatrolSpeed { get { return _patrolSpeed; } }
+
+        public float StopDistance { get { return _stopDistance; } }
+
+        public float SeparationDistance { get { return _separationDistance; } }
 
         public float ChaseSpeed { get { return _chaseSpeed; } }
 
@@ -175,6 +186,28 @@ namespace Pawntom.Enemy.Core
     }
 
     /// <summary>
+    /// 공격(접촉 피해) 수치. GAME_DESIGN.md 3.7 "적 AI 충돌로 HP 0 이하" — 피해량·간격은 기획서에 없어 시작값이며 L3 에서 조정한다.
+    /// </summary>
+    [Serializable]
+    public class EnemyAttackSettings
+    {
+        [Tooltip("추격 중 플레이어에게 닿았을 때 한 번에 깎는 체력")]
+        [SerializeField, Min(0f)] private float _damage = 20f;
+
+        [Tooltip("공격이 닿는 수평 거리(m). 추격 멈춤 거리(Movement 그룹 Stop Distance)보다 커야 멈춘 자리에서 닿는다")]
+        [SerializeField, Min(0f)] private float _range = 1.5f;
+
+        [Tooltip("공격 뒤 같은 플레이어를 다시 물기까지의 시간(초)")]
+        [SerializeField, Min(0.05f)] private float _cooldownSeconds = 1.0f;
+
+        public float Damage { get { return _damage; } }
+
+        public float Range { get { return _range; } }
+
+        public float CooldownSeconds { get { return _cooldownSeconds; } }
+    }
+
+    /// <summary>
     /// K-9 한 마리의 수치 설정.
     /// <para>
     /// 별도 애셋 파일 없이 인스펙터에서 개체마다 다른 값을 줄 수 있도록
@@ -200,8 +233,11 @@ namespace Pawntom.Enemy.Core
         [SerializeField] private EnemyInvestigateSettings _investigate = new EnemyInvestigateSettings();
         [SerializeField] private EnemyChaseSettings _chase = new EnemyChaseSettings();
         [SerializeField] private EnemyTraceSettings _trace = new EnemyTraceSettings();
+        [SerializeField] private EnemyAttackSettings _attack = new EnemyAttackSettings();
 
         public EnemyMovementSettings Movement { get { return _movement; } }
+
+        public EnemyAttackSettings Attack { get { return _attack; } }
 
         public EnemyPerceptionSettings Perception { get { return _perception; } }
 

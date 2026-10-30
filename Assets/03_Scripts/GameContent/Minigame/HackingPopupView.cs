@@ -395,6 +395,12 @@ namespace Hacking
                 return;
             }
 
+            // 다른 화면(튜토리얼 대사)이 미니게임을 멈춰 둔 동안에는 버튼 입력도 받지 않는다.
+            if (HackingGameBase.Paused)
+            {
+                return;
+            }
+
             currentGame.ReceiveVirtualInput(key);
         }
 

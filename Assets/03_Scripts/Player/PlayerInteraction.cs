@@ -104,6 +104,13 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
 
+        // 연출 중 잠금(튜토리얼 대사·오프닝 등)으로 게임 입력이 꺼져 있으면 E 도 막는다.
+        // E 는 입력 액션이 아니라 키를 직접 읽어서, 액션을 꺼도 따로 확인해야 한다.
+        if (InputManager.Instance != null && !InputManager.Instance.IsGameplayInputEnabled)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             Debug.Log("[PlayerInteraction] E키 입력 감지");
@@ -242,13 +249,23 @@ public class PlayerInteraction : NetworkBehaviour
         // 4. 월드 아이템 획득
         // ==========================================
 
-        NetworkItem item =
-            hit.collider.GetComponentInParent<NetworkItem>();
+        if (hit.collider.GetComponentInParent<NetworkItem>() == null)
+        {
+            Debug.Log(
+                "[PlayerInteraction] 맞춘 오브젝트에 NetworkItem이 없습니다."
+            );
+
+            return;
+        }
+
+        // 가장 가까운 콜라이더가 곧 겨눈 아이템은 아니다 — 콜라이더가 보이는 모양보다 큰 아이템(그림 등)이
+        // 옆 아이템 앞을 덮고 있으면 그쪽이 먼저 맞는다. 광선에 걸린 아이템들 중 보이는 모양을 겨눈 것을 다시 고른다.
+        NetworkItem item = FindAimedItem(ray);
 
         if (item == null)
         {
             Debug.Log(
-                "[PlayerInteraction] 맞춘 오브젝트에 NetworkItem이 없습니다."
+                "[PlayerInteraction] 조준선이 아이템의 보이는 모양을 겨누고 있지 않습니다."
             );
 
             return;
@@ -316,6 +333,125 @@ public class PlayerInteraction : NetworkBehaviour
         {
             RPC_RequestDespawnItem(item.Object);
         }
+    }
+
+    /// <summary>
+    /// 광선(과 보조 SphereCast)에 걸린 아이템 중 조준선이 실제로 겨눈 것을 고른다.
+    /// 판정은 콜라이더가 아니라 렌더러 경계로 한다(<see cref="Pawntom.Player.Core.InteractAimSelector"/>).
+    /// 아이템이 아닌 단단한 물체(벽 등)보다 뒤에 있는 아이템은 고르지 않는다. E 를 누를 때만 불린다.
+    /// </summary>
+    private NetworkItem FindAimedItem(Ray ray)
+    {
+        System.Collections.Generic.List<NetworkItem> items = new System.Collections.Generic.List<NetworkItem>(4);
+        float blockDistance = float.MaxValue;
+
+        CollectItems(Physics.RaycastAll(ray, interactDistance, interactLayerMask, QueryTriggerInteraction.Collide), items, ref blockDistance);
+        CollectItems(Physics.SphereCastAll(ray, interactRadius, interactDistance, interactLayerMask, QueryTriggerInteraction.Collide), items, ref blockDistance);
+
+        System.Collections.Generic.List<Bounds> visuals = new System.Collections.Generic.List<Bounds>(items.Count);
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            visuals.Add(VisualBounds(items[i]));
+        }
+
+        int chosen = Pawntom.Player.Core.InteractAimSelector.Choose(ray, interactDistance, visuals, interactRadius, blockDistance);
+        return chosen >= 0 ? items[chosen] : null;
+    }
+
+    private void CollectItems(RaycastHit[] hits, System.Collections.Generic.List<NetworkItem> items, ref float blockDistance)
+    {
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i].collider;
+
+            if (col == null || IsMyCollider(col))
+            {
+                continue;
+            }
+
+            NetworkItem item = col.GetComponentInParent<NetworkItem>();
+
+            if (item != null)
+            {
+                if (!items.Contains(item))
+                {
+                    items.Add(item);
+                }
+
+                continue;
+            }
+
+            // 아이템이 아닌 단단한 물체(벽·선반)는 그 뒤를 가린다. SphereCast 는 옆을 스치는 것까지 맞으므로 광선 위의 점만 가림으로 친다.
+            if (!col.isTrigger && hits[i].distance > 0f && hits[i].distance < blockDistance && IsOnRay(hits[i]))
+            {
+                blockDistance = hits[i].distance;
+            }
+        }
+    }
+
+    // SphereCast 결과는 광선 옆을 스친 것일 수 있다. 맞은 점이 광선에서 반경보다 멀면 가림으로 치지 않는다.
+    private bool IsOnRay(RaycastHit hit)
+    {
+        if (playerCamera == null)
+        {
+            return true;
+        }
+
+        Vector3 origin = playerCamera.transform.position;
+        Vector3 direction = playerCamera.transform.forward;
+        Vector3 toPoint = hit.point - origin;
+        Vector3 perpendicular = toPoint - direction * Vector3.Dot(toPoint, direction);
+        return perpendicular.sqrMagnitude <= 0.0025f; // 5cm
+    }
+
+    /// <summary>아이템의 보이는 경계. 크기가 있는 렌더러만 합친다(빈 루트 렌더러 제외). 없으면 콜라이더 경계.</summary>
+    private static Bounds VisualBounds(NetworkItem item)
+    {
+        bool has = false;
+        Bounds bounds = new Bounds(item.transform.position, Vector3.zero);
+        Renderer[] renderers = item.GetComponentsInChildren<Renderer>();
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+
+            if (!renderer.enabled || renderer.bounds.size.sqrMagnitude < 0.0001f)
+            {
+                continue;
+            }
+
+            if (!has)
+            {
+                bounds = renderer.bounds;
+                has = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        if (has)
+        {
+            return bounds;
+        }
+
+        Collider[] colliders = item.GetComponentsInChildren<Collider>();
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (i == 0)
+            {
+                bounds = colliders[i].bounds;
+            }
+            else
+            {
+                bounds.Encapsulate(colliders[i].bounds);
+            }
+        }
+
+        return bounds;
     }
 
     /// <summary>

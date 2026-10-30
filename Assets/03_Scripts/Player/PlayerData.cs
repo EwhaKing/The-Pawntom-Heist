@@ -75,6 +75,49 @@ public class PlayerData : NetworkBehaviour
             IsExhausted = false;
             ExhaustedTimer = TickTimer.None;
         }
+
+        if (Object.HasStateAuthority && !IsDead)
+        {
+            TickEnemyContactDamage();
+        }
+    }
+
+    // 적 접촉 피해(GAME_DESIGN.md 3.7 "적 AI 충돌로 HP 0 이하"). 적 두뇌는 상태 권한 쪽(호스트)에서만 돌기 때문에
+    // 플레이어 상태 권한도 같은 호스트에서 판정한다. 판정 규칙은 EnemyContactDamage(순수 C#).
+    // 위아래로 1m 넘게 떨어져 있으면(상자 위로 피함) 닿지 않은 것으로 본다.
+    private const float EnemyContactVerticalTolerance = 1f;
+    private readonly Pawntom.Enemy.Core.EnemyContactDamage _enemyContact =
+        new Pawntom.Enemy.Core.EnemyContactDamage(EnemyContactVerticalTolerance);
+    private readonly System.Collections.Generic.List<Pawntom.Enemy.Core.EnemyAttacker> _attackers =
+        new System.Collections.Generic.List<Pawntom.Enemy.Core.EnemyAttacker>(8);
+
+    private void TickEnemyContactDamage()
+    {
+        _attackers.Clear();
+        System.Collections.Generic.IReadOnlyList<Pawntom.Enemy.Authoring.EnemyAgent> enemies =
+            Pawntom.Enemy.Authoring.EnemyAgent.Active;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Pawntom.Enemy.Authoring.EnemyAgent enemy = enemies[i];
+
+            // 쫓아와서 닿았을 때만 문다. 순찰 중 스친 접촉은 감지(경계→추격)로 이어지고, 추격이 되면 그때 문다.
+            if (enemy == null || !enemy.isActiveAndEnabled || enemy.State != Pawntom.Enemy.Core.EnemyState.Chase)
+            {
+                continue;
+            }
+
+            Pawntom.Enemy.Core.EnemyAttackSettings attack = enemy.Settings.Attack;
+            _attackers.Add(new Pawntom.Enemy.Core.EnemyAttacker(
+                enemy.transform.position, attack.Range, attack.Damage, attack.CooldownSeconds));
+        }
+
+        float damage = _enemyContact.Tick(Runner.DeltaTime, transform.position, _attackers);
+
+        if (damage > 0f)
+        {
+            ApplyDamage(damage);
+        }
     }
 
     public void ApplyDamage(float amount)

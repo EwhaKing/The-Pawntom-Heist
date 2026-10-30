@@ -21,11 +21,74 @@ public class InputManager : PawntomSingleton<InputManager>
     private InputSystemActions _inputActions;
     private bool _isGameplayInputEnabled;
 
+    /// <summary>
+    /// 게임 플레이 입력이 켜져 있는가. 입력 액션을 거치지 않고 키를 직접 읽는 곳(E 상호작용 등)이
+    /// 연출 중 잠금(튜토리얼 대사·오프닝)을 따르도록 확인한다.
+    /// </summary>
+    public bool IsGameplayInputEnabled => _isGameplayInputEnabled;
+
+    // 프레임 단위로 모아 두는 "한 번만" 입력. Fusion 은 입력을 틱마다(초당 64회) 걷어 가는데 프레임과 박자가 다르다 —
+    // 수집 순간에만 wasPressedThisFrame 을 읽으면 틱이 없는 프레임의 눌림은 사라지고, 한 프레임에 틱이 두 번 돌면
+    // 같은 눌림이 두 번 들어가 슬롯 선택이 켜졌다 바로 꺼졌다(토글). 그래서 Update 에서 모으고, 수집 때 한 번 내보내고 비운다.
+    private int _pendingSlot = -1;
+    private int _pendingScroll;
+    private bool _pendingDrop;
+
     protected override void Awake()
     {
         base.Awake();
 
         _inputActions = new InputSystemActions();
+    }
+
+    private void Update()
+    {
+        if (!_isGameplayInputEnabled || GameplayInputBlocker.IsBlocked || Hacking.HackingManager.AnyHackingActive)
+        {
+            ClearPending();
+            return;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard != null)
+        {
+            if (keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame) _pendingSlot = 0;
+            else if (keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame) _pendingSlot = 1;
+            else if (keyboard.digit3Key.wasPressedThisFrame || keyboard.numpad3Key.wasPressedThisFrame) _pendingSlot = 2;
+            else if (keyboard.digit4Key.wasPressedThisFrame || keyboard.numpad4Key.wasPressedThisFrame) _pendingSlot = 3;
+
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                _pendingDrop = true;
+            }
+        }
+
+        Mouse mouse = Mouse.current;
+
+        if (mouse != null)
+        {
+            // 휠 한 칸 = 한 프레임의 스크롤 값. 위로 굴리면 이전 칸, 아래로 굴리면 다음 칸(기존 방향 유지).
+            float scrollY = mouse.scroll.ReadValue().y;
+
+            if (scrollY > 0f)
+            {
+                _pendingScroll = Mathf.Max(_pendingScroll - 1, -MaxScrollSteps);
+            }
+            else if (scrollY < 0f)
+            {
+                _pendingScroll = Mathf.Min(_pendingScroll + 1, MaxScrollSteps);
+            }
+        }
+    }
+
+    private const int MaxScrollSteps = 4;
+
+    private void ClearPending()
+    {
+        _pendingSlot = -1;
+        _pendingScroll = 0;
+        _pendingDrop = false;
     }
 
     /// <summary>
@@ -90,39 +153,11 @@ public class InputManager : PawntomSingleton<InputManager>
         data.Buttons.Set((int)InputButton.Sprint, _inputActions.Player.Sprint.IsPressed());
         data.Buttons.Set((int)InputButton.Interact, _inputActions.Player.Interact.IsPressed());
 
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
-            {
-                data.SelectedSlotIndex = 0;
-            }
-            else if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
-            {
-                data.SelectedSlotIndex = 1;
-            }
-            else if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame)
-            {
-                data.SelectedSlotIndex = 2;
-            }
-            else if (Keyboard.current.digit4Key.wasPressedThisFrame || Keyboard.current.numpad4Key.wasPressedThisFrame)
-            {
-                data.SelectedSlotIndex = 3;
-            }
-        }
-
-        if (Mouse.current != null)
-        {
-            float scrollY = Mouse.current.scroll.ReadValue().y;
-
-            if (scrollY > 0f)
-            {
-                data.SlotScrollDirection = -1;
-            }
-            else if (scrollY < 0f)
-            {
-                data.SlotScrollDirection = 1;
-            }
-        }
+        // 모아 둔 한 번짜리 입력을 내보내고 비운다(같은 프레임에 틱이 두 번 돌아도 두 번째 틱에는 들어가지 않는다).
+        data.SelectedSlotIndex = _pendingSlot;
+        data.SlotScrollDirection = _pendingScroll;
+        data.DropItem = _pendingDrop;
+        ClearPending();
 
         // 아이템 상호 작용 키
         data.Buttons.Set((int)InputButton.Interact, _inputActions.Player.Interact.IsPressed());
