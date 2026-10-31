@@ -47,6 +47,29 @@ namespace Pawntom.Tutorial.Tests
         // ── 메인 진행 ──
 
         [Test]
+        public void SkipMainsBefore_UnblocksLaterBeat_WhenEarlierNonSkippableBeatIsPending()
+        {
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("c", 7, TutorialSignal.CatnipAcquired, L("c")).AsAnchor());
+            List<string> started = RecordLines(sequencer);
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+
+            // b(추격)가 아직 안 열렸는데 c(캣닢)의 신호가 먼저 온다 — b 는 건너뛸 수 없어 c 를 막는다.
+            Signal(sequencer, TutorialSignal.CatnipAcquired);
+            Assert.AreEqual(new[] { "a" }, started.ToArray(), "사전 조건: 앞 비트가 줄을 막고 있다");
+
+            int skipped = sequencer.SkipMainsBefore("c");
+            Signal(sequencer, TutorialSignal.CatnipAcquired);
+
+            Assert.AreEqual(1, skipped);
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("b"));
+            Assert.AreEqual(new[] { "a", "c" }, started.ToArray());
+        }
+
+        [Test]
         public void Tick_BeforeTrigger_StartsNoLine()
         {
             TutorialSequencer sequencer = Make(TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")));

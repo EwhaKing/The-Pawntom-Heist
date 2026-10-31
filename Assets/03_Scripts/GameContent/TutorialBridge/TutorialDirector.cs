@@ -93,6 +93,8 @@ namespace Pawntom.TutorialBridge
         private bool _hasCheckpoint;
         private Vector3 _checkpointPosition;
         private Quaternion _checkpointRotation;
+        private string _checkpointBeatId;
+        private TutorialSignal _lastLocationSignal;
         private bool _respawning;
 
         /// <summary>지금 씬에서 동작 중인 디렉터. 없으면 null.</summary>
@@ -105,6 +107,15 @@ namespace Pawntom.TutorialBridge
 
         /// <summary>대사가 화면에 뜰 때. 자막 로그·음성 재생 등 외부 연동용.</summary>
         public static event Action<TutorialLine> LineShown;
+
+        /// <summary>로컬 플레이어가 죽었을 때. 경보·사이렌 같은 연출을 끄는 데 쓴다(부활은 이후 별도로 진행된다).</summary>
+        public static event Action LocalPlayerDied;
+
+        /// <summary>사망 후 체크포인트에서 다시 깨어난 직후. 인자는 그 체크포인트가 속한 메인 비트 ID(위치 기준 저장이면 null).</summary>
+        public static event Action<string> CheckpointRestored;
+
+        // 캣닢 미션(금고 -> 캣닢 -> 탈출). 이 비트에서 죽으면 금고를 되살리고 이 미션을 처음부터 다시 한다.
+        private const string CatnipBeatId = "7-4";
 
         public TutorialSequencer Sequencer
         {
@@ -199,7 +210,6 @@ namespace Pawntom.TutorialBridge
             _sequencer.ActionRequested += HandleActionRequested;
             _sequencer.BeatStarted += HandleBeatStarted;
             _sequencer.BeatSkipped += HandleBeatSkipped;
-            _sequencer.MainBeatCompleted += HandleMainBeatCompleted;
             _sequencer.HintAdded += _hints.OnHintAdded;
             _sequencer.HintRemoved += _hints.OnHintRemoved;
             _sequencer.HintRecalled += _hints.OnHintRecalled;
@@ -208,6 +218,7 @@ namespace Pawntom.TutorialBridge
             _probe.SignalRaised += _sequencer.Raise;
             _probe.SignalRaised += HandleProbeSignal;
             GameManager.OnStateChanged += HandleGameStateChanged;
+            TutorialCatnipAlarm.Triggered += HandleCatnipAlarmTriggered;
 
             _eyelids.SetBlackout(playOpening ? 1f : 0f);
             _eyelids.SetOpenness(playOpening ? 0f : 1f, playOpening ? 1f : 0f);
@@ -234,6 +245,7 @@ namespace Pawntom.TutorialBridge
             }
 
             GameManager.OnStateChanged -= HandleGameStateChanged;
+            TutorialCatnipAlarm.Triggered -= HandleCatnipAlarmTriggered;
             HackingManager.PreferredGameType = null;
             TutorialInputLock.ForgetOwner(this);
             TutorialInputLock.ForgetOwner(_dialogue);
@@ -277,7 +289,14 @@ namespace Pawntom.TutorialBridge
         /// <summary>씬 배치 컴포넌트(영역·분전반·금고)가 신호를 보낸다.</summary>
         public void Raise(TutorialSignal signal)
         {
-            _sequencer?.Raise(signal);
+            if (_sequencer == null)
+            {
+                return;
+            }
+
+            // 금고 앞 신호(VaultFront)는 금고가 직접 보낸다. 앞 단계를 건너뛰고 온 경우를 여기서도 풀어 준다.
+            CatchUpToVaultBeat(signal);
+            _sequencer.Raise(signal);
         }
 
         public void ShowCastProgress(string label, float progress)
@@ -402,6 +421,10 @@ namespace Pawntom.TutorialBridge
 
             _probe.ResetLookReference();
 
+            // 사망 후 되돌아갈 지점 = 이 단계(미션)가 시작된 자리. 대사가 끝날 때까지 걸어 나간 자리가 아니라
+            // 미션이 벌어진 장소에서 깨어나야 한다(예: 캣닢을 얻은 금고방).
+            SaveCheckpoint(beat.Id);
+
             // 단계별 안내와 미니게임을 맞춘다: 4단계 격벽 = 방향키 순서 입력, 6단계 이후 금고 = Space 타이밍.
             if (beat.Stage >= 6)
             {
@@ -461,7 +484,7 @@ namespace Pawntom.TutorialBridge
 
         // ───────────── 사망 후 재개 ─────────────
 
-        private void HandleMainBeatCompleted(TutorialBeat beat)
+        private void SaveCheckpoint(string beatId)
         {
             Transform player = _probe.LocalPlayerTransform;
 
@@ -473,10 +496,95 @@ namespace Pawntom.TutorialBridge
             _hasCheckpoint = true;
             _checkpointPosition = player.position;
             _checkpointRotation = player.rotation;
+            _checkpointBeatId = beatId;
+            Debug.Log("[TutorialDirector] 체크포인트 저장: " + (beatId ?? "(위치)") + " @ " + _checkpointPosition);
+        }
+
+        // 캣닢을 얻어 경보가 시작된 순간의 자리가 곧 마지막 미션 장소다. 비트 시작이 늦거나 앞 비트에 막혀도 여기로 돌아온다.
+        private void HandleCatnipAlarmTriggered()
+        {
+            _lastLocationSignal = TutorialSignal.None;
+            SaveCheckpoint(CatnipBeatId);
+        }
+
+        // 플레이어가 앞 단계를 건너뛰고 금고 단계로 먼저 와 버렸을 때, 건너뛸 수 없는 앞 비트가 줄을 막아
+        // 금고 대사(7-1·7-2·7-4)가 경비견이 올 때까지 안 나오는 것을 풀어 준다. 앞 비트는 건너뜀 처리한다.
+        private void CatchUpToVaultBeat(TutorialSignal signal)
+        {
+            string target;
+
+            switch (signal)
+            {
+                case TutorialSignal.VaultFront:
+                    target = "7-1";
+                    break;
+                case TutorialSignal.VaultHackStarted:
+                    target = "7-2";
+                    break;
+                case TutorialSignal.CatnipAcquired:
+                    target = CatnipBeatId;
+                    break;
+                default:
+                    return;
+            }
+
+            if (_sequencer.GetMainState(target) != TutorialBeatState.Pending)
+            {
+                return;
+            }
+
+            int skipped = _sequencer.SkipMainsBefore(target);
+
+            if (skipped > 0)
+            {
+                Debug.Log("[TutorialDirector] 금고 단계로 먼저 와서 앞 비트 " + skipped + "개를 건너뜁니다 (" + target + ")");
+            }
+        }
+
+        // 미션 장소에 도착했다는 신호가 새로 오면 그 자리도 되돌아갈 지점으로 삼는다.
+        // 비트 시작이 앞 대사에 밀려 늦어지거나 건너뛰어져도 "마지막 미션 장소"가 남는다. 캣닢 미션 중에는 금고방을 지킨다.
+        private void TrackLocationCheckpoint(TutorialSignal signal)
+        {
+            if (_respawning || _checkpointBeatId == CatnipBeatId || !IsMissionLocation(signal) || signal == _lastLocationSignal)
+            {
+                return;
+            }
+
+            _lastLocationSignal = signal;
+            SaveCheckpoint(null);
+        }
+
+        private static bool IsMissionLocation(TutorialSignal signal)
+        {
+            switch (signal)
+            {
+                case TutorialSignal.CorridorAEndReached:
+                case TutorialSignal.NearSecurityNode:
+                case TutorialSignal.NearTerminal:
+                case TutorialSignal.BlueDoorAhead:
+                case TutorialSignal.LootRoomEntered:
+                case TutorialSignal.LootRoomExiting:
+                case TutorialSignal.VaultCorridorEntered:
+                case TutorialSignal.VaultRoomEntered:
+                case TutorialSignal.VaultFront:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void HandleProbeSignal(TutorialSignal signal)
         {
+            if (signal == TutorialSignal.PlayerDied)
+            {
+                LocalPlayerDied?.Invoke();
+            }
+            else
+            {
+                TrackLocationCheckpoint(signal);
+                CatchUpToVaultBeat(signal);
+            }
+
             if (signal == TutorialSignal.PlayerDied && !_respawning && !_ending && !_settlementOpening)
             {
                 StartCoroutine(RespawnAfterDeath());
@@ -538,6 +646,14 @@ namespace Pawntom.TutorialBridge
                 waited += Time.unscaledDeltaTime;
                 yield return null;
             }
+
+            // 캣닢 미션 중에 죽었다면 금고를 되살리고 그 비트부터 다시 한다(가방은 새 몸으로 초기화돼 캣닢이 없다).
+            if (_hasCheckpoint && _checkpointBeatId == CatnipBeatId)
+            {
+                _sequencer.RewindMainTo(CatnipBeatId);
+            }
+
+            CheckpointRestored?.Invoke(_hasCheckpoint ? _checkpointBeatId : null);
 
             while (fade > 0f)
             {

@@ -100,6 +100,38 @@ namespace Pawntom.Enemy.Authoring
             _brain.Tick(deltaTime);
         }
 
+        /// <summary>
+        /// 적을 처음 상태로 되돌린다: 순찰 경로의 0번 지점으로 옮기고, 순찰 상태로 0번 지점부터 다시 돈다.
+        /// 경로가 없으면 자리는 그대로 두고 상태만 되돌린다. 상태 권한이 있는 쪽(Host)에서만 부른다.
+        /// </summary>
+        public void ResetToPatrolStart()
+        {
+            if (_brain == null)
+            {
+                return;
+            }
+
+            if (_patrolRoute != null && _navMeshAgent != null && _navMeshAgent.enabled)
+            {
+                IReadOnlyList<Vector3> waypoints = _patrolRoute.GetWaypointPositions();
+
+                if (waypoints != null && waypoints.Count > 0)
+                {
+                    NavMeshHit hit;
+                    Vector3 start = waypoints[0];
+
+                    if (NavMesh.SamplePosition(start, out hit, 2f, NavMesh.AllAreas))
+                    {
+                        start = hit.position;
+                    }
+
+                    _navMeshAgent.Warp(start);
+                }
+            }
+
+            _brain.ResetToPatrolStart();
+        }
+
         /// <summary>런타임에 순찰 경로를 갈아 끼운다.</summary>
         public void SetPatrolRoute(PatrolRoute route)
         {

@@ -20,6 +20,9 @@ namespace Pawntom.TutorialBridge
         [Tooltip("이 거리(수평) 안에서 상호작용 키를 길게 누르면 접속한다")]
         [SerializeField, Min(0.1f)] private float interactRadius = 2.5f;
 
+        [Tooltip("분전반 앞에서 \"E | 이름\" 으로 보일 이름(길게 눌러 접속)")]
+        [SerializeField] private string interactName = "분전반 접속 (길게)";
+
         [Tooltip("GAME_DESIGN 분전반 캐스팅 3초")]
         [SerializeField, Min(0.1f)] private float castSeconds = 3f;
 
@@ -108,6 +111,11 @@ namespace Pawntom.TutorialBridge
             if (near)
             {
                 director.Raise(TutorialSignal.NearSecurityNode);
+            }
+
+            if (near && !_casting && !GameplayInputBlocker.IsBlocked && !director.IsControlLockedByDirector)
+            {
+                InteractPrompt.Show(interactName);
             }
 
             bool holding = near &&

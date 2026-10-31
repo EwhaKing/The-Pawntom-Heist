@@ -351,6 +351,81 @@ namespace Pawntom.Tutorial.Core
         /// <summary>
         /// 디버그용 강제 진행. 대사가 떠 있으면 끝내고, 대기 중이면 대기를 끊고, 아무것도 없으면 다음 메인 비트를 트리거 없이 시작한다.
         /// </summary>
+        /// <summary>
+        /// 메인 비트 <paramref name="beatId"/> 보다 앞에서 아직 안 열린 메인 비트를 모두 건너뜀으로 돌린다.
+        /// 플레이어가 앞 단계(예: 3-4 경비견 추격)를 건너뛰고 뒤 단계(금고)로 먼저 가 버렸을 때,
+        /// 건너뛸 수 없는 앞 비트가 줄을 막아 뒤 대사가 안 나오는 것을 풀어 준다. 이미 시작·완료된 비트는 건드리지 않는다.
+        /// </summary>
+        /// <returns>건너뛴 비트 수.</returns>
+        public int SkipMainsBefore(string beatId)
+        {
+            int index = _script.IndexOfMain(beatId);
+
+            if (index < 0)
+            {
+                throw new ArgumentException("메인 비트가 아니다: " + beatId, nameof(beatId));
+            }
+
+            int skipped = 0;
+
+            for (int i = _cursor; i < index; i++)
+            {
+                if (_mainStates[i] == TutorialBeatState.Pending)
+                {
+                    Skip(i);
+                    skipped++;
+                }
+            }
+
+            return skipped;
+        }
+
+        /// <summary>
+        /// 메인 비트 <paramref name="beatId"/> 부터 끝까지를 아직 안 지나간 상태로 되돌린다(사망 후 그 미션을 처음부터 다시 하게 할 때).
+        /// 재생 중이던 대사와 대기열·안내는 정리하고, 그 비트의 신호는 되돌린 뒤에 새로 들어온 것만 인정한다.
+        /// 곁가지 비트의 재생 횟수는 그대로 둔다.
+        /// </summary>
+        public void RewindMainTo(string beatId)
+        {
+            int index = _script.IndexOfMain(beatId);
+
+            if (index < 0)
+            {
+                throw new ArgumentException("메인 비트가 아니다: " + beatId, nameof(beatId));
+            }
+
+            // 떠 있는 대사는 정상적으로 끝내서 화면이 지워지게 한다. 다음 대사가 이어지지 않도록 대기열을 먼저 비운다.
+            _queue.Clear();
+            _delayArmed = false;
+            _delayRemaining = 0f;
+
+            if (_hasCurrent)
+            {
+                CompleteCurrentLine();
+            }
+
+            _queue.Clear();
+            _armedHint = null;
+            _recallLine = null;
+
+            for (int i = _hints.Count - 1; i >= 0; i--)
+            {
+                RemoveHintAt(i, TutorialHintRemoval.StageChanged);
+            }
+
+            for (int i = index; i < _mainStates.Length; i++)
+            {
+                _mainStates[i] = TutorialBeatState.Pending;
+            }
+
+            Array.Clear(_sideQueued, 0, _sideQueued.Length);
+
+            _cursor = index;
+            _validFrom = _stampCounter;
+            _lastMainStart = _stampCounter;
+            _finished = false;
+        }
+
         public void ForceAdvance()
         {
             if (_hasCurrent)

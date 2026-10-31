@@ -45,6 +45,10 @@ public class ControllableWall : NetworkBehaviour
     [SerializeField] private Color minimapUnlockedColor = new Color(0.1f, 0.45f, 0.9f, 1f);
 
     [Header("Field Open (현장 상호작용)")]
+    [Tooltip("끄면 현장에서 상호작용 키로 격벽을 열 수 없다. 본부(OpenWall/CloseWall)에서만 열고 닫으며, 한 번 열린 격벽은 본부에서 닫기 전까지 열려 있다")]
+    [SerializeField] private bool allowFieldOpen = true;
+
+
     [Tooltip("현장에서 상호작용 키로 연 뒤 자동으로 닫힐 때까지의 시간. GAME_DESIGN 격벽: Open → 5초 후 Unlocked 회귀")]
     [SerializeField, Min(0.5f)] private float fieldOpenSeconds = 5f;
 
@@ -120,11 +124,33 @@ public class ControllableWall : NetworkBehaviour
     }
 
     /// <summary>
+    /// 현장에서 E 를 눌렀을 때 열 수 있는 상태면 안내에 띄울 이름, 아니면 null.
+    /// 현장 개방이 꺼져 있거나, 잠겼거나, 이미 열려 있으면 안내를 띄우지 않는다.
+    /// </summary>
+    public string FieldInteractName
+    {
+        get
+        {
+            if (!allowFieldOpen || Object == null || !Object.IsValid || !IsUnlocked || IsOpen)
+            {
+                return null;
+            }
+
+            return "격벽 열기";
+        }
+    }
+
+    /// <summary>
     /// 현장(침투조) 상호작용. 해금된(푸른) 격벽만 열리고, <see cref="fieldOpenSeconds"/> 뒤 자동으로 닫힌다.
     /// 잠긴(붉은) 격벽이면 false — 본부 해킹으로 먼저 해금해야 한다.
     /// </summary>
     public bool TryFieldOpen()
     {
+        if (!allowFieldOpen)
+        {
+            return false;
+        }
+
         if (!IsUnlocked)
         {
             Debug.Log($"[ControllableWall] {gameObject.name} 잠김 — 접근 거부. 본부에서 해킹으로 해금해야 합니다.");

@@ -20,6 +20,9 @@ namespace Pawntom.TutorialBridge
         [Header("상호작용")]
         [SerializeField, Min(0.1f)] private float interactRadius = 2.5f;
 
+        [Tooltip("금고 앞에서 \"E | 이름\" 으로 보일 이름")]
+        [SerializeField] private string interactName = "금고 해킹";
+
         [Header("해킹")]
         [Tooltip("HackingManager 풀에 이 등급이 없으면 Normal 로 대신 띄운다(현재 Tutorial_Scene 풀은 Normal 만 있다)")]
         [SerializeField] private SecurityLevel securityLevel = SecurityLevel.VaultFinal;
@@ -45,6 +48,13 @@ namespace Pawntom.TutorialBridge
         public static bool IsVaultHackPending { get; private set; }
 
         public bool IsOpened { get; private set; }
+
+        /// <summary>사망 후 같은 미션을 다시 하게 할 때 금고를 닫힌 상태로 되돌린다(보상은 가방 초기화로 이미 사라졌다).</summary>
+        public void ResetForRetry()
+        {
+            IsOpened = false;
+            IsVaultHackPending = false;
+        }
 
         public float InteractRadius
         {
@@ -114,6 +124,15 @@ namespace Pawntom.TutorialBridge
             }
 
             director.Raise(TutorialSignal.VaultFront);
+
+            bool blocked = GameplayInputBlocker.IsBlocked ||
+                           director.IsControlLockedByDirector ||
+                           Hacking.HackingManager.AnyHackingActive;
+
+            if (!blocked)
+            {
+                InteractPrompt.Show(interactName);
+            }
 
             if (GameplayInputBlocker.IsBlocked ||
                 director.IsControlLockedByDirector ||

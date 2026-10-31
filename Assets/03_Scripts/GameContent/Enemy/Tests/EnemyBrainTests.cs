@@ -1593,6 +1593,37 @@ namespace Pawntom.Enemy.Tests
         }
 
         [Test]
+        [Description("연출용 - ResetToPatrolStart 는 조사 중이던 적을 순찰 상태로, 경로 0번 지점부터 다시 돌게 한다")]
+        public void ResetToPatrolStart_FromInvestigate_ReturnsToPatrolAtFirstWaypoint()
+        {
+            Rig rig = new Rig();
+            List<Vector3> route = MakeRoute(3);
+            rig.Brain.SetPatrolRoute(route, true);
+
+            // 1번 지점까지 진행한 뒤 소집을 받아 조사로 넘어간다.
+            rig.Brain.Tick(0.1f);
+            rig.Motor.Arrived = true;
+            rig.Brain.Tick(rig.Settings.Patrol.WaitSeconds);
+            Assert.AreEqual(1, rig.Brain.WaypointIndex, "사전 조건: 1번 지점을 향하고 있다");
+
+            rig.Brain.SetInvestigateOverride(2f, 3f, 1f, true);
+            rig.Alert.HasSummon = true;
+            rig.Alert.SummonTarget = new Vector3(9f, 0f, 9f);
+            rig.Brain.Tick(0.1f);
+            Assert.AreEqual(EnemyState.Investigate, rig.Brain.State, "사전 조건: 조사 중이다");
+
+            rig.Brain.ResetToPatrolStart();
+
+            Assert.AreEqual(EnemyState.Patrol, rig.Brain.State);
+            Assert.AreEqual(0, rig.Brain.WaypointIndex, "경로 0번 지점부터 다시 돈다");
+
+            rig.Motor.Arrived = false;
+            rig.Brain.Tick(0.1f);
+            Assert.AreEqual(route[0], rig.Motor.LastDestination, "처음 지점으로 출발한다");
+            Assert.AreEqual(rig.Settings.Movement.PatrolSpeed, rig.Motor.LastSpeed, 0.0001f);
+        }
+
+        [Test]
         [Description("TASK-009 기준5 - 순찰에 머무는 동안 도착 전과 대기 중에는 다음 지점으로 넘어가지 않는다")]
         public void Task009_Patrol_WhileDwelling_HoldsWaypoint_UntilArrivalAndWaitElapse()
         {

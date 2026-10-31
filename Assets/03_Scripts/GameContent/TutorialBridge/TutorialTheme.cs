@@ -35,6 +35,16 @@ namespace Pawntom.TutorialBridge
         // 가장 긴 대사(4-6, 88자)가 27pt 로 세 줄에 들어가는 크기.
         public static readonly Vector2 DialogueSize = new Vector2(1100f, 185f);
         public const float DialogueBottom = 160f;
+
+        // 대화창 위, 왼쪽 가장자리에 서는 화자 초상 칸.
+        public static readonly Vector2 PortraitSize = new Vector2(190f, 250f);
+        public const float PortraitLeft = 30f;
+        public const float PortraitGap = 10f;
+        public const float PortraitFrameThickness = 5f;
+        public static readonly Color PortraitPlaceholderColor = new Color(0.03f, 0.03f, 0.04f, 1f);
+        // Resources 아래 스프라이트 경로. 파일이 없으면 검은 네모가 대신 뜬다.
+        public const string CommandPortraitPath = "Tutorial/Portrait_Command";
+        public const string CatPortraitPath = "Tutorial/Portrait_Cat";
         public const float DialogueFontSize = 27f;
 
         public static readonly Vector2 HintRowSize = new Vector2(760f, 54f);

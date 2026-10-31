@@ -45,6 +45,9 @@ namespace Pawntom.TutorialBridge
         [Tooltip("사이렌이 한 번 올라갔다 내려오는 길이(초). 화면 깜박임도 이 주기를 따른다")]
         [SerializeField, Min(0.5f)] private float sirenCycleSeconds = 2.4f;
 
+        /// <summary>경보가 시작된 순간(캣닢을 얻고 금고가 부서질 때). 디렉터가 그 자리를 되돌아갈 지점으로 삼는다.</summary>
+        public static event System.Action Triggered;
+
         private bool _triggered;
         private bool _stopped;
         private Volume _volume;
@@ -53,6 +56,9 @@ namespace Pawntom.TutorialBridge
         private AudioClip _sirenClip;
         private UniversalAdditionalCameraData _cameraData;
         private bool _cameraPostWas;
+        private Renderer[] _vaultRenderers;
+        private Collider[] _vaultColliders;
+        private Vector3 _vaultHome;
 
         public bool IsRunning
         {
@@ -68,6 +74,7 @@ namespace Pawntom.TutorialBridge
             }
 
             _triggered = true;
+            Triggered?.Invoke();
             StartCoroutine(RunAlarm());
             if (vaultRoot != null)
             {
@@ -79,6 +86,81 @@ namespace Pawntom.TutorialBridge
         public void Stop()
         {
             _stopped = true;
+        }
+
+        private void OnEnable()
+        {
+            TutorialDirector.LocalPlayerDied += HandlePlayerDied;
+            TutorialDirector.CheckpointRestored += HandleCheckpointRestored;
+        }
+
+        private void OnDisable()
+        {
+            TutorialDirector.LocalPlayerDied -= HandlePlayerDied;
+            TutorialDirector.CheckpointRestored -= HandleCheckpointRestored;
+        }
+
+        // 캣닢 미션 도중 죽어 그 미션으로 돌아왔다면 금고를 되살리고 경보를 다시 쓸 수 있게 되돌린다.
+        private void HandleCheckpointRestored(string beatId)
+        {
+            if (beatId == "7-4")
+            {
+                ResetForRetry();
+            }
+        }
+
+        /// <summary>부서진 금고를 되살리고 경보를 처음 상태로 되돌린다. 금고는 닫힌 상태로 돌아온다.</summary>
+        public void ResetForRetry()
+        {
+            _triggered = false;
+            _stopped = false;
+            StopAllCoroutines();
+            Cleanup();
+
+            if (vaultRoot == null)
+            {
+                return;
+            }
+
+            vaultRoot.transform.position = _vaultHome;
+            vaultRoot.SetActive(true);
+
+            if (_vaultRenderers != null)
+            {
+                foreach (Renderer r in _vaultRenderers)
+                {
+                    if (r != null)
+                    {
+                        r.enabled = true;
+                    }
+                }
+            }
+
+            if (_vaultColliders != null)
+            {
+                foreach (Collider c in _vaultColliders)
+                {
+                    if (c != null)
+                    {
+                        c.enabled = true;
+                    }
+                }
+            }
+
+            TutorialVault vault = vaultRoot.GetComponent<TutorialVault>();
+            if (vault != null)
+            {
+                vault.ResetForRetry();
+            }
+        }
+
+        // 죽으면 경보를 끈다. 새로 깨어난 뒤에도 사이렌·붉은 화면이 남지 않게 한다.
+        private void HandlePlayerDied()
+        {
+            if (IsRunning)
+            {
+                Stop();
+            }
         }
 
         private void OnDestroy()
@@ -290,7 +372,10 @@ namespace Pawntom.TutorialBridge
         {
             Transform root = vaultRoot.transform;
             Vector3 home = root.position;
+            _vaultHome = home;
             Renderer[] renderers = vaultRoot.GetComponentsInChildren<Renderer>();
+            _vaultRenderers = renderers;
+            _vaultColliders = vaultRoot.GetComponentsInChildren<Collider>();
             Bounds bounds = renderers.Length > 0 ? renderers[0].bounds : new Bounds(home, Vector3.one);
             Material debrisMaterial = renderers.Length > 0 ? renderers[0].sharedMaterial : null;
             for (int i = 1; i < renderers.Length; i++)
@@ -320,8 +405,8 @@ namespace Pawntom.TutorialBridge
 
             SpawnFlash(bounds.center);
             SpawnDebris(bounds, debrisMaterial);
-            Destroy(vaultRoot);
-            vaultRoot = null;
+            // 부수지만 지우지 않는다 - 죽어서 이 미션으로 돌아오면 되살려야 한다.
+            vaultRoot.SetActive(false);
         }
 
         private static void SpawnFlash(Vector3 position)
