@@ -185,9 +185,7 @@ public class GameManager : PawntomSingleton<GameManager>
         yield return load;
 
         // 파괴되는 게임 UI의 OnDisable이 입력/커서를 변경한 뒤 초기화합니다.
-        GameplayInputBlocker.SetBlocked(false);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        GameplayInputBlocker.ResetForLobby();
         _isReturningToLobby = false;
         EnterLobby();
     }

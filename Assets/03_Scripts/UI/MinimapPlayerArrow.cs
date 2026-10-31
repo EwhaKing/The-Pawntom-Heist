@@ -25,6 +25,8 @@ public class MinimapPlayerArrow : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         targetPlayer = newTarget;
+        UnityEngine.UI.Graphic graphic = GetComponent<UnityEngine.UI.Graphic>();
+        if (graphic != null) graphic.enabled = newTarget != null;
     }
 
     private void Update()

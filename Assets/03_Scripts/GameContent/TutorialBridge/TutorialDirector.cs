@@ -79,6 +79,7 @@ namespace Pawntom.TutorialBridge
         private TutorialSettlementView _settlement;
         private TutorialEyelidView _eyelids;
         private TutorialGuideMarker _guide;
+        private TutorialDeathFlow _deathFlow;
         private Func<TutorialSignal, bool> _canResolveGuide;
         private bool _controlEverEnabled;
         private float _nextGuideUpdate;
@@ -256,7 +257,7 @@ namespace Pawntom.TutorialBridge
 
         private void Update()
         {
-            if (_sequencer == null)
+            if (_sequencer == null || (_deathFlow != null && _deathFlow.IsShowing))
             {
                 return;
             }
@@ -403,6 +404,7 @@ namespace Pawntom.TutorialBridge
 
         private void HandleDialogueLineDone()
         {
+            if (_deathFlow != null && _deathFlow.IsShowing) return;
             _sequencer.CompleteCurrentLine();
 
             if (_sequencer.CurrentLine == null && !_ending)
@@ -420,6 +422,7 @@ namespace Pawntom.TutorialBridge
             }
 
             _probe.ResetLookReference();
+            _deathFlow?.CaptureCheckpoint(beat.Stage);
 
             // 사망 후 되돌아갈 지점 = 이 단계(미션)가 시작된 자리. 대사가 끝날 때까지 걸어 나간 자리가 아니라
             // 미션이 벌어진 장소에서 깨어나야 한다(예: 캣닢을 얻은 금고방).
@@ -475,6 +478,7 @@ namespace Pawntom.TutorialBridge
 
         private void HandleGameStateChanged(GameState previous, GameState next)
         {
+            if (_deathFlow != null && _deathFlow.IsShowing) return;
             // 출발 버튼으로 정식 결과 상태가 되면 그 시점에 정산을 띄운다(7-10 경로보다 먼저 올 수 있다).
             if (next == GameState.Result)
             {
@@ -848,6 +852,39 @@ namespace Pawntom.TutorialBridge
 
             _eyelids = overlay.gameObject.AddComponent<TutorialEyelidView>();
             _eyelids.Build(_factory, overlay.transform);
+
+            _deathFlow = GetOrAdd<TutorialDeathFlow>();
+            _deathFlow.Build(this, _factory);
+        }
+
+        public void SuspendForDeath()
+        {
+            StopAllCoroutines();
+            LockControl(true);
+            _dialogue.Close();
+            _hints.HideAll();
+            _castBar.Hide();
+            _settlement.Close();
+            _guide.Hide();
+            _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
+            _eyelids.SetBlackout(0f);
+            _eyelids.SetOpenness(1f, 0f);
+            _probe.enabled = false;
+        }
+
+        public void ResumeStage(int stage)
+        {
+            _ending = _settlementOpening = false;
+            _dialogue.Close();
+            _dialogueHold = false;
+            TutorialInputLock.Release(_dialogue);
+            Hacking.HackingGameBase.Paused = false;
+            _probe.ResetForRetry();
+            _probe.enabled = true;
+            _controlEverEnabled = true;
+            LockControl(false);
+            _radio.SetMode(TutorialRadioIndicatorView.Mode.Idle);
+            _sequencer.RestartStage(stage);
         }
 
         /// <summary>

@@ -158,6 +158,12 @@ namespace Pawntom.Enemy.Authoring
             // 두뇌를 만들기 전에 걸어 둔다. 두뇌는 첫 Enter* 에서 상태에 맞는 값으로 다시 덮어쓴다.
             ApplyMovementSettings();
 
+            BuildBrain();
+        }
+
+        private void BuildBrain()
+        {
+
             // 멈춤 거리: 추격 대상 몸 안까지 파고들어 플레이어를 계속 밀어내지 않도록.
             // 겹침 방지: 같은 지점을 노리는 다른 적이 있으면 그 앞에서 멈추도록 목적지를 비킨다.
             NavMeshEnemyMotor motor = new NavMeshEnemyMotor(
@@ -181,6 +187,24 @@ namespace Pawntom.Enemy.Authoring
 
             // 본부 등 출입 금지 구역. 구역이 하나도 없으면 판정은 늘 false 다.
             _brain.SetSafeZone(EnemySafeZone.Registry);
+        }
+
+        /// <summary>단계 재시도처럼 외부에서 위치를 복원할 때 추격 기억과 경로도 새로 시작합니다.</summary>
+        public void ResetAfterTeleport(Vector3 position, Quaternion rotation)
+        {
+            if (_navMeshAgent != null && _navMeshAgent.enabled)
+            {
+                _navMeshAgent.Warp(position);
+                if (_navMeshAgent.isOnNavMesh)
+                {
+                    _navMeshAgent.ResetPath();
+                    _navMeshAgent.velocity = Vector3.zero;
+                }
+            }
+            else transform.position = position;
+            transform.rotation = rotation;
+            BuildBrain();
+            ApplyPatrolRoute();
         }
 
         private static readonly List<EnemyAgent> ActiveAgents = new List<EnemyAgent>(8);

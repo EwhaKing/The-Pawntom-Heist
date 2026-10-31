@@ -105,7 +105,7 @@ public class PlayerPositionManager : MonoBehaviour
         {
             PlayerTarget target = PlayerTarget.AllTargets[i];
 
-            if (target == null)
+            if (target == null || !target.IsVisibleOnMap)
             {
                 continue;
             }
@@ -133,7 +133,7 @@ public class PlayerPositionManager : MonoBehaviour
 
         foreach (KeyValuePair<PlayerTarget, RectTransform> pair in markers)
         {
-            if (pair.Key != null)
+            if (pair.Key != null && pair.Key.IsVisibleOnMap)
             {
                 continue;
             }

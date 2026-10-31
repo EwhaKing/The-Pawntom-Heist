@@ -88,14 +88,9 @@ public class MainbaseZone : MonoBehaviour
             if (inventory == null)
                 continue;
             
-            // TODO:
-            // 나중에 PlayerHealth가 생기면 여기서 사망 여부 검사
-            //
-            // PlayerHealth health = playerObject.GetComponent<PlayerHealth>();
-            // if (health != null && health.IsDead)
-            // {
-            //     continue;
-            // }
+            PlayerData player = playerObject.GetComponent<PlayerData>();
+            if (player == null || player.Object == null || !player.Object.IsValid || player.IsDead)
+                continue;
 
             if (showDebugLog)
             {

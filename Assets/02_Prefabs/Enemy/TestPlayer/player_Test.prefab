@@ -471,6 +471,8 @@ GameObject:
   - component: {fileID: 7243955919356161554}
   - component: {fileID: 6802944652937411772}
   - component: {fileID: 1666277955232396346}
+  - component: {fileID: 871239876451230002}
+  - component: {fileID: 871239876451230001}
   m_Layer: 0
   m_Name: player_Test
   m_TagString: Untagged
@@ -544,6 +546,7 @@ MonoBehaviour:
   - {fileID: 559381532148537397}
   - {fileID: 8465880047156062518}
   - {fileID: 7243955919356161554}
+  - {fileID: 871239876451230001}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &706616535137644363
 MonoBehaviour:
@@ -816,3 +819,36 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1336408682451185731, guid: b88f27b41cdd44d44b38bea4d53f1377, type: 3}
   m_PrefabInstance: {fileID: 7860764304851923773}
   m_PrefabAsset: {fileID: 0}
+
+--- !u!114 &871239876451230002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8560757213432983713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7726f63943674b1492601faf95e7300a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpectator
+
+--- !u!114 &871239876451230001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8560757213432983713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8a46637f97f4f8b8628690ebc8d9b61, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathPresentation
+  _deathTraceMaterial: {fileID: 2100000, guid: fffc457dc3e94521a929fe160573c4d7, type: 2}
+  _deathEffectPrefab: {fileID: 0}
+  _playerCamera: {fileID: 6145112086823044638}
+  _grayscaleDuration: 0.35
+  _onDeathPresentation:
+    m_PersistentCalls:
+      m_Calls: []

@@ -1,4 +1,5 @@
 using Fusion;
+using Pawntom.Enemy.Authoring;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkCharacterController))]
@@ -32,13 +33,20 @@ public class PlayerController : NetworkBehaviour
     [SerializeField, Range(0f, 1f)]
     private float jumpCutMultiplier = 0.45f;
 
+    [Header("Enemy Contact Damage")]
+    [Tooltip("기획 수치 확정 전 임시값. 적 접촉 1회당 피해량")]
+    [SerializeField, Min(0f)] private float _enemyContactDamage = 25f;
+    [SerializeField, Min(0.01f)] private float _contactDamageInterval = 1f;
+    [Networked] private TickTimer ContactDamageCooldown { get; set; }
+
     private NetworkCharacterController _controller;
     private PlayerData _playerData;
 
     public float WalkSpeed => walkSpeed;
     public float SprintSpeed => sprintSpeed;
 
-    private float _pitch; // 카메라의 위아래 회전값
+    [Networked] public float ViewPitch { get; private set; }
+    public Camera ViewCamera => playerCamera;
     private NetworkButtons _previousButtons; // 이전 프레임의 버튼 상태를 저장하는 변수
 
     private void Awake()
@@ -83,12 +91,16 @@ public class PlayerController : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (!GetInput(out NetworkInputData input)) { return; }
-
         if (_playerData.IsDead)
         {
+            if (Object.HasStateAuthority || Object.HasInputAuthority)
+            {
+                _controller.Velocity = Vector3.zero;
+            }
             return;
         }
+
+        if (!GetInput(out NetworkInputData input)) { return; }
 
         HandleLook(input.Look);
 
@@ -99,6 +111,13 @@ public class PlayerController : NetworkBehaviour
 
         UpdateStamina(isSprinting);
         HandleMove(input.Move, isSprinting);
+
+        // Move 안의 충돌 콜백에서 사망했으면 같은 틱의 점프도 차단합니다.
+        if (_playerData.IsDead)
+        {
+            _controller.Velocity = Vector3.zero;
+            return;
+        }
 
         NetworkButtons pressed =
             input.Buttons.GetPressed(_previousButtons);
@@ -117,6 +136,50 @@ public class PlayerController : NetworkBehaviour
         }
 
         _previousButtons = input.Buttons;
+    }
+
+    public override void Render()
+    {
+        // 다른 클라이언트의 비활성 카메라도 관전용 1인칭 시점을 유지합니다.
+        if (playerCamera != null && !Object.HasInputAuthority)
+            playerCamera.transform.localRotation = Quaternion.Euler(ViewPitch, 0f, 0f);
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        TryApplyEnemyContactDamage(hit.collider);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        TryApplyEnemyContactDamage(other);
+    }
+
+    private void TryApplyEnemyContactDamage(Collider other)
+    {
+        if (Object == null || !Object.IsValid || !Object.HasStateAuthority ||
+            _playerData.IsDead || !ContactDamageCooldown.ExpiredOrNotRunning(Runner))
+        {
+            return;
+        }
+
+        EnemyAgent enemy = other.GetComponentInParent<EnemyAgent>();
+        if (enemy == null || !enemy.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        _playerData.ApplyDamage(_enemyContactDamage);
+        ContactDamageCooldown = TickTimer.CreateFromSeconds(
+            Runner, Mathf.Max(0.01f, _contactDamageInterval));
+    }
+
+    public void ResetTutorialLook()
+    {
+        ViewPitch = 0f;
+        _previousButtons = default;
+        ContactDamageCooldown = TickTimer.None;
+        if (playerCamera != null) playerCamera.transform.localRotation = Quaternion.identity;
     }
 
     private void HandleMove(Vector2 moveInput, bool isSprinting)
@@ -162,12 +225,11 @@ public class PlayerController : NetworkBehaviour
         transform.Rotate(Vector3.up * yaw);
 
         // 위아래 회전은 카메라에만 적용
-        _pitch -= pitchDelta;
-        _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
+        ViewPitch = Mathf.Clamp(ViewPitch - pitchDelta, minPitch, maxPitch);
 
         if (playerCamera != null)
         {
-            playerCamera.transform.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+            playerCamera.transform.localRotation = Quaternion.Euler(ViewPitch, 0f, 0f);
         }
     }
 

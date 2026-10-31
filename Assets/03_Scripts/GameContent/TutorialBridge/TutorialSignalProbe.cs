@@ -206,6 +206,19 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        public void ResetForRetry()
+        {
+            _isDead = _awaitingRespawn = _lowHealthFired = false;
+            _terminalOpen = _cctvTabVisible = _cctvChecked = _hackIsVault = _hackActive = false;
+            _cctvSeconds = _movedDistance = _turnedDegrees = 0f;
+            _lastInventoryCount = -1;
+            _enemyStates.Clear();
+            _nextSceneCache = _nextPoll = 0f;
+            ResetIdleTimers();
+            MarkControlEnabled();
+            ResetLookReference();
+        }
+
         private void Update()
         {
             float now = Time.unscaledTime;

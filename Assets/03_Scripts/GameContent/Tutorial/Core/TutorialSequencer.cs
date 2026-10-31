@@ -292,6 +292,37 @@ namespace Pawntom.Tutorial.Core
             Advance();
         }
 
+        /// <summary>사망 재시도: 이전 단계는 유지하고 해당 단계의 첫 대사부터 다시 시작한다.</summary>
+        public void RestartStage(int stage)
+        {
+            int first = -1;
+            for (int i = 0; i < _script.Mains.Count; i++)
+                if (_script.Mains[i].Stage == stage) { first = i; break; }
+            if (first < 0) throw new ArgumentOutOfRangeException(nameof(stage));
+
+            for (int i = _hints.Count - 1; i >= 0; i--)
+                RemoveHintAt(i, TutorialHintRemoval.StageChanged);
+            _queue.Clear();
+            _hasCurrent = false;
+            _armedHint = null;
+            _recallLine = null;
+            _recallStage = 0;
+            _delayArmed = false;
+            _delayRemaining = 0f;
+            _finished = false;
+            Array.Clear(_incoming, 0, _incoming.Length);
+            Array.Clear(_stamp, 0, _stamp.Length);
+            Array.Clear(_sideQueued, 0, _sideQueued.Length);
+            Array.Clear(_sidePlayCount, 0, _sidePlayCount.Length);
+            Array.Clear(_sideLastPlayTime, 0, _sideLastPlayTime.Length);
+            _stampCounter = _validFrom = _lastMainStart = 0;
+            for (int i = 0; i < _mainStates.Length; i++)
+                _mainStates[i] = i < first ? TutorialBeatState.Done : TutorialBeatState.Pending;
+            _cursor = first;
+            StartMain(first);
+            Advance();
+        }
+
         /// <summary>
         /// 연출 쪽이 현재 대사의 출력과 머무름을 끝냈다. 다음 대사가 바로 이어지면 이 호출 안에서 <see cref="LineStarted"/>가 온다.
         /// </summary>

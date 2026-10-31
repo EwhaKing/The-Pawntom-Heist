@@ -388,6 +388,8 @@ GameObject:
   - component: {fileID: 6927131166089411136}
   - component: {fileID: 7650601162378760883}
   - component: {fileID: 5152516341703195541}
+  - component: {fileID: 871239876451230001}
+  - component: {fileID: 871239876451230002}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -461,6 +463,7 @@ MonoBehaviour:
   - {fileID: 8196721981007322051}
   - {fileID: 2501010036201639159}
   - {fileID: 7693582246180369213}
+  - {fileID: 871239876451230001}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -475,9 +478,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Unity::Fusion.NetworkCharacterController
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  gravity: -100
+  gravity: -6
   fallMultiplier: 2.5
-  jumpImpulse: 60
+  jumpImpulse: 4
   acceleration: 1000
   braking: 10
   maxSpeed: 20
@@ -504,6 +507,8 @@ MonoBehaviour:
   jumpRiseSeconds: 0.6
   deriveGravityFromJump: 1
   jumpCutMultiplier: 0.45
+  _enemyContactDamage: 25
+  _contactDamageInterval: 1
 --- !u!114 &-992902756951653428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -870,3 +875,35 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 67f8495fa61f6de45b3d03e9df0ec108, type: 3}
   m_PrefabInstance: {fileID: 6443330488175133673}
   m_PrefabAsset: {fileID: 0}
+
+--- !u!114 &871239876451230001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8a46637f97f4f8b8628690ebc8d9b61, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathPresentation
+  _deathTraceMaterial: {fileID: 2100000, guid: fffc457dc3e94521a929fe160573c4d7, type: 2}
+  _deathEffectPrefab: {fileID: 0}
+  _playerCamera: {fileID: 228144081064392142}
+  _grayscaleDuration: 0.35
+  _onDeathPresentation:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &871239876451230002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7726f63943674b1492601faf95e7300a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpectator

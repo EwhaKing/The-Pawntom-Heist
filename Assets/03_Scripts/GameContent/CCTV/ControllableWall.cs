@@ -336,6 +336,16 @@ public class ControllableWall : NetworkBehaviour
     /// <summary>
     /// 현재 상태를 실제 벽과 미니맵/CCTV 표시용 벽에 반영
     /// </summary>
+    public void RestoreTutorialCheckpoint(bool unlocked, bool open)
+    {
+        if (Pawntom.TutorialBridge.TutorialDirector.Active == null || !Object.HasStateAuthority) return;
+        IsUnlocked = unlocked;
+        IsOpen = open;
+        AutoCloseTimer = TickTimer.None;
+        ApplyWallState();
+        OnStateChanged?.Invoke();
+    }
+
     private void ApplyWallState()
     {
         // 실제 벽은 색을 바꾸지 않고, 보이기/숨기기만 처리
