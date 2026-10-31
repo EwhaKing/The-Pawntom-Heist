@@ -95,8 +95,43 @@ namespace Pawntom.EnemyBridge
             _groundOffset = 0f;
         }
 
+        private bool _pauseFrozen;
+        private float _animatorSpeedBeforePause = 1f;
+
+        /// <summary>월드 일시정지 동안 애니메이션도 멈춘다(물기 도중이면 그 자세로 굳는다).</summary>
+        private void ApplyWorldPause()
+        {
+            bool paused = GameWorldPause.IsPaused;
+
+            if (paused == _pauseFrozen || animator == null)
+            {
+                return;
+            }
+
+            _pauseFrozen = paused;
+
+            if (paused)
+            {
+                _animatorSpeedBeforePause = animator.speed;
+                animator.speed = 0f;
+            }
+            else
+            {
+                animator.speed = _animatorSpeedBeforePause;
+                // 멈춘 동안 이동량이 0 이었으므로 위치 기준을 다시 잡아 복귀 순간 속도가 튀지 않게 한다.
+                _hasLast = false;
+            }
+        }
+
         private void Update()
         {
+            ApplyWorldPause();
+
+            if (_pauseFrozen)
+            {
+                return;
+            }
+
             float deltaTime = Time.deltaTime;
 
             if (deltaTime <= 0f)

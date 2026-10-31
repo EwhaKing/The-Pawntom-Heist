@@ -41,6 +41,25 @@ namespace Pawntom.TutorialBridge
         private InputSystemActions _actions;
         private HackingManager _hackingManager;
 
+        // 같은 오브젝트의 열쇠 금고. 있으면 열쇠로 잠금을 푼 뒤에만 해킹할 수 있고, 해킹에 성공해야 금고가 열린다.
+        private VaultChest _chest;
+
+        private bool HasKeyLock
+        {
+            get { return _chest != null && _chest.OpenByMinigame; }
+        }
+
+        private bool IsKeyLockActive
+        {
+            get { return HasKeyLock && _chest.Object != null && _chest.Object.IsValid; }
+        }
+
+        /// <summary>열쇠로 사용한 횟수. 체크포인트가 저장해 두었다가 사망 재시도 때 되돌린다.</summary>
+        public int UsedKeyCount
+        {
+            get { return IsKeyLockActive ? _chest.UsedKeyCount : 0; }
+        }
+
         /// <summary>
         /// 금고 해킹을 띄우는 중이다. 수집기가 HackingStarted 를 금고 해킹으로 분류하는 데 쓴다
         /// (풀에 VaultFinal 이 없어 Normal 로 띄운 경우에도 금고로 보기 위해).
@@ -54,6 +73,12 @@ namespace Pawntom.TutorialBridge
         {
             IsOpened = false;
             IsVaultHackPending = false;
+
+            // 열쇠 사용 횟수는 그대로 두고 개봉 상태만 닫는다(열쇠 복원은 단계 체크포인트가 맡는다).
+            if (IsKeyLockActive)
+            {
+                _chest.RestoreCheckpointState(_chest.UsedKeyCount, false);
+            }
         }
 
         public float InteractRadius
@@ -80,6 +105,7 @@ namespace Pawntom.TutorialBridge
         private void Awake()
         {
             _actions = new InputSystemActions();
+            _chest = GetComponent<VaultChest>();
         }
 
         private void OnEnable()
@@ -125,7 +151,15 @@ namespace Pawntom.TutorialBridge
 
             director.Raise(TutorialSignal.VaultFront);
 
+            // 열쇠로 잠금을 풀기 전에는 해킹할 수 없다. 안내("열쇠가 필요합니다")는 VaultPromptUI가 띄운다.
+            if (HasKeyLock && !_chest.IsUnlocked)
+            {
+                return;
+            }
+
+            // 대사가 떠 있는 동안(GameWorldPause)에는 안내도 상호작용도 없다.
             bool blocked = GameplayInputBlocker.IsBlocked ||
+                           GameWorldPause.IsPaused ||
                            director.IsControlLockedByDirector ||
                            Hacking.HackingManager.AnyHackingActive;
 
@@ -135,6 +169,7 @@ namespace Pawntom.TutorialBridge
             }
 
             if (GameplayInputBlocker.IsBlocked ||
+                GameWorldPause.IsPaused ||
                 director.IsControlLockedByDirector ||
                 !_actions.Player.Interact.WasPressedThisFrame())
             {
@@ -193,14 +228,41 @@ namespace Pawntom.TutorialBridge
             }
 
             IsOpened = true;
+            OpenChest();
             GiveReward();
             onOpened.Invoke();
         }
 
-        public void RestoreCheckpoint(bool opened)
+        // 해킹에 성공하면 열쇠 금고의 네트워크 상태도 "열림"으로 바꾼다.
+        // 캣닢은 튜토리얼이 가방에 직접 넣으므로(GiveReward) 금고가 월드에 따로 생성하지 않게 한다.
+        private void OpenChest()
+        {
+            if (!IsKeyLockActive)
+            {
+                return;
+            }
+
+            TutorialDirector director = TutorialDirector.Active;
+            InventoryManager inventory = director != null ? director.LocalInventory : null;
+
+            if (inventory == null || inventory.Object == null)
+            {
+                Debug.LogWarning("[TutorialVault] 로컬 플레이어를 찾지 못해 금고를 열림 상태로 바꾸지 못했습니다.", this);
+                return;
+            }
+
+            _chest.RequestOpenAfterMinigame(inventory.Object, false);
+        }
+
+        public void RestoreCheckpoint(bool opened, int usedKeyCount)
         {
             IsOpened = opened;
             IsVaultHackPending = false;
+
+            if (IsKeyLockActive)
+            {
+                _chest.RestoreCheckpointState(usedKeyCount, opened);
+            }
         }
 
         private void GiveReward()

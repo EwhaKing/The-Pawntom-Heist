@@ -7,7 +7,7 @@ using UnityEngine;
 /// 담당:
 /// - 실제 인벤토리의 열쇠 검사 및 소비 요청
 /// - 사용된 열쇠 개수 네트워크 동기화
-/// - 잠금 해제 후 E키로 금고 열기
+/// - 잠금 해제 후 금고 열기 (Open By Minigame 켬: 해킹 미니게임 성공 후 / 끔: E키로 바로)
 /// - 황금 캣닢 네트워크 스폰
 /// - 금고 개봉 후 모델 및 Collider 숨기기
 ///
@@ -31,6 +31,11 @@ public class VaultChest : NetworkBehaviour
     [SerializeField, Min(0.5f)]
     private float maxUseDistance = 3.5f;
 
+    [Header("Open Rule")]
+    [Tooltip("켜면 열쇠로 잠금을 푼 뒤 E로 바로 열리지 않고, 해킹 미니게임에 성공해야 열립니다.\n" +
+             "미니게임 쪽(예: TutorialVault)이 성공 시 RequestOpenAfterMinigame을 호출합니다.")]
+    [SerializeField] private bool openByMinigame = true;
+
     [Header("Chest Visual")]
     [SerializeField] private GameObject chestVisual;
     [SerializeField] private Collider chestCollider;
@@ -46,6 +51,9 @@ public class VaultChest : NetworkBehaviour
     public NetworkBool IsOpened { get; set; }
 
     public float MaxUseDistance => maxUseDistance;
+
+    /// <summary>잠금 해제 뒤 해킹 미니게임에 성공해야 열리는 금고인지</summary>
+    public bool OpenByMinigame => openByMinigame;
 
     /// <summary>
     /// 모든 열쇠를 사용하여 잠금이 해제되었는지 확인
@@ -85,6 +93,73 @@ public class VaultChest : NetworkBehaviour
 
         if (chestCollider != null)
             chestCollider.enabled = !IsOpened;
+    }
+
+    /// <summary>
+    /// 사망 재시도 등으로 월드를 되돌릴 때 열쇠 사용 횟수와 개봉 상태를 복원
+    /// StateAuthority에서만 적용
+    /// </summary>
+    public void RestoreCheckpointState(int usedKeyCount, bool opened)
+    {
+        if (Object == null || !Object.IsValid || !Object.HasStateAuthority)
+            return;
+
+        UsedKeyCount = Mathf.Max(0, usedKeyCount);
+        IsOpened = opened;
+        ApplyVisualState();
+    }
+
+    /// <summary>
+    /// 해킹 미니게임에 성공한 뒤 금고 개봉을 요청
+    /// 잠금이 풀린 금고에서만 열리며, 보상 생성 여부는 호출한 쪽이 정함
+    /// (보상을 따로 지급하는 쪽은 spawnReward를 false로 넘김)
+    /// </summary>
+    public void RequestOpenAfterMinigame(NetworkObject playerObject, bool spawnReward = true)
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            Debug.LogWarning(
+                "[VaultChest] 금고가 Fusion Spawn 상태가 아닙니다."
+            );
+            return;
+        }
+
+        if (playerObject == null || !playerObject.IsValid)
+            return;
+
+        RPC_OpenAfterMinigame(playerObject, spawnReward);
+    }
+
+    [Rpc(
+        RpcSources.All,
+        RpcTargets.StateAuthority,
+        HostMode = RpcHostMode.SourceIsHostPlayer)]
+    private void RPC_OpenAfterMinigame(
+        NetworkObject playerObject,
+        bool spawnReward,
+        RpcInfo info = default)
+    {
+        if (!IsValidPlayer(playerObject, info.Source))
+        {
+            Debug.LogWarning(
+                "[VaultChest] 플레이어 검증 또는 거리 검사 실패"
+            );
+            return;
+        }
+
+        if (IsOpened)
+            return;
+
+        // 열쇠로 잠금을 풀지 않았다면 미니게임에 성공해도 열리지 않음
+        if (!IsUnlocked)
+        {
+            Debug.LogWarning(
+                "[VaultChest] 열쇠로 잠금을 풀지 않아 열 수 없습니다."
+            );
+            return;
+        }
+
+        OpenVaultOnAuthority(spawnReward);
     }
 
     /// <summary>
@@ -138,11 +213,15 @@ public class VaultChest : NetworkBehaviour
         }
 
         // ==========================================
-        // 1. 모든 열쇠 사용 완료 → 금고 열기
+        // 1. 모든 열쇠 사용 완료
+        //    - 미니게임 방식: 여기서는 열지 않음 (미니게임 성공 후 RequestOpenAfterMinigame)
+        //    - 즉시 개봉 방식: 바로 금고 열기
         // ==========================================
         if (IsUnlocked)
         {
-            OpenVaultOnAuthority();
+            if (!openByMinigame)
+                OpenVaultOnAuthority(true);
+
             return;
         }
 
@@ -191,7 +270,7 @@ public class VaultChest : NetworkBehaviour
     /// <summary>
     /// StateAuthority에서 금고를 열고 캣닢을 생성
     /// </summary>
-    private void OpenVaultOnAuthority()
+    private void OpenVaultOnAuthority(bool spawnReward)
     {
         if (!Object.HasStateAuthority)
             return;
@@ -199,24 +278,27 @@ public class VaultChest : NetworkBehaviour
         if (IsOpened || !IsUnlocked)
             return;
 
-        if (catnipPrefab == null || catnipSpawnPoint == null)
+        if (spawnReward)
         {
-            Debug.LogError(
-                "[VaultChest] Catnip Prefab 또는 Spawn Point가 없습니다."
+            if (catnipPrefab == null || catnipSpawnPoint == null)
+            {
+                Debug.LogError(
+                    "[VaultChest] Catnip Prefab 또는 Spawn Point가 없습니다."
+                );
+                return;
+            }
+
+            NetworkObject spawnedCatnip = Runner.Spawn(
+                catnipPrefab,
+                catnipSpawnPoint.position,
+                catnipSpawnPoint.rotation
             );
-            return;
-        }
 
-        NetworkObject spawnedCatnip = Runner.Spawn(
-            catnipPrefab,
-            catnipSpawnPoint.position,
-            catnipSpawnPoint.rotation
-        );
-
-        if (spawnedCatnip == null)
-        {
-            Debug.LogError("[VaultChest] 황금 캣닢 생성 실패");
-            return;
+            if (spawnedCatnip == null)
+            {
+                Debug.LogError("[VaultChest] 황금 캣닢 생성 실패");
+                return;
+            }
         }
 
         IsOpened = true;
@@ -258,8 +340,9 @@ public class VaultChest : NetworkBehaviour
             return "";
 
         // 열쇠 사용이 모두 완료된 상태
+        // 미니게임 방식이면 해킹 안내는 미니게임 쪽(예: TutorialVault)이 띄우므로 여기서는 비움
         if (IsUnlocked)
-            return "금고가 열렸습니다. (E키로 OPEN)";
+            return openByMinigame ? "" : "금고가 열렸습니다. (E키로 OPEN)";
 
         // 아직 잠겼지만 열쇠를 선택한 상태
         if (hasSelectedKey)

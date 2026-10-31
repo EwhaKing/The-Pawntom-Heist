@@ -243,6 +243,8 @@ namespace Pawntom.TutorialBridge
             HackingManager.PreferredGameType = null;
             TutorialInputLock.ForgetOwner(this);
             TutorialInputLock.ForgetOwner(_dialogue);
+            GameWorldPause.ForgetOwner(this);
+            GameWorldPause.ForgetOwner(_dialogue);
             Hacking.HackingGameBase.Paused = false;
             _factory?.DestroyOwnedTextures();
             _factory?.DestroyRuntimeFont();
@@ -737,6 +739,7 @@ namespace Pawntom.TutorialBridge
             _dialogue.Close();
             _dialogueHold = false;
             TutorialInputLock.Release(_dialogue);
+            GameWorldPause.Release(_dialogue);
             Hacking.HackingGameBase.Paused = false;
             _probe.ResetForRetry();
             _probe.enabled = true;
@@ -816,12 +819,14 @@ namespace Pawntom.TutorialBridge
                 {
                     _dialogueHold = true;
                     TutorialInputLock.Acquire(_dialogue);
+                    GameWorldPause.Acquire(_dialogue); // 대사만 움직이고 적·상호작용 대상은 멈춘다
                 }
             }
             else if (_dialogueHold && !TutorialDialogueView.IsConfirmHeld())
             {
                 _dialogueHold = false;
                 TutorialInputLock.Release(_dialogue);
+                GameWorldPause.Release(_dialogue);
             }
 
             // 대사를 읽는 동안 해킹 미니게임의 제한 시간이 흐르지 않게 멈춘다. 넘기기에 쓴 Space 를 뗀 뒤에 다시 돌린다
@@ -841,10 +846,12 @@ namespace Pawntom.TutorialBridge
             if (locked)
             {
                 TutorialInputLock.Acquire(this);
+                GameWorldPause.Acquire(this); // 오프닝·정산·엔딩·부활 연출 중에도 월드는 멈춘다
             }
             else
             {
                 TutorialInputLock.Release(this);
+                GameWorldPause.Release(this);
             }
         }
 
