@@ -40,6 +40,10 @@ namespace Pawntom.TutorialBridge
         private float _catCharactersPerSecond = 27f;
 
         private RectTransform _panel;
+        private Image _portraitFrame;
+        private Image _portrait;
+        private Sprite _commandPortrait;
+        private Sprite _catPortrait;
         private CanvasGroup _group;
         private Image _accent;
         private Image _edge;
@@ -142,6 +146,8 @@ namespace Pawntom.TutorialBridge
                 _bars[i] = bar;
             }
 
+            BuildPortrait(factory);
+
             _body = factory.CreateText("Body", _panel, TutorialTheme.DialogueFontSize, TutorialTheme.BodyTextColor, TextAlignmentOptions.TopLeft);
             _body.richText = false; // 잡음 기호 '<' '>' 가 태그로 읽히지 않도록
             _body.lineSpacing = 6f;
@@ -154,6 +160,33 @@ namespace Pawntom.TutorialBridge
             _nextArrow.gameObject.SetActive(false);
 
             _panel.gameObject.SetActive(false);
+        }
+
+        // 대화창 위 왼쪽에 화자 초상 칸을 둔다. 대화창의 자식이라 열릴 때 같이 펼쳐지고 닫힐 때 같이 사라진다.
+        // 그림 파일(Resources/Tutorial/Portrait_Command, Portrait_Cat)이 없으면 검은 네모로 자리만 잡아 둔다.
+        private void BuildPortrait(TutorialUIFactory factory)
+        {
+            _commandPortrait = Resources.Load<Sprite>(TutorialTheme.CommandPortraitPath);
+            _catPortrait = Resources.Load<Sprite>(TutorialTheme.CatPortraitPath);
+
+            _portraitFrame = factory.CreateImage("PortraitFrame", _panel, TutorialTheme.CommandColor);
+            _portraitFrame.raycastTarget = false;
+            TutorialUIFactory.Place(_portraitFrame.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 0f),
+                new Vector2(TutorialTheme.PortraitLeft, TutorialTheme.PortraitGap), TutorialTheme.PortraitSize);
+
+            _portrait = factory.CreateImage("Portrait", _portraitFrame.transform, TutorialTheme.PortraitPlaceholderColor);
+            _portrait.raycastTarget = false;
+            _portrait.preserveAspect = true;
+            float t = TutorialTheme.PortraitFrameThickness;
+            TutorialUIFactory.Inset(_portrait.rectTransform, t, t, t, t);
+        }
+
+        private void ApplyPortrait(bool isCommand, Color frameColor)
+        {
+            Sprite sprite = isCommand ? _commandPortrait : _catPortrait;
+            _portraitFrame.color = frameColor;
+            _portrait.sprite = sprite;
+            _portrait.color = sprite != null ? Color.white : TutorialTheme.PortraitPlaceholderColor;
         }
 
         public void SetSpeeds(float commandCharactersPerSecond, float catCharactersPerSecond)
@@ -196,6 +229,7 @@ namespace Pawntom.TutorialBridge
             _channel.text = isCommand ? "RX  수신" : "TX  발신";
             _channel.color = speakerColor;
             _accent.color = speakerColor;
+            ApplyPortrait(isCommand, speakerColor);
 
             for (int i = 0; i < _bars.Length; i++)
             {

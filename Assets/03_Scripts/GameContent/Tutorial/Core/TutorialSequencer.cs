@@ -152,6 +152,9 @@ namespace Pawntom.Tutorial.Core
 
         public event Action<TutorialBeat> BeatSkipped;
 
+        /// <summary>메인 비트의 마지막 대사까지 끝났을 때. 사망 후 되돌아갈 지점을 잡는 데 쓴다.</summary>
+        public event Action<TutorialBeat> MainBeatCompleted;
+
         public event Action<TutorialHint> HintAdded;
 
         public event Action<TutorialHint, TutorialHintRemoval> HintRemoved;
@@ -352,6 +355,7 @@ namespace Pawntom.Tutorial.Core
                     if (_mainStates[index] == TutorialBeatState.Playing)
                     {
                         _mainStates[index] = TutorialBeatState.Done;
+                        MainBeatCompleted?.Invoke(done.Owner);
                     }
                 }
                 else
@@ -378,6 +382,35 @@ namespace Pawntom.Tutorial.Core
         /// <summary>
         /// 디버그용 강제 진행. 대사가 떠 있으면 끝내고, 대기 중이면 대기를 끊고, 아무것도 없으면 다음 메인 비트를 트리거 없이 시작한다.
         /// </summary>
+        /// <summary>
+        /// 메인 비트 <paramref name="beatId"/> 보다 앞에서 아직 안 열린 메인 비트를 모두 건너뜀으로 돌린다.
+        /// 플레이어가 앞 단계(예: 3-4 경비견 추격)를 건너뛰고 뒤 단계(금고)로 먼저 가 버렸을 때,
+        /// 건너뛸 수 없는 앞 비트가 줄을 막아 뒤 대사가 안 나오는 것을 풀어 준다. 이미 시작·완료된 비트는 건드리지 않는다.
+        /// </summary>
+        /// <returns>건너뛴 비트 수.</returns>
+        public int SkipMainsBefore(string beatId)
+        {
+            int index = _script.IndexOfMain(beatId);
+
+            if (index < 0)
+            {
+                throw new ArgumentException("메인 비트가 아니다: " + beatId, nameof(beatId));
+            }
+
+            int skipped = 0;
+
+            for (int i = _cursor; i < index; i++)
+            {
+                if (_mainStates[i] == TutorialBeatState.Pending)
+                {
+                    Skip(i);
+                    skipped++;
+                }
+            }
+
+            return skipped;
+        }
+
         public void ForceAdvance()
         {
             if (_hasCurrent)

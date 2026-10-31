@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Fusion;
 using Hacking;
 using Pawntom.Tutorial.Core;
 using TMPro;
@@ -52,6 +53,14 @@ namespace Pawntom.TutorialBridge
         [Tooltip("비우면 TMP 기본 폰트(NanumBarunpenR SDF)")]
         [SerializeField] private TMP_FontAsset fontOverride;
 
+        [Header("사망 후 재개")]
+        [Tooltip("죽은 뒤 사망 대사를 들려주고 화면이 어두워지기까지의 시간")]
+        [SerializeField, Min(0f)] private float respawnDelaySeconds = 3.5f;
+
+        [Header("종료")]
+        [Tooltip("'교신 종료' 카드를 보여 준 뒤 메인(로비) 화면으로 돌아가기까지의 시간")]
+        [SerializeField, Min(0f)] private float endCardHoldSeconds = 2.5f;
+
         [Header("정산")]
         [Tooltip("7-10 대사가 끝난 뒤 정산 창을 띄우기까지의 시간")]
         [SerializeField, Min(0f)] private float settlementDelay = 1.2f;
@@ -91,6 +100,18 @@ namespace Pawntom.TutorialBridge
 
         /// <summary>대사가 화면에 뜰 때. 자막 로그·음성 재생 등 외부 연동용.</summary>
         public static event Action<TutorialLine> LineShown;
+
+        /// <summary>로컬 플레이어가 죽었을 때. 경보·사이렌 같은 연출을 끄는 데 쓴다(부활은 이후 별도로 진행된다).</summary>
+        public static event Action LocalPlayerDied;
+
+        /// <summary>사망 재시도로 단계를 처음부터 다시 시작한 직후(<see cref="ResumeStage"/>). 부서진 금고 복구 같은 연출 정리에 쓴다.</summary>
+        public static event Action StageResumed;
+
+        // 이번 사망 뒤 StageResumed 를 이미 보냈는가. 재시도 도중 예외로 못 보냈을 때 Update 가 대신 보낸다.
+        private bool _stageResumedSent = true;
+        private bool _deathShowingLastFrame;
+
+        private const string CatnipBeatId = "7-4";
 
         public TutorialSequencer Sequencer
         {
@@ -191,6 +212,7 @@ namespace Pawntom.TutorialBridge
             _sequencer.Finished += HandleFinished;
 
             _probe.SignalRaised += _sequencer.Raise;
+            _probe.SignalRaised += HandleProbeSignal;
             GameManager.OnStateChanged += HandleGameStateChanged;
 
             _eyelids.SetBlackout(playOpening ? 1f : 0f);
@@ -214,6 +236,7 @@ namespace Pawntom.TutorialBridge
             if (_probe != null && _sequencer != null)
             {
                 _probe.SignalRaised -= _sequencer.Raise;
+                _probe.SignalRaised -= HandleProbeSignal;
             }
 
             GameManager.OnStateChanged -= HandleGameStateChanged;
@@ -227,7 +250,17 @@ namespace Pawntom.TutorialBridge
 
         private void Update()
         {
-            if (_sequencer == null || (_deathFlow != null && _deathFlow.IsShowing))
+            bool deathShowing = _deathFlow != null && _deathFlow.IsShowing;
+
+            // 실패 화면이 닫혔는데 재시도 알림이 못 나갔다면(재시도 도중 예외 등) 여기서 대신 보낸다.
+            if (_deathShowingLastFrame && !deathShowing && !_stageResumedSent)
+            {
+                RaiseStageResumed();
+            }
+
+            _deathShowingLastFrame = deathShowing;
+
+            if (_sequencer == null || deathShowing)
             {
                 return;
             }
@@ -260,7 +293,14 @@ namespace Pawntom.TutorialBridge
         /// <summary>씬 배치 컴포넌트(영역·분전반·금고)가 신호를 보낸다.</summary>
         public void Raise(TutorialSignal signal)
         {
-            _sequencer?.Raise(signal);
+            if (_sequencer == null)
+            {
+                return;
+            }
+
+            // 금고 앞 신호(VaultFront)는 금고가 직접 보낸다. 앞 단계를 건너뛰고 온 경우를 여기서도 풀어 준다.
+            CatchUpToVaultBeat(signal);
+            _sequencer.Raise(signal);
         }
 
         public void ShowCastProgress(string label, float progress)
@@ -445,6 +485,51 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        // 플레이어가 앞 단계를 건너뛰고 금고 단계로 먼저 와 버렸을 때, 건너뛸 수 없는 앞 비트가 줄을 막아
+        // 금고 대사(7-1·7-2·7-4)가 경비견이 올 때까지 안 나오는 것을 풀어 준다. 앞 비트는 건너뜀 처리한다.
+        private void CatchUpToVaultBeat(TutorialSignal signal)
+        {
+            string target;
+
+            switch (signal)
+            {
+                case TutorialSignal.VaultFront:
+                    target = "7-1";
+                    break;
+                case TutorialSignal.VaultHackStarted:
+                    target = "7-2";
+                    break;
+                case TutorialSignal.CatnipAcquired:
+                    target = CatnipBeatId;
+                    break;
+                default:
+                    return;
+            }
+
+            if (_sequencer.GetMainState(target) != TutorialBeatState.Pending)
+            {
+                return;
+            }
+
+            int skipped = _sequencer.SkipMainsBefore(target);
+
+            if (skipped > 0)
+            {
+                Debug.Log("[TutorialDirector] 금고 단계로 먼저 와서 앞 비트 " + skipped + "개를 건너뜁니다 (" + target + ")");
+            }
+        }
+
+        private void HandleProbeSignal(TutorialSignal signal)
+        {
+            if (signal == TutorialSignal.PlayerDied)
+            {
+                LocalPlayerDied?.Invoke();
+                return;
+            }
+
+            CatchUpToVaultBeat(signal);
+        }
+
         // ───────────── 정산 ─────────────
 
         private IEnumerator OpenSettlement(float delay)
@@ -563,6 +648,10 @@ namespace Pawntom.TutorialBridge
 
             Debug.Log("[TutorialDirector] 튜토리얼 완료 — 질의응답 단계로 전환합니다(Completed 이벤트).");
             Completed?.Invoke();
+
+            // 카드를 잠시 보여 준 뒤 메인(로비) 화면으로 돌아간다. 씬이 바뀌면 이 디렉터도 함께 사라진다.
+            yield return new WaitForSecondsRealtime(endCardHoldSeconds);
+            _ = GameManager.Instance.ReturnToMainMenuAsync();
         }
 
         // ───────────── 내부 ─────────────
@@ -626,6 +715,9 @@ namespace Pawntom.TutorialBridge
 
         public void SuspendForDeath()
         {
+            // 사망 처리는 실패 연출(TutorialDeathFlow)이 맡는다. 경보·소집 같은 연출은 여기서 끈다.
+            _stageResumedSent = false;
+            LocalPlayerDied?.Invoke();
             StopAllCoroutines();
             LockControl(true);
             _dialogue.Close();
@@ -651,7 +743,39 @@ namespace Pawntom.TutorialBridge
             _controlEverEnabled = true;
             LockControl(false);
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Idle);
-            _sequencer.RestartStage(stage);
+
+            try
+            {
+                _sequencer.RestartStage(stage);
+            }
+            finally
+            {
+                RaiseStageResumed();
+            }
+        }
+
+        // 구독자 하나가 예외를 내도 나머지(금고 복구·적 초기화)는 실행되게 하나씩 부른다.
+        private void RaiseStageResumed()
+        {
+            _stageResumedSent = true;
+            Action handlers = StageResumed;
+
+            if (handlers == null)
+            {
+                return;
+            }
+
+            foreach (Delegate handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    ((Action)handler)();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
         }
 
         /// <summary>

@@ -47,6 +47,25 @@ namespace Pawntom.Enemy.Tests
         }
 
         [Test]
+        [Description("연출용 - Restart 는 Reset 과 달리 번호를 0 으로 되돌려 경로를 처음부터 다시 돈다")]
+        public void PatrolCursor_Restart_RewindsIndexToZero()
+        {
+            EnemyPatrolCursor cursor = new EnemyPatrolCursor();
+            List<Vector3> route = MakeRoute(3);
+            cursor.SetRoute(route, true);
+
+            Vector3 destination;
+            cursor.Advance(1f, false, 1f, out destination);
+            cursor.Advance(1f, true, 1f, out destination);
+            Assert.AreEqual(1, cursor.WaypointIndex, "사전 조건: 1번 지점을 향하고 있다");
+
+            cursor.Restart();
+            Assert.AreEqual(0, cursor.WaypointIndex, "Restart 는 번호를 0 으로 되돌린다");
+            Assert.AreEqual(EnemyPatrolAction.MoveTo, cursor.Advance(1f, false, 1f, out destination));
+            Assert.AreEqual(route[0], destination, "처음 지점으로 다시 출발한다");
+        }
+
+        [Test]
         [Description("TASK-009 5.3-2 - 한 번의 Advance 에서 나가는 행동은 최대 하나다")]
         public void PatrolCursor_Advance_YieldsAtMostOneAction_PerCall()
         {

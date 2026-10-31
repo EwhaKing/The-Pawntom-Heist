@@ -1,6 +1,8 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Threading.Tasks;
+using Fusion;
 using UnityEngine.SceneManagement;
 
 public enum GameState
@@ -121,7 +123,7 @@ public class GameManager : PawntomSingleton<GameManager>
     {
         if (_isReturningToLobby) return;
 
-        if (sceneName == SceneNames.Map)
+        if (sceneName == SceneNames.Map || sceneName == SceneNames.DemoTutorialMap)
         {
             EnterInGame();
         }
@@ -219,6 +221,47 @@ public class GameManager : PawntomSingleton<GameManager>
         NetworkManager.Instance.LoadGameScene();
     }
 
+
+    /// <summary>
+    /// 로비의 튜토리얼 버튼. 혼자 Host로 접속한 뒤 튜토리얼 씬으로 이동합니다.
+    /// 튜토리얼이 끝나면 <see cref="ReturnToMainMenuAsync"/>로 로비에 돌아옵니다.
+    /// </summary>
+    public async Task StartTutorialAsync()
+    {
+        if (!CanConnect) return;
+
+        try
+        {
+            // 다른 사람의 방과 이름이 겹치지 않도록 매번 새 이름을 쓴다.
+            string sessionName = "Tutorial_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            bool connected = await NetworkManager.Instance.StartNetworkGame(GameMode.Host, sessionName);
+
+            // 실패하면 StartNetworkGame이 세션 정리와 로비 복귀 안내를 이미 처리했다.
+            if (!connected) return;
+
+            NetworkManager.Instance.LoadTutorialScene();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+        }
+    }
+
+    /// <summary>
+    /// 세션을 끝내고 메인(로비) 화면으로 돌아갑니다. 안내 문구는 띄우지 않습니다.
+    /// </summary>
+    public Task ReturnToMainMenuAsync()
+    {
+        if (NetworkManager.Instance.Runner == null)
+        {
+            // 세션 없이 씬만 열어 둔 미리보기. 정리할 세션이 없으니 로비 씬만 불러온다.
+            SceneManager.LoadScene(SceneNames.Lobby);
+            return Task.CompletedTask;
+        }
+
+        return NetworkManager.Instance.LeaveSessionAsync(string.Empty);
+    }
 
     /// <summary>
     /// 탈출 성공 처리

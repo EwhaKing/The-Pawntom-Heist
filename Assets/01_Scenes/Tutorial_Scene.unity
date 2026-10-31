@@ -3804,6 +3804,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 159288349}
+  - component: {fileID: 159288350}
   m_Layer: 0
   m_Name: Soffit_HQ
   m_TagString: Untagged
@@ -3830,6 +3831,26 @@ Transform:
   - {fileID: 601638906}
   m_Father: {fileID: 1624390455}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &159288350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 159288348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &166544350
 GameObject:
   m_ObjectHideFlags: 0
@@ -14963,6 +14984,7 @@ MonoBehaviour:
   minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
   minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  allowFieldOpen: 0
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -15073,7 +15095,7 @@ NavMeshObstacle:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 561764063}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Shape: 1
   m_Extents: {x: 0.5, y: 0.5, z: 0.5}
@@ -30081,6 +30103,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.5, y: 0, z: -10.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1039955969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1039955970}
+  m_Layer: 0
+  m_Name: EnemyGatherPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1039955970
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1039955969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 10.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -47206,6 +47259,7 @@ MonoBehaviour:
   minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
   minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  allowFieldOpen: 0
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -47336,7 +47390,7 @@ NavMeshObstacle:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1572574562}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Shape: 1
   m_Extents: {x: 0.5, y: 0.5, z: 0.5}
@@ -55145,6 +55199,7 @@ GameObject:
   - component: {fileID: 1890865335}
   - component: {fileID: 1890865337}
   - component: {fileID: 1890865336}
+  - component: {fileID: 1890865338}
   m_Layer: 0
   m_Name: Paw_LED
   m_TagString: Untagged
@@ -55224,6 +55279,26 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1890865334}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1890865338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1890865334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &1891327925
 GameObject:
   m_ObjectHideFlags: 0
@@ -55828,7 +55903,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: a718d940130cc2f4b9acbd9065a47334, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: b3cd60fce0dd0bf4f90e5ed2638f5bcd, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &1919759312
 GameObject:
@@ -58768,7 +58843,31 @@ MonoBehaviour:
   rewardItemId: 1
   onOpened:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2058943093}
+        m_TargetAssemblyTypeName: Pawntom.TutorialBridge.TutorialCatnipAlarm, Assembly-CSharp
+        m_MethodName: Trigger
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 2138870735}
+        m_TargetAssemblyTypeName: Pawntom.TutorialBridge.TutorialEnemyRecall, Assembly-CSharp
+        m_MethodName: BeginRecall
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onFailed:
     m_PersistentCalls:
       m_Calls: []
@@ -60673,6 +60772,63 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2058364590}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2058943092
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2058943094}
+  - component: {fileID: 2058943093}
+  m_Layer: 0
+  m_Name: TutorialCatnipAlarm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2058943093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2058943092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 234f8711b7f49b144a0afd8e9fc687ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Pawntom.TutorialBridge.TutorialCatnipAlarm
+  vaultRoot: {fileID: 2020277959}
+  shakeSeconds: 0.45
+  shakeAmount: 0.05
+  debrisCount: 22
+  filterColor: {r: 1, g: 0.13, b: 0.1, a: 1}
+  postExposure: 0.5
+  vignetteColor: {r: 0.25, g: 0, b: 0, a: 1}
+  vignetteIntensity: 0.36
+  bloomIntensity: 0.6
+  pulseMinWeight: 0.62
+  fadeInSeconds: 0.7
+  sirenVolume: 0.32
+  sirenCycleSeconds: 2.4
+--- !u!4 &2058943094
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2058943092}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2060142950
 GameObject:
   m_ObjectHideFlags: 0
@@ -63247,6 +63403,7 @@ GameObject:
   - component: {fileID: 2135929599}
   - component: {fileID: 2135929601}
   - component: {fileID: 2135929600}
+  - component: {fileID: 2135929602}
   m_Layer: 0
   m_Name: Ceiling_HQ
   m_TagString: Untagged
@@ -63326,6 +63483,26 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2135929598}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2135929602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2135929598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &2137518046
 GameObject:
   m_ObjectHideFlags: 0
@@ -63416,6 +63593,65 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2137518046}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2138870734
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2138870736}
+  - component: {fileID: 2138870735}
+  m_Layer: 0
+  m_Name: TutorialEnemyRecall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2138870735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2138870734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b8b0d683abd00243be354345427a91d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Pawntom.TutorialBridge.TutorialEnemyRecall
+  gatherPoint: {fileID: 1039955970}
+  roomFloor: {fileID: 2079977639}
+  doorArriveRadius: 9
+  resendSeconds: 3
+  gatherSpeedMultiplier: 1.8
+  gatherWanderRadius: 2.5
+  spreadAroundPoint: 2.5
+  searchSeconds: 5
+  searchWanderRadius: 3
+  searchRepickSeconds: 1.5
+  roamIntervalMin: 7
+  roamIntervalMax: 12
+  roamAreaRoot: {fileID: 1916055021}
+  roamMinDistance: 6
+  tickSeconds: 0.4
+--- !u!4 &2138870736
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2138870734}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2139395789
 GameObject:
   m_ObjectHideFlags: 0
@@ -63902,3 +64138,6 @@ SceneRoots:
   - {fileID: 564456251}
   - {fileID: 198906129}
   - {fileID: 2020277961}
+  - {fileID: 2058943094}
+  - {fileID: 1039955970}
+  - {fileID: 2138870736}

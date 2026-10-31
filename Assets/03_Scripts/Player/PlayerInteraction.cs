@@ -117,12 +117,105 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
 
+        UpdatePrompt();
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             Debug.Log("[PlayerInteraction] E키 입력 감지");
 
             TryInteract();
         }
+    }
+
+    // ==========================================
+    // 상호작용 안내 ("E | 이름")
+    // ==========================================
+
+    private const float PromptRefreshSeconds = 0.1f;
+    private float _nextPromptRefresh;
+    private string _promptName;
+
+    /// <summary>
+    /// 지금 겨누고 있는 상호작용 대상의 이름을 화면에 띄운다. 대상 판정은 E 를 눌렀을 때와 같은 규칙이다.
+    /// 판정(Raycast·SphereCast)은 0.1초마다 한 번만 하고, 결과는 매 프레임 안내 쪽에 다시 알려 준다.
+    /// </summary>
+    private void UpdatePrompt()
+    {
+        if (Time.unscaledTime >= _nextPromptRefresh)
+        {
+            _nextPromptRefresh = Time.unscaledTime + PromptRefreshSeconds;
+            _promptName = ResolvePromptName();
+        }
+
+        InteractPrompt.Show(_promptName);
+    }
+
+    private string ResolvePromptName()
+    {
+        // 죽은 동안에는 안내를 띄우지 않는다(E 도 막혀 있다).
+        if (_playerData != null && _playerData.IsDead)
+        {
+            return null;
+        }
+
+        // 씬의 다른 MainCamera 가 아니라 이 플레이어의 카메라를 쓴다(TryInteract 와 같은 복구 순서).
+        if (playerCamera == null)
+        {
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponentInChildren<Camera>(true);
+            }
+        }
+
+        if (playerCamera == null)
+        {
+            return null;
+        }
+
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        if (!TryFindInteractionHit(ray, out RaycastHit hit, false))
+        {
+            return null;
+        }
+
+        ControlMachine controlMachine = hit.collider.GetComponentInParent<ControlMachine>();
+
+        if (controlMachine != null)
+        {
+            return controlMachine.IsPlayerInRange(transform.position) ? controlMachine.InteractName : null;
+        }
+
+        EscapeButtonInteraction escapeButton = hit.collider.GetComponentInParent<EscapeButtonInteraction>();
+
+        if (escapeButton != null)
+        {
+            return escapeButton.InteractName;
+        }
+
+        ControllableWall wall = hit.collider.GetComponentInParent<ControllableWall>();
+
+        if (wall != null)
+        {
+            return hit.distance <= wallInteractDistance ? wall.FieldInteractName : null;
+        }
+
+        if (hit.collider.GetComponentInParent<NetworkItem>() == null)
+        {
+            return null;
+        }
+
+        NetworkItem item = FindAimedItem(ray);
+
+        if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+        {
+            return null;
+        }
+
+        ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(item.ItemId) : null;
+        return data != null && !string.IsNullOrEmpty(data.itemName) ? data.itemName : "아이템";
     }
 
     /// <summary>
@@ -202,6 +295,15 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (controlMachine != null)
         {
+            if (!controlMachine.IsPlayerInRange(transform.position))
+            {
+                Debug.Log(
+                    "[PlayerInteraction] 단말기 앞 상자 밖이라 상호작용할 수 없습니다."
+                );
+
+                return;
+            }
+
             Debug.Log(
                 "[PlayerInteraction] ControlMachine 감지 성공"
             );
@@ -450,7 +552,8 @@ public class PlayerInteraction : NetworkBehaviour
     /// </summary>
     private bool TryFindInteractionHit(
         Ray ray,
-        out RaycastHit selectedHit)
+        out RaycastHit selectedHit,
+        bool verbose = true)
     {
         selectedHit = default;
 
@@ -466,9 +569,13 @@ public class PlayerInteraction : NetworkBehaviour
         if (hasDirectHit && IsInteractionCollider(directHit.collider))
         {
             selectedHit = directHit;
-            Debug.Log(
-                "[PlayerInteraction] Raycast로 대상 감지"
-            );
+
+            if (verbose)
+            {
+                Debug.Log(
+                    "[PlayerInteraction] Raycast로 대상 감지"
+                );
+            }
 
             return true;
         }
@@ -492,9 +599,13 @@ public class PlayerInteraction : NetworkBehaviour
                 continue;
 
             selectedHit = candidate;
-            Debug.Log(
-                "[PlayerInteraction] SphereCast로 대상 감지"
-            );
+
+            if (verbose)
+            {
+                Debug.Log(
+                    "[PlayerInteraction] SphereCast로 대상 감지"
+                );
+            }
 
             return true;
         }

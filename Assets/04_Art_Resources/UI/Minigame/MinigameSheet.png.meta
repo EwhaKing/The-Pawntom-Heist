@@ -1,0 +1,1477 @@
+fileFormatVersion: 2
+guid: 654264aa20458fc43a5784fbf9d3d028
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: mg_board_command
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 2479
+        width: 1261
+        height: 793
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e677df04d85aec4db5aa77d6049cb2e
+      internalID: 2128573279
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_board_signal
+      rect:
+        serializedVersion: 2
+        x: 1444
+        y: 2443
+        width: 1288
+        height: 824
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 57f8ac4c141c76b4eb345b33ac4078b9
+      internalID: -1091780676
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_dial
+      rect:
+        serializedVersion: 2
+        x: 77
+        y: 1639
+        width: 774
+        height: 773
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96512f5729031c74cafd7270eb5960ca
+      internalID: 2092746869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_green_up
+      rect:
+        serializedVersion: 2
+        x: 937
+        y: 2152
+        width: 186
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fdd657ae9690b194f96a8152e48ca363
+      internalID: 922766535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_normal_up
+      rect:
+        serializedVersion: 2
+        x: 937
+        y: 1926
+        width: 186
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8fe1a9861908a44793aa0cfa9b72abc
+      internalID: 1301881965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_green_right
+      rect:
+        serializedVersion: 2
+        x: 1166
+        y: 2152
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 04214f7a42266604e9ebb8b0531fd691
+      internalID: -568629449
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_normal_right
+      rect:
+        serializedVersion: 2
+        x: 1166
+        y: 1926
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e21d263a36644c24e816282f2887f8e7
+      internalID: -557561423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_green_down
+      rect:
+        serializedVersion: 2
+        x: 1396
+        y: 2152
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b4bea70805dd3a948b0c8e9ffeba3ec6
+      internalID: -2019226432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_normal_down
+      rect:
+        serializedVersion: 2
+        x: 1396
+        y: 1926
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 906cf507388b32f44ac8d8f981d98d64
+      internalID: -1795828342
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_green_left
+      rect:
+        serializedVersion: 2
+        x: 1626
+        y: 2152
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd8e0928d40cb2f49879e7771383120e
+      internalID: 1352819109
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_normal_left
+      rect:
+        serializedVersion: 2
+        x: 1626
+        y: 1926
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8b2458cd70782fa41bb9f36a3c62b255
+      internalID: -1564086087
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_red_up
+      rect:
+        serializedVersion: 2
+        x: 935
+        y: 1700
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da525ae7e665df042afb8a01bd099151
+      internalID: -173206434
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_red_right
+      rect:
+        serializedVersion: 2
+        x: 1165
+        y: 1700
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ae6bf305b09399245b2f78b1fa1ab68b
+      internalID: -676208945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_red_down
+      rect:
+        serializedVersion: 2
+        x: 1395
+        y: 1700
+        width: 187
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 27fdcafbeefb48c4e86f659a34fe532c
+      internalID: -205270063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_arrow_red_left
+      rect:
+        serializedVersion: 2
+        x: 1625
+        y: 1700
+        width: 186
+        height: 187
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bfa2debd19b7fc14893b6663e78c8f90
+      internalID: -215305592
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_normal_W
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 1240
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2f339b4c1f9cf5479bed32a5acc88ba
+      internalID: 1567432869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_dim_W
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 877
+        width: 362
+        height: 324
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0a950235f261d8d4f859a57b79b1997f
+      internalID: -164714293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_green_W
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 515
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6384d9837c1bc42438631ef6d2d1a9e7
+      internalID: -638020413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_red_W
+      rect:
+        serializedVersion: 2
+        x: 106
+        y: 153
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ebcd480aabfd18c4f903ca72f2f07007
+      internalID: 333644792
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_normal_S
+      rect:
+        serializedVersion: 2
+        x: 521
+        y: 1240
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e897904d5ec5e864e950fcd34cfa472d
+      internalID: -1819776815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_dim_S
+      rect:
+        serializedVersion: 2
+        x: 521
+        y: 877
+        width: 362
+        height: 324
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c9e5be6e35d31f445bdfea78490b5c85
+      internalID: -760837542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_green_S
+      rect:
+        serializedVersion: 2
+        x: 519
+        y: 515
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d0ee036e86bd804bb9ac212d9c99246
+      internalID: -1479956645
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_red_S
+      rect:
+        serializedVersion: 2
+        x: 518
+        y: 153
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: df333dd95a228c044ab4c4b3d88ec1eb
+      internalID: -1703506491
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_normal_A
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 1240
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d58c67a6bb8351042bacc3414fe7f08f
+      internalID: -1409541124
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_dim_A
+      rect:
+        serializedVersion: 2
+        x: 933
+        y: 877
+        width: 362
+        height: 324
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30a378353ccb000488c2978ec7554ba3
+      internalID: -428704880
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_green_A
+      rect:
+        serializedVersion: 2
+        x: 931
+        y: 515
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e63b6a4a59417ad43bd92736776f7f39
+      internalID: -2010107533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_red_A
+      rect:
+        serializedVersion: 2
+        x: 930
+        y: 153
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 27a24992bfa504b4c91badb9966ec97e
+      internalID: -857942524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_normal_D
+      rect:
+        serializedVersion: 2
+        x: 1345
+        y: 1240
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e6adefc72870a6045b1d6d6177dbef44
+      internalID: 1307224074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_dim_D
+      rect:
+        serializedVersion: 2
+        x: 1345
+        y: 877
+        width: 362
+        height: 324
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17662d09a66bafc46ae11c3f94228db9
+      internalID: -1690614752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_green_D
+      rect:
+        serializedVersion: 2
+        x: 1343
+        y: 515
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 707a13fa486cc3843acede5668732e49
+      internalID: -798186058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_key_red_D
+      rect:
+        serializedVersion: 2
+        x: 1342
+        y: 153
+        width: 362
+        height: 323
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eac9424840c487c42924448190b211c1
+      internalID: -985181743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_ring_green_big
+      rect:
+        serializedVersion: 2
+        x: 1792
+        y: 704
+        width: 553
+        height: 545
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ada5a92fc1e230f408990cc1168a5a4c
+      internalID: -924032545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_ring_red_big
+      rect:
+        serializedVersion: 2
+        x: 2413
+        y: 704
+        width: 553
+        height: 545
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6b486e14d401019439086639c1c815d3
+      internalID: 431606760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_ring_green_small
+      rect:
+        serializedVersion: 2
+        x: 1792
+        y: 111
+        width: 553
+        height: 545
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: de0a46bc14b1c484589128a70a711b89
+      internalID: -1303657239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_ring_red_small
+      rect:
+        serializedVersion: 2
+        x: 2413
+        y: 111
+        width: 553
+        height: 545
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6cc824327db79ad4886e89c6c08a5189
+      internalID: -2058332635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_circle_dark
+      rect:
+        serializedVersion: 2
+        x: 1917
+        y: 1689
+        width: 207
+        height: 207
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c342af696025a2b4aa673513dbd5b9ad
+      internalID: -213466187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_circle_green
+      rect:
+        serializedVersion: 2
+        x: 2155
+        y: 1689
+        width: 207
+        height: 207
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 526058f63d81a9142a9a6fc2a6a53d39
+      internalID: 1367400674
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_circle_red
+      rect:
+        serializedVersion: 2
+        x: 2393
+        y: 1689
+        width: 207
+        height: 207
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 81976ab9983a34b46bb9f9fd8f636a4b
+      internalID: -1825198025
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_dark
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 2302
+        width: 960
+        height: 39
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e168cd55c91d7dd4c94bb06be00c1840
+      internalID: 334463096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_green
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 2241
+        width: 960
+        height: 39
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: edd052a70e200bb458780b72503b9070
+      internalID: 242973802
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_red
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 2180
+        width: 960
+        height: 38
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 10806151727f4194aa4eab524e4e2633
+      internalID: -206207604
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_frame
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 2077
+        width: 1106
+        height: 59
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f3b2a37f22730694d8f56e45686cba23
+      internalID: -647661930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_green_slant
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 2007
+        width: 1072
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 49da68d2660a3a34dbbb1b58c8078eb8
+      internalID: 357984023
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_bar_red_slant
+      rect:
+        serializedVersion: 2
+        x: 1925
+        y: 1931
+        width: 1072
+        height: 41
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab2f71a5c579f224aa8938441962900a
+      internalID: 1884977245
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_label_timer_green
+      rect:
+        serializedVersion: 2
+        x: 1911
+        y: 1394
+        width: 122
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8b892acd6865ac94ab269f1ef2a1c20f
+      internalID: -838375965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_label_timer_green_small
+      rect:
+        serializedVersion: 2
+        x: 2065
+        y: 1394
+        width: 100
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 232da2af0e98c3e4b871492820a7db6d
+      internalID: 1191450711
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_label_timer_red
+      rect:
+        serializedVersion: 2
+        x: 1911
+        y: 1321
+        width: 123
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d7b5b46e5fb4aba43b0cdb69f336f7fe
+      internalID: -77129732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_label_timer_red_small
+      rect:
+        serializedVersion: 2
+        x: 2065
+        y: 1321
+        width: 101
+        height: 35
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 599a01ad93138824eaca2048d3519cfb
+      internalID: -1175485101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_label_connecting
+      rect:
+        serializedVersion: 2
+        x: 2798
+        y: 1321
+        width: 293
+        height: 43
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c1f7a322137c374286a73cf3a147c35
+      internalID: -1880704250
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_needle
+      rect:
+        serializedVersion: 2
+        x: 1796
+        y: 1414
+        width: 17
+        height: 141
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: efbc33a305c05f24bbd47d5aae1c007f
+      internalID: 2014086315
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_green_0
+      rect:
+        serializedVersion: 2
+        x: 2250
+        y: 1389
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: adb851ed0afa7524e924d1bb22ad7911
+      internalID: 1176393638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_red_0
+      rect:
+        serializedVersion: 2
+        x: 2250
+        y: 1316
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b955511d760af345ab425d83f6cd0f4
+      internalID: -647781777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_green_1
+      rect:
+        serializedVersion: 2
+        x: 2355
+        y: 1389
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bad58224a4c8d8149b535f89b99286eb
+      internalID: 366053795
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_red_1
+      rect:
+        serializedVersion: 2
+        x: 2355
+        y: 1316
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 314384faa6a76eb4e9fba10e9262673a
+      internalID: 998638994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_green_2
+      rect:
+        serializedVersion: 2
+        x: 2460
+        y: 1389
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 37510e430ece6574f8acd203b587be55
+      internalID: 1906242863
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_red_2
+      rect:
+        serializedVersion: 2
+        x: 2460
+        y: 1316
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3bd6a78f75a8eb5499c9309abc22c5df
+      internalID: 1343202766
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_green_3
+      rect:
+        serializedVersion: 2
+        x: 2565
+        y: 1389
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 83c3b0852b549e64881680b48e995475
+      internalID: -561559286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mg_tri_red_3
+      rect:
+        serializedVersion: 2
+        x: 2565
+        y: 1316
+        width: 55
+        height: 55
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4db2ec9679ac4164b9b4ad77d8dc53c0
+      internalID: 1920770993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: e2068ef85226b064185365f12b5132a4
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      mg_arrow_green_down: -2019226432
+      mg_arrow_green_left: 1352819109
+      mg_arrow_green_right: -568629449
+      mg_arrow_green_up: 922766535
+      mg_arrow_normal_down: -1795828342
+      mg_arrow_normal_left: -1564086087
+      mg_arrow_normal_right: -557561423
+      mg_arrow_normal_up: 1301881965
+      mg_arrow_red_down: -205270063
+      mg_arrow_red_left: -215305592
+      mg_arrow_red_right: -676208945
+      mg_arrow_red_up: -173206434
+      mg_bar_dark: 334463096
+      mg_bar_frame: -647661930
+      mg_bar_green: 242973802
+      mg_bar_green_slant: 357984023
+      mg_bar_red: -206207604
+      mg_bar_red_slant: 1884977245
+      mg_board_command: 2128573279
+      mg_board_signal: -1091780676
+      mg_circle_dark: -213466187
+      mg_circle_green: 1367400674
+      mg_circle_red: -1825198025
+      mg_dial: 2092746869
+      mg_key_dim_A: -428704880
+      mg_key_dim_D: -1690614752
+      mg_key_dim_S: -760837542
+      mg_key_dim_W: -164714293
+      mg_key_green_A: -2010107533
+      mg_key_green_D: -798186058
+      mg_key_green_S: -1479956645
+      mg_key_green_W: -638020413
+      mg_key_normal_A: -1409541124
+      mg_key_normal_D: 1307224074
+      mg_key_normal_S: -1819776815
+      mg_key_normal_W: 1567432869
+      mg_key_red_A: -857942524
+      mg_key_red_D: -985181743
+      mg_key_red_S: -1703506491
+      mg_key_red_W: 333644792
+      mg_label_connecting: -1880704250
+      mg_label_timer_green: -838375965
+      mg_label_timer_green_small: 1191450711
+      mg_label_timer_red: -77129732
+      mg_label_timer_red_small: -1175485101
+      mg_needle: 2014086315
+      mg_ring_green_big: -924032545
+      mg_ring_green_small: -1303657239
+      mg_ring_red_big: 431606760
+      mg_ring_red_small: -2058332635
+      mg_tri_green_0: 1176393638
+      mg_tri_green_1: 366053795
+      mg_tri_green_2: 1906242863
+      mg_tri_green_3: -561559286
+      mg_tri_red_0: -647781777
+      mg_tri_red_1: 998638994
+      mg_tri_red_2: 1343202766
+      mg_tri_red_3: 1920770993
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

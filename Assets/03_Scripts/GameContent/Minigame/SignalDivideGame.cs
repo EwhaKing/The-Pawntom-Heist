@@ -31,6 +31,19 @@ namespace Hacking
         private KeyCode secondSignalKey = KeyCode.D;
 
         private KeyCode lastPressedKey = KeyCode.None;
+        private KeyCode lastRejectedKey = KeyCode.None;
+
+        /// <summary>마지막으로 게이지를 올린 키. 다음에는 반대쪽 키를 눌러야 합니다.</summary>
+        public KeyCode LastPressedKey => lastPressedKey;
+
+        /// <summary>게이지를 올린 입력 횟수. HackingPopupView가 키 피드백(초록)을 띄울 때 변화를 감지합니다.</summary>
+        public int AcceptedPressCount { get; private set; }
+
+        /// <summary>같은 키를 연속으로 눌러 무시된 횟수. HackingPopupView가 키 피드백(빨강)을 띄울 때 변화를 감지합니다.</summary>
+        public int RejectedPressCount { get; private set; }
+
+        /// <summary>마지막으로 무시된 키.</summary>
+        public KeyCode LastRejectedKey => lastRejectedKey;
 
         /// <summary>
         /// HackingPopupView가 게이지 슬라이더를 갱신할 때 읽어가는 값
@@ -56,6 +69,9 @@ namespace Hacking
 
             progressGauge = 0f;
             lastPressedKey = KeyCode.None;
+            lastRejectedKey = KeyCode.None;
+            AcceptedPressCount = 0;
+            RejectedPressCount = 0;
 
             SelectSignalKeys();
 
@@ -191,11 +207,14 @@ namespace Hacking
             // 같은 키를 연속으로 누르면 무시
             if (pressed == lastPressedKey)
             {
+                lastRejectedKey = pressed;
+                RejectedPressCount++;
                 Debug.Log($"[SignalDivideGame] 같은 키 연속 입력 무시: {pressed}");
                 return;
             }
 
             lastPressedKey = pressed;
+            AcceptedPressCount++;
             progressGauge += gaugeIncreasePerPress;
 
             Debug.Log($"[SignalDivideGame] 입력 키: {pressed} / 게이지: {progressGauge:F1} / {maxGauge}");
