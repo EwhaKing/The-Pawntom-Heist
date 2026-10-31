@@ -45,9 +45,6 @@ namespace Pawntom.TutorialBridge
         [Tooltip("사이렌이 한 번 올라갔다 내려오는 길이(초). 화면 깜박임도 이 주기를 따른다")]
         [SerializeField, Min(0.5f)] private float sirenCycleSeconds = 2.4f;
 
-        /// <summary>경보가 시작된 순간(캣닢을 얻고 금고가 부서질 때). 디렉터가 그 자리를 되돌아갈 지점으로 삼는다.</summary>
-        public static event System.Action Triggered;
-
         private bool _triggered;
         private bool _stopped;
         private Volume _volume;
@@ -74,7 +71,6 @@ namespace Pawntom.TutorialBridge
             }
 
             _triggered = true;
-            Triggered?.Invoke();
             StartCoroutine(RunAlarm());
             if (vaultRoot != null)
             {
@@ -91,21 +87,24 @@ namespace Pawntom.TutorialBridge
         private void OnEnable()
         {
             TutorialDirector.LocalPlayerDied += HandlePlayerDied;
-            TutorialDirector.CheckpointRestored += HandleCheckpointRestored;
+            TutorialDirector.StageResumed += HandleStageResumed;
         }
 
         private void OnDisable()
         {
             TutorialDirector.LocalPlayerDied -= HandlePlayerDied;
-            TutorialDirector.CheckpointRestored -= HandleCheckpointRestored;
+            TutorialDirector.StageResumed -= HandleStageResumed;
         }
 
-        // 캣닢 미션 도중 죽어 그 미션으로 돌아왔다면 금고를 되살리고 경보를 다시 쓸 수 있게 되돌린다.
-        private void HandleCheckpointRestored(string beatId)
+        // 사망 재시도로 단계가 다시 시작되면, 이 연출이 부순 금고를 되살리고 경보를 다시 쓸 수 있게 되돌린다.
+        // 부서진 금고는 비활성이라 단계 체크포인트(TutorialStageCheckpoint)의 금고 복구 대상에 안 잡힌다.
+        private void HandleStageResumed()
         {
-            if (beatId == "7-4")
+            // 경보를 켠 적이 없어도 금고가 숨겨진 채라면(경보 중 죽어 상태가 어긋난 경우) 되살린다.
+            if (_triggered || (vaultRoot != null && !vaultRoot.activeSelf))
             {
                 ResetForRetry();
+                Debug.Log("[TutorialCatnipAlarm] 단계 재시도: 금고를 되살리고 경보를 초기화했습니다.");
             }
         }
 

@@ -411,52 +411,6 @@ namespace Pawntom.Tutorial.Core
             return skipped;
         }
 
-        /// <summary>
-        /// 메인 비트 <paramref name="beatId"/> 부터 끝까지를 아직 안 지나간 상태로 되돌린다(사망 후 그 미션을 처음부터 다시 하게 할 때).
-        /// 재생 중이던 대사와 대기열·안내는 정리하고, 그 비트의 신호는 되돌린 뒤에 새로 들어온 것만 인정한다.
-        /// 곁가지 비트의 재생 횟수는 그대로 둔다.
-        /// </summary>
-        public void RewindMainTo(string beatId)
-        {
-            int index = _script.IndexOfMain(beatId);
-
-            if (index < 0)
-            {
-                throw new ArgumentException("메인 비트가 아니다: " + beatId, nameof(beatId));
-            }
-
-            // 떠 있는 대사는 정상적으로 끝내서 화면이 지워지게 한다. 다음 대사가 이어지지 않도록 대기열을 먼저 비운다.
-            _queue.Clear();
-            _delayArmed = false;
-            _delayRemaining = 0f;
-
-            if (_hasCurrent)
-            {
-                CompleteCurrentLine();
-            }
-
-            _queue.Clear();
-            _armedHint = null;
-            _recallLine = null;
-
-            for (int i = _hints.Count - 1; i >= 0; i--)
-            {
-                RemoveHintAt(i, TutorialHintRemoval.StageChanged);
-            }
-
-            for (int i = index; i < _mainStates.Length; i++)
-            {
-                _mainStates[i] = TutorialBeatState.Pending;
-            }
-
-            Array.Clear(_sideQueued, 0, _sideQueued.Length);
-
-            _cursor = index;
-            _validFrom = _stampCounter;
-            _lastMainStart = _stampCounter;
-            _finished = false;
-        }
-
         public void ForceAdvance()
         {
             if (_hasCurrent)

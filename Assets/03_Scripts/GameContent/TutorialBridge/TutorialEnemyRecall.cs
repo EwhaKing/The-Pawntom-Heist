@@ -133,31 +133,52 @@ namespace Pawntom.TutorialBridge
         private void OnEnable()
         {
             TutorialDirector.LocalPlayerDied += HandlePlayerDied;
-            TutorialDirector.CheckpointRestored += HandleCheckpointRestored;
+            TutorialDirector.StageResumed += HandleStageResumed;
         }
 
         private void OnDisable()
         {
             TutorialDirector.LocalPlayerDied -= HandlePlayerDied;
-            TutorialDirector.CheckpointRestored -= HandleCheckpointRestored;
+            TutorialDirector.StageResumed -= HandleStageResumed;
             ReleaseAll();
         }
 
-        // 죽어서 체크포인트로 돌아왔다면(어느 단계든) 적도 처음 상태(각자 순찰 경로 0번 지점, 순찰 중)로 되돌린다.
-        // 그래야 다시 시작할 때 금고방을 둘러싼 두 마리가 다시 반대로 돈다.
-        private void HandleCheckpointRestored(string beatId)
+        // 사망 재시도로 단계가 다시 시작되면 소집을 풀고, 모든 적을 순찰 시작 지점으로 되돌린다.
+        // 단계 체크포인트(TutorialStageCheckpoint)가 적을 체크포인트 때의 자리로 옮겨 둔 뒤라, 그 위에서 처음 자리로 다시 보낸다.
+        // 같은 프레임에 다른 곳이 적을 다시 움직여도 처음 자리가 이기도록 한 프레임 뒤에 한 번 더 확인한다.
+        private void HandleStageResumed()
         {
             StopRecall();
+            ResetAllEnemies();
 
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(ResetEnemiesNextFrame());
+            }
+        }
+
+        private System.Collections.IEnumerator ResetEnemiesNextFrame()
+        {
+            yield return null;
+            ResetAllEnemies();
+        }
+
+        private void ResetAllEnemies()
+        {
+            int reset = 0;
             IReadOnlyList<EnemyAgent> agents = EnemyAgent.Active;
+
             for (int i = 0; i < agents.Count; i++)
             {
                 EnemyAgent agent = agents[i];
                 if (agent != null && agent.isActiveAndEnabled && HasAuthority(agent))
                 {
                     agent.ResetToPatrolStart();
+                    reset++;
                 }
             }
+
+            Debug.Log("[TutorialEnemyRecall] 단계 재시도: 적 " + reset + "/" + agents.Count + "마리를 순찰 시작 지점으로 되돌렸습니다.");
         }
 
         // 플레이어가 죽으면 소집을 풀어 적이 평소 행동으로 돌아가게 한다.
