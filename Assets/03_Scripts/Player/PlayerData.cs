@@ -35,6 +35,7 @@ public class PlayerData : NetworkBehaviour
     [Networked] public Vector3 DeathPosition { get; private set; }
     [Networked] private TickTimer DeathTimer { get; set; }
     private bool _animationFinished;
+    private TickTimer _tutorialRetryProtection;
     private InventoryManager _inventory;
     private const float DefaultMaxHealth = 100f;
     private const float DefaultMaxStamina = 100f;
@@ -86,6 +87,7 @@ public class PlayerData : NetworkBehaviour
         _inventory = GetComponent<InventoryManager>();
         _animationFinished = false;
         _deathNotified = false;
+        _tutorialRetryProtection = TickTimer.None;
         if (!Object.HasStateAuthority)
         {
             OnDeathChanged();
@@ -188,6 +190,10 @@ public class PlayerData : NetworkBehaviour
             return;
         }
 
+        if (Pawntom.TutorialBridge.TutorialDirector.Active != null &&
+            (!_tutorialRetryProtection.ExpiredOrNotRunning(Runner) ||
+             Pawntom.TutorialBridge.TutorialInputLock.IsLocked)) return;
+
         CurrentHealth = Mathf.Max(0f, CurrentHealth - amount);
 
         if (CurrentHealth <= 0f)
@@ -200,6 +206,29 @@ public class PlayerData : NetworkBehaviour
             IsExhausted = false;
             ExhaustedTimer = TickTimer.None;
         }
+    }
+
+    /// <summary>혼자 진행하는 튜토리얼의 단계 재시도 전용. 일반 맵에서는 부활하지 않는다.</summary>
+    public bool TryRestartTutorial(Vector3 position, Quaternion rotation)
+    {
+        if (Pawntom.TutorialBridge.TutorialDirector.Active == null || Object == null ||
+            !Object.IsValid || !Object.HasStateAuthority || !IsDead) return false;
+        NetworkCharacterController controller = GetComponent<NetworkCharacterController>();
+        if (controller == null) return false;
+        controller.Teleport(position, rotation);
+        controller.Velocity = Vector3.zero;
+        GetComponent<PlayerController>().ResetTutorialLook();
+        CurrentHealth = MaxHealth;
+        CurrentStamina = MaxStamina;
+        IsSprinting = IsParkouring = IsExhausted = false;
+        ExhaustedTimer = DeathTimer = TickTimer.None;
+        DeathSequenceCompleted = false;
+        _animationFinished = _deathNotified = false;
+        _tutorialRetryProtection = TickTimer.CreateFromSeconds(Runner, 2f);
+        IsDead = false;
+        OnHealthChanged();
+        OnStaminaChanged();
+        return true;
     }
 
     public void RestoreHealth(float amount)

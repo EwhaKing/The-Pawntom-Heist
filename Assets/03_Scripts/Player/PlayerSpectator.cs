@@ -51,6 +51,8 @@ public sealed class PlayerSpectator : MonoBehaviour
 
     private void LateUpdate()
     {
+        // 튜토리얼은 일반 관전 대신 단계 재시도 화면이 카메라를 관리합니다.
+        if (Pawntom.TutorialBridge.TutorialDirector.Active != null) return;
         if (!CanSpectate)
         {
             if (_started) StopSpectating();

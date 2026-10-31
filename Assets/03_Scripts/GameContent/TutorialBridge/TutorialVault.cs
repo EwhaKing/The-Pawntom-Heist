@@ -178,6 +178,12 @@ namespace Pawntom.TutorialBridge
             onOpened.Invoke();
         }
 
+        public void RestoreCheckpoint(bool opened)
+        {
+            IsOpened = opened;
+            IsVaultHackPending = false;
+        }
+
         private void GiveReward()
         {
             TutorialDirector director = TutorialDirector.Active;

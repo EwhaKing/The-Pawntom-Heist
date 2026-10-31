@@ -8,6 +8,11 @@ using UnityEngine.UI;
 /// </summary>
 public class PlayerStatusUI : MonoBehaviour
 {
+    public bool PortraitVisible
+    {
+        get => catImage != null && catImage.enabled;
+        set { if (catImage != null) catImage.enabled = value; }
+    }
     [Header("Character")]
     [SerializeField] private Image catImage;
     [SerializeField] private Sprite blackCatSprite;

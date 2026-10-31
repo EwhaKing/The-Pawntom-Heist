@@ -153,6 +153,14 @@ namespace Pawntom.TutorialBridge
             director.Raise(TutorialSignal.SecurityNodeConnected);
         }
 
+        public void RestoreCheckpoint(bool connected)
+        {
+            CancelCast();
+            IsConnected = connected;
+            _cueFired = false;
+            _progress = 0f;
+        }
+
         private void CancelCast()
         {
             if (!_casting)

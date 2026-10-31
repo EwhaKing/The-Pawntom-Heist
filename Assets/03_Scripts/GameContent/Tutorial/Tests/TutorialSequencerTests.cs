@@ -8,6 +8,49 @@ namespace Pawntom.Tutorial.Tests
     {
         private const TutorialSpeaker Hq = TutorialSpeaker.Command;
 
+        [Test]
+        public void RestartStage_ReplaysFirstLineAndPreservesEarlierStageCompletion()
+        {
+            var sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.None, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.CorridorAEndReached, L("b")),
+                TutorialBeat.Main("c", 2, TutorialSignal.Jumped, L("c")));
+            sequencer.RestartStage(2);
+            Assert.AreEqual("b", sequencer.CurrentLine.Id);
+            Assert.AreEqual(TutorialBeatState.Done, sequencer.GetMainState("a"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("c"));
+            sequencer.Raise(TutorialSignal.Jumped);
+            Pump(sequencer);
+            sequencer.RestartStage(2);
+            Assert.AreEqual("b", sequencer.CurrentLine.Id);
+        }
+
+        [Test]
+        public void RestartStage_DiscardsQueuedSignalsAndOldHints()
+        {
+            var sequencer = Make(
+                TutorialBeat.Main("a", 2, TutorialSignal.None,
+                    L("a").WithHint("Jump", TutorialSignal.Jumped)),
+                TutorialBeat.Main("b", 2, TutorialSignal.Jumped, L("b")));
+            Pump(sequencer);
+            Assert.AreEqual(1, sequencer.Hints.Count);
+            sequencer.Raise(TutorialSignal.Jumped);
+            sequencer.RestartStage(2);
+            Assert.AreEqual(0, sequencer.Hints.Count);
+            Pump(sequencer);
+            Assert.IsNull(sequencer.CurrentLine);
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("b"));
+        }
+
+        [Test]
+        public void RestartStage_InvalidStageDoesNotChangeCurrentLine()
+        {
+            var sequencer = Make(TutorialBeat.Main("a", 1, TutorialSignal.None, L("a")));
+            sequencer.Tick(0f);
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => sequencer.RestartStage(99));
+            Assert.AreEqual("a", sequencer.CurrentLine.Id);
+        }
+
         private static TutorialLine L(string id)
         {
             return new TutorialLine(id, Hq, "대사 " + id);

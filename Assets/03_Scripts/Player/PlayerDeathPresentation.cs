@@ -49,6 +49,8 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
     private Renderer[] _traceRenderers;
     private bool[] _traceRendererVisibility;
     private bool _traceHidden;
+    private readonly List<Pawntom.Enemy.Adapters.EnemyTargetRegistrar> _disabledRegistrars =
+        new List<Pawntom.Enemy.Adapters.EnemyTargetRegistrar>();
     private GameObject _deathEffect;
     private bool _traceCreated;
 
@@ -105,6 +107,7 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
 
     public override void Render()
     {
+        if (_spawned && _presented && !_playerData.IsDead) ResetTutorialPresentation();
         // 늦은 참가와 재활성화 시에도 현재 사망 상태를 반영합니다.
         if (!_spawned || !isActiveAndEnabled || !_playerData.IsDead)
         {
@@ -143,7 +146,11 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
         _presented = true;
         // 죽은 캐릭터를 적이 계속 추격하지 않도록 각 피어의 감지 대상에서 제외합니다.
         foreach (Pawntom.Enemy.Adapters.EnemyTargetRegistrar registrar in GetComponentsInChildren<Pawntom.Enemy.Adapters.EnemyTargetRegistrar>())
+        {
+            if (!registrar.enabled) continue;
+            _disabledRegistrars.Add(registrar);
             registrar.enabled = false;
+        }
         if (Object.HasInputAuthority && _playerCamera != null)
         {
             foreach (Hacking.HackingManager hacking in FindObjectsByType<Hacking.HackingManager>(FindObjectsSortMode.None))
@@ -272,6 +279,7 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
     public void SetViewingCamera(Camera camera)
     {
         if (camera == null || camera == _playerCamera) return;
+        RestoreTraceVisibility();
         ClearGrayscaleEffect();
         _playerCamera = camera;
         if (_spawned && _presented && isActiveAndEnabled && Object != null &&
@@ -294,6 +302,8 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
             FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (Canvas canvas in canvases)
         {
+            // 실패 문구의 주황색과 회색 베일은 월드 흑백 후처리 위에 표시합니다.
+            if (canvas.GetComponent<Pawntom.TutorialBridge.TutorialFailureView>() != null) continue;
             if (!canvas.isRootCanvas || canvas.renderMode == RenderMode.WorldSpace ||
                 canvas.targetDisplay != _playerCamera.targetDisplay || _screenCanvases.ContainsKey(canvas))
             {
@@ -392,6 +402,22 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
         ClearGrayscaleEffect();
         RestoreDeathCamera();
         _presented = false;
+    }
+
+    public void ResetTutorialPresentation()
+    {
+        RestoreTraceVisibility();
+        ClearGrayscaleEffect();
+        RestoreDeathCamera();
+        _playerCamera = GetComponent<PlayerController>().ViewCamera;
+        foreach (var registrar in _disabledRegistrars)
+            if (registrar != null) registrar.enabled = true;
+        _disabledRegistrars.Clear();
+        if (_deathTrace != null) Destroy(_deathTrace);
+        if (_deathEffect != null) Destroy(_deathEffect);
+        _traceRenderers = null;
+        _traceRendererVisibility = null;
+        _presented = _animationPlayed = _traceCreated = false;
     }
 
     private void RestoreTraceVisibility()

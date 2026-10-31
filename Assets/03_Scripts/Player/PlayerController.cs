@@ -174,6 +174,14 @@ public class PlayerController : NetworkBehaviour
             Runner, Mathf.Max(0.01f, _contactDamageInterval));
     }
 
+    public void ResetTutorialLook()
+    {
+        ViewPitch = 0f;
+        _previousButtons = default;
+        ContactDamageCooldown = TickTimer.None;
+        if (playerCamera != null) playerCamera.transform.localRotation = Quaternion.identity;
+    }
+
     private void HandleMove(Vector2 moveInput, bool isSprinting)
     {
         if (Object.HasStateAuthority)
