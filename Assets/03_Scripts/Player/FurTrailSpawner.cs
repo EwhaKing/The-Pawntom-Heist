@@ -13,13 +13,13 @@ public class FurTrailSpawner : NetworkBehaviour
     [SerializeField] private NetworkObject furBallPrefab;
 
     // 수치는 플레이어 스케일 0.05(키 1.55m, 걷기 1m/s·달리기 2.25m/s) 기준이다.
-    // 스케일 축소 전과 같은 "생성 간격(초)"이 되도록 맞췄다: 걷기 약 0.7초, 달리기 약 0.6초마다 하나.
+    // 걷기 약 1.8초, 달리기 약 1.2초마다 하나(예전 0.7m/1.3m 는 너무 촘촘하다는 플레이 피드백으로 늘렸다).
     [Header("Spawn Distance")]
     [Tooltip("걷는 동안 털공 하나가 생성되기까지 필요한 수평 이동 거리입니다.")]
-    [SerializeField, Min(0.1f)] private float walkSpawnDistance = 0.7f;
+    [SerializeField, Min(0.1f)] private float walkSpawnDistance = 1.8f;
 
     [Tooltip("달리는 동안 털공 하나가 생성되기까지 필요한 수평 이동 거리입니다. 넓게 퍼지도록 걷기 값보다 크게 설정하세요.")]
-    [SerializeField, Min(0.1f)] private float sprintSpawnDistance = 1.3f;
+    [SerializeField, Min(0.1f)] private float sprintSpawnDistance = 2.7f;
 
     [Header("Random Scatter")]
     [Tooltip("플레이어 진행 방향을 기준으로 좌우에 무작위로 흩어지는 최대 거리입니다.")]

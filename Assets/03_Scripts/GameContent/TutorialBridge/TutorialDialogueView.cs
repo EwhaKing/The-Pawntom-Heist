@@ -13,6 +13,8 @@ namespace Pawntom.TutorialBridge
     /// <item>타자기: 화자별 속도, 문장부호 뒤 쉼, 글자마다 출력음.</item>
     /// <item>노이즈: 방금 찍힌 글자가 잡음 기호로 보였다 풀리는 해독 꼬리, 지휘부(무전) 대사에는 주기적인 간섭
     ///       (글자 일부 잡음 + 글자 떨림 + 창 흔들림 + 지직 소리).</item>
+    /// <item>넘기기: 메인 대사는 Space·좌클릭으로 넘긴다 — 출력 중이면 한 번에 다 찍고, 다 찍힌 뒤에는 오른쪽 아래 ▼ 가
+    ///       깜빡이며 다음 입력을 기다린다. 상황 대사(추격·재촉 등)는 플레이 중에 끼어드므로 예전처럼 저절로 넘어간다.</item>
     /// </list>
     /// Update 에서 할당하지 않는다 — 문자열 대신 char 버퍼와 TMP SetCharArray/maxVisibleCharacters 를 쓴다.
     /// </summary>
@@ -31,6 +33,8 @@ namespace Pawntom.TutorialBridge
         private const float CloseSeconds = 0.16f;
         private const float SwapSeconds = 0.1f;
         private const float BarRefreshSeconds = 0.08f;
+        private static readonly Vector2 NextArrowSize = new Vector2(18f, 12f);
+        private static readonly Vector2 NextArrowHome = new Vector2(-30f, 22f);
 
         private float _commandCharactersPerSecond = 22f;
         private float _catCharactersPerSecond = 27f;
@@ -44,6 +48,7 @@ namespace Pawntom.TutorialBridge
         private TextMeshProUGUI _channel;
         private TextMeshProUGUI _body;
         private Image[] _bars;
+        private RawImage _nextArrow;
         private Vector2 _panelHome;
 
         private TutorialAudio _audio;
@@ -59,6 +64,7 @@ namespace Pawntom.TutorialBridge
         private float _holdSeconds;
         private float _swapRemaining;
         private bool _doneNotified;
+        private bool _waitForConfirm;
 
         private float _nextGlitchAt;
         private float _glitchUntil;
@@ -68,6 +74,14 @@ namespace Pawntom.TutorialBridge
         public bool IsVisible
         {
             get { return _phase != Phase.Hidden; }
+        }
+
+        /// <summary>
+        /// 넘기기 입력을 기다리는 메인 대사가 떠 있다(출력 중 포함). 이 동안 플레이어 이동·시점을 막는다.
+        /// </summary>
+        public bool IsHoldingPlayer
+        {
+            get { return _waitForConfirm && _phase != Phase.Hidden && _phase != Phase.Closing; }
         }
 
         public void Build(TutorialUIFactory factory, Transform parent, TutorialAudio audioPlayer, int maxTextLength, Action onLineDone)
@@ -80,11 +94,16 @@ namespace Pawntom.TutorialBridge
             TutorialUIFactory.Place(_panel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, TutorialTheme.DialogueBottom), TutorialTheme.DialogueSize);
             _panelHome = _panel.anchoredPosition;
+            // 단말기·해킹 팝업처럼 커서가 풀린 화면에서는 대화창을 직접 클릭해 넘긴다.
+            // 그 클릭이 창 아래 단말기 버튼까지 눌리지 않도록, 넘기기를 기다리는 동안에만 창이 클릭을 받는다(평소엔 통과).
+            _panel.gameObject.AddComponent<Canvas>();
+            _panel.gameObject.AddComponent<GraphicRaycaster>();
             _group = _panel.gameObject.AddComponent<CanvasGroup>();
             _group.blocksRaycasts = false;
             _group.interactable = false;
 
             Image background = factory.CreateImage("Background", _panel, TutorialTheme.PanelColor);
+            background.raycastTarget = true;
             TutorialUIFactory.Stretch(background.rectTransform);
 
             _scanlines = factory.CreateRawImage("Scanlines", _panel, factory.CreateScanlineTexture(), TutorialTheme.ScanlineColor);
@@ -128,6 +147,12 @@ namespace Pawntom.TutorialBridge
             _body.lineSpacing = 6f;
             TutorialUIFactory.Inset(_body.rectTransform, 30f, 30f, 52f, 14f);
 
+            // 다 찍힌 뒤 "넘기려면 누르세요" 표시. 오른쪽 아래에서 위아래로 까딱인다.
+            _nextArrow = factory.CreateRawImage("NextArrow", _panel,
+                factory.CreateDownTriangleTexture((int)NextArrowSize.x * 2, (int)NextArrowSize.y * 2), TutorialTheme.CommandColor);
+            TutorialUIFactory.Place(_nextArrow.rectTransform, new Vector2(1f, 0f), new Vector2(0.5f, 0.5f), NextArrowHome, NextArrowSize);
+            _nextArrow.gameObject.SetActive(false);
+
             _panel.gameObject.SetActive(false);
         }
 
@@ -138,7 +163,11 @@ namespace Pawntom.TutorialBridge
         }
 
         /// <summary>새 대사를 띄운다. 이미 떠 있으면 짧은 간섭과 함께 교체한다.</summary>
-        public void Show(TutorialLine line)
+        /// <param name="waitForConfirm">
+        /// true 면 Space·좌클릭으로 넘긴다(출력 중 누르면 즉시 다 찍고, 다 찍힌 뒤 누르면 다음 대사).
+        /// false 면 머무름 시간이 지나면 저절로 넘어간다.
+        /// </param>
+        public void Show(TutorialLine line, bool waitForConfirm)
         {
             if (line == null)
             {
@@ -150,6 +179,8 @@ namespace Pawntom.TutorialBridge
 
             _line = line;
             _doneNotified = false;
+            _waitForConfirm = waitForConfirm;
+            _nextArrow.gameObject.SetActive(false);
             _typewriter.CharactersPerSecond = isCommand ? _commandCharactersPerSecond : _catCharactersPerSecond;
             _typewriter.Begin(line.Text);
             _holdSeconds = TypewriterModel.HoldSecondsFor(line.Text, 1.3f, 4.2f, 0.035f);
@@ -204,25 +235,83 @@ namespace Pawntom.TutorialBridge
             }
 
             SetPhase(Phase.Closing);
+            _group.blocksRaycasts = false;
+            _nextArrow.gameObject.SetActive(false);
             ResetPanelPose();
         }
 
-        /// <summary>디버그: 타자 출력을 끝까지 건너뛴다. 이미 다 찍혔으면 머무름을 끝낸다.</summary>
+        /// <summary>타자 출력을 끝까지 건너뛴다. 이미 다 찍혔으면 이 대사를 끝낸다(넘기기 입력·디버그 F9 공용).</summary>
         public void SkipTyping()
         {
             if (_phase == Phase.Typing || _phase == Phase.Opening)
             {
-                _typewriter.Complete();
-                _swapRemaining = 0f;
-                ComposeBody(_typewriter.Length, 0, 0d);
-                SetPhase(Phase.Holding);
+                CompleteTyping();
                 return;
             }
 
             if (_phase == Phase.Holding)
             {
-                _phaseTime = _holdSeconds;
+                FinishLine();
             }
+        }
+
+        private void CompleteTyping()
+        {
+            _typewriter.Complete();
+            _swapRemaining = 0f;
+            _group.alpha = 1f;
+            _panel.localScale = Vector3.one;
+            ResetPanelPose();
+            ComposeBody(_typewriter.Length, 0, 0d);
+            SetPhase(Phase.Holding);
+        }
+
+        /// <summary>
+        /// Space·좌클릭이 이번 프레임에 눌렸는가.
+        /// 1인칭 조작 중(커서 잠김)에는 화면 어디를 클릭해도 되고, 단말기·해킹 팝업 등 커서가 풀린 화면에서는 대화창을 클릭해야 한다
+        /// (다른 곳 클릭은 그 화면의 버튼 조작이다). 해킹 미니게임은 메인 대사가 떠 있는 동안 디렉터가 멈춰 두므로 Space 가 게임으로 새지 않는다.
+        /// </summary>
+        private bool ConfirmPressedThisFrame()
+        {
+            UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
+
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            {
+                return false;
+            }
+
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                return true;
+            }
+
+            return RectTransformUtility.RectangleContainsScreenPoint(_panel, mouse.position.ReadValue(), null);
+        }
+
+        /// <summary>넘기기를 기다리는 동안 커서가 풀려 있으면 대화창이 클릭을 받게 한다(아래 UI 로 새지 않게).</summary>
+        private void UpdateClickBlocking()
+        {
+            bool clickable = IsHoldingPlayer && Cursor.lockState != CursorLockMode.Locked;
+
+            if (_group.blocksRaycasts != clickable)
+            {
+                _group.blocksRaycasts = clickable;
+            }
+        }
+
+        /// <summary>넘기기 키(Space·좌클릭)를 아직 누르고 있는가. 잠금을 풀 때 같은 Space 가 점프로 새지 않도록 확인한다.</summary>
+        public static bool IsConfirmHeld()
+        {
+            UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            return (keyboard != null && keyboard.spaceKey.isPressed) || (mouse != null && mouse.leftButton.isPressed);
         }
 
         private void Update()
@@ -237,6 +326,15 @@ namespace Pawntom.TutorialBridge
 
             AnimateScanlines(deltaTime);
             AnimateBars();
+            UpdateClickBlocking();
+
+            // 한 프레임에 한 단계만: 출력 중이면 다 찍기, 다 찍힌 뒤면 다음 대사.
+            if (_waitForConfirm && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding) &&
+                ConfirmPressedThisFrame())
+            {
+                SkipTyping();
+                return;
+            }
 
             switch (_phase)
             {
@@ -338,11 +436,44 @@ namespace Pawntom.TutorialBridge
 
             _wasGlitching = glitching;
 
-            if (_doneNotified || _phaseTime < _holdSeconds)
+            if (_waitForConfirm)
+            {
+                AnimateNextArrow();
+                return; // 넘기기 입력을 기다린다(Update 에서 처리)
+            }
+
+            if (_phaseTime < _holdSeconds)
             {
                 return;
             }
 
+            FinishLine();
+        }
+
+        private void AnimateNextArrow()
+        {
+            if (!_nextArrow.gameObject.activeSelf)
+            {
+                _nextArrow.gameObject.SetActive(true);
+                _nextArrow.color = _accent.color;
+            }
+
+            // 위아래로 까딱이며 은은하게 깜빡인다(게임 대화창의 "다음" 표시).
+            float wave = Mathf.Sin(_phaseTime * 6f);
+            _nextArrow.rectTransform.anchoredPosition = NextArrowHome + new Vector2(0f, wave * 3f);
+            Color color = _nextArrow.color;
+            color.a = 0.65f + 0.35f * (0.5f + 0.5f * wave);
+            _nextArrow.color = color;
+        }
+
+        private void FinishLine()
+        {
+            if (_doneNotified)
+            {
+                return;
+            }
+
+            _nextArrow.gameObject.SetActive(false);
             _doneNotified = true;
             TutorialLine finished = _line;
             _onLineDone?.Invoke();

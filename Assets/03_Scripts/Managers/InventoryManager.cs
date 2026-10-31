@@ -79,9 +79,16 @@ public class InventoryManager : NetworkBehaviour
             AllInventories.Remove(this);
     }
 
+    [Header("Drop")]
+    [Tooltip("Q 로 버린 아이템이 놓이는 거리(플레이어 앞, m)")]
+    [SerializeField, Min(0.2f)] private float dropDistance = 0.8f;
+
     /// <summary>
     /// Fusion 네트워크 Tick마다 호출
-    /// 숫자키 1~4 입력이 들어오면 현재 선택 슬롯 변경
+    /// 숫자키 1~4 / 휠 입력으로 선택 슬롯 변경, Q 로 선택 아이템 버리기
+    ///
+    /// 선택 슬롯은 입력 권한 쪽(내 클라이언트)에서도 예측해서 바꾼다 —
+    /// 호스트 응답을 기다리면 핫바가 한 박자 늦게 움직여 끊겨 보인다. 어긋나면 Fusion 이 호스트 값으로 되돌린다.
     /// </summary>
     public override void FixedUpdateNetwork()
     {
@@ -93,14 +100,153 @@ public class InventoryManager : NetworkBehaviour
         // -1이면 이번 Tick에 슬롯 선택 입력이 없다는 뜻
         if (input.SelectedSlotIndex >= 0)
         {
-            ToggleSlot(input.SelectedSlotIndex);
+            ApplyToggle(input.SelectedSlotIndex);
+        }
+        else if (input.SlotScrollDirection != 0)
+        {
+            ApplyScroll(input.SlotScrollDirection);
+        }
+
+        // 버리기는 월드에 아이템을 만들므로 호스트에서 한 번만 한다(예측·재시뮬레이션 제외).
+        if (input.DropItem && Object.HasStateAuthority && Runner.IsForward)
+        {
+            DropSelectedItem();
+        }
+    }
+
+    private void ApplyToggle(int slotIndex)
+    {
+        SelectedSlotIndex = Pawntom.Player.Core.HotbarSelection.Toggle(SelectedSlotIndex, slotIndex, MaxSlotCount);
+    }
+
+    /// <summary>휠로 여러 칸 넘김. 선택이 없으면 첫 칸은 방향에 따라 1번(아래) 또는 4번(위)에서 시작한다.</summary>
+    private void ApplyScroll(int steps)
+    {
+        SelectedSlotIndex = Pawntom.Player.Core.HotbarSelection.Scroll(SelectedSlotIndex, steps, MaxSlotCount);
+    }
+
+    /// <summary>
+    /// 선택 슬롯의 아이템을 플레이어 앞 바닥에 월드 아이템(다시 주울 수 있음)으로 내려놓고 슬롯을 비운다. 호스트 전용.
+    /// 앞이 벽이면 벽 앞에 둔다. 버릴 수 없는 아이템(canDrop=false)·빈 슬롯은 무시한다.
+    /// </summary>
+    private void DropSelectedItem()
+    {
+        int slot = SelectedSlotIndex;
+
+        if (slot < 0 || slot >= MaxSlotCount || Slots[slot] == EmptySlot)
+        {
             return;
         }
 
-        if (input.SlotScrollDirection != 0)
+        int itemId = Slots[slot];
+        ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
+
+        if (data == null || !data.canDrop)
         {
-            MoveSelectedSlot(input.SlotScrollDirection);
+            Debug.Log("[InventoryManager] 버릴 수 없는 아이템입니다.");
+            return;
         }
+
+        NetworkObject prefab = data.modelPrefab != null ? data.modelPrefab.GetComponent<NetworkObject>() : null;
+
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[InventoryManager] {data.itemName} 의 월드 프리팹(modelPrefab)에 NetworkObject 가 없어 버릴 수 없습니다.");
+            return;
+        }
+
+        Vector3 position = FindDropPosition(prefab.transform);
+        Quaternion rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f) * prefab.transform.rotation;
+        NetworkObject spawned = Runner.Spawn(prefab, position, rotation);
+
+        if (spawned == null)
+        {
+            return;
+        }
+
+        NetworkItem item = spawned.GetComponent<NetworkItem>();
+
+        if (item != null)
+        {
+            item.Init(itemId);
+        }
+
+        Slots.Set(slot, EmptySlot);
+        Debug.Log($"[InventoryManager] {data.itemName} 버림");
+    }
+
+    /// <summary>플레이어 앞 바닥 위치. 프리팹 콜라이더 바닥이 땅에 닿도록 높이를 올린다.</summary>
+    private Vector3 FindDropPosition(Transform prefabRoot)
+    {
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+        forward = forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+
+        Vector3 chest = transform.position + Vector3.up * 0.6f;
+        float distance = dropDistance;
+
+        // 앞이 벽이면 벽 앞에서 멈춘다(내 몸 콜라이더는 CharacterController 라 걸러진다).
+        if (Physics.Raycast(chest, forward, out RaycastHit wall, dropDistance + 0.3f, ~0, QueryTriggerInteraction.Ignore) &&
+            !(wall.collider is CharacterController))
+        {
+            distance = Mathf.Max(0.2f, wall.distance - 0.3f);
+        }
+
+        Vector3 above = chest + forward * distance;
+        float groundY = transform.position.y;
+
+        if (Physics.Raycast(above, Vector3.down, out RaycastHit ground, 3f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            groundY = ground.point.y;
+        }
+
+        return new Vector3(above.x, groundY + PrefabBottomOffset(prefabRoot), above.z);
+    }
+
+    private static readonly Dictionary<Transform, float> BottomOffsetCache = new Dictionary<Transform, float>();
+
+    /// <summary>
+    /// 프리팹 루트에서 콜라이더 가장 아래까지의 높이(월드 단위, 루트 회전 그대로 기준). 루트를 땅 위 이만큼에 두면 바닥이 땅에 닿는다.
+    /// 프리팹 애셋의 콜라이더 모양으로 계산하고 결과를 캐시한다.
+    /// </summary>
+    private static float PrefabBottomOffset(Transform prefabRoot)
+    {
+        if (BottomOffsetCache.TryGetValue(prefabRoot, out float cached))
+        {
+            return cached;
+        }
+
+        float lowest = float.MaxValue;
+        Matrix4x4 rootInverse = Matrix4x4.TRS(prefabRoot.position, prefabRoot.rotation, Vector3.one).inverse;
+
+        foreach (Collider collider in prefabRoot.GetComponentsInChildren<Collider>(true))
+        {
+            if (collider.isTrigger)
+            {
+                continue;
+            }
+
+            Bounds local;
+
+            if (collider is BoxCollider box) local = new Bounds(box.center, box.size);
+            else if (collider is SphereCollider sphere) local = new Bounds(sphere.center, Vector3.one * sphere.radius * 2f);
+            else if (collider is CapsuleCollider capsule) local = new Bounds(capsule.center, Vector3.one * Mathf.Max(capsule.radius * 2f, capsule.height));
+            else if (collider is MeshCollider mesh && mesh.sharedMesh != null) local = mesh.sharedMesh.bounds;
+            else continue;
+
+            Matrix4x4 toRoot = rootInverse * collider.transform.localToWorldMatrix;
+
+            for (int c = 0; c < 8; c++)
+            {
+                Vector3 corner = local.center + Vector3.Scale(local.extents,
+                    new Vector3((c & 1) == 0 ? -1f : 1f, (c & 2) == 0 ? -1f : 1f, (c & 4) == 0 ? -1f : 1f));
+                lowest = Mathf.Min(lowest, toRoot.MultiplyPoint3x4(corner).y);
+            }
+        }
+
+        float offset = lowest < float.MaxValue ? -lowest : 0f;
+        BottomOffsetCache[prefabRoot] = offset;
+        return offset;
     }
 
     /// <summary>
@@ -129,45 +275,6 @@ public class InventoryManager : NetworkBehaviour
         SelectedSlotIndex = slotIndex;
 
         Debug.Log($"[InventoryManager] 선택 슬롯 변경: {SelectedSlotIndex + 1}번 슬롯");
-    }
-
-    /// <summary>
-    /// 현재 선택 슬롯을 좌우로 이동
-    /// 
-    /// 아무 슬롯도 선택하지 않은 상태에서 움직이면
-    /// 아래 방향은 1번 슬롯, 위 방향은 4번 슬롯 선택
-    /// </summary>
-    private void MoveSelectedSlot(int direction)
-    {
-        if (!Object.HasStateAuthority)
-            return;
-        
-        if (SelectedSlotIndex < 0)
-        {
-            if (direction > 0)
-            {
-                SelectedSlotIndex = 0;
-            }
-            else
-            {
-                SelectedSlotIndex = MaxSlotCount - 1;
-            }
-
-            Debug.Log($"[InventoryManager] 휠 입력으로 슬롯 선택: {SelectedSlotIndex + 1}번 슬롯");
-            return;
-        }
-
-        int nextIndex = SelectedSlotIndex + direction;
-
-        if (nextIndex >= MaxSlotCount)
-            nextIndex = 0;
-
-        if (nextIndex < 0)
-            nextIndex = MaxSlotCount - 1;
-
-        SelectedSlotIndex = nextIndex;
-
-        Debug.Log($"[InventoryManager] 마우스 휠 선택 슬롯 변경: {SelectedSlotIndex + 1}번 슬롯");
     }
 
     /// <summary>

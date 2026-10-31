@@ -33,12 +33,48 @@ namespace Hacking
             get { return isHackingActive; }
             private set
             {
+                if (value && !isHackingActive)
+                {
+                    ShowCursorForPopup();
+                }
+                else if (!value && isHackingActive)
+                {
+                    RestoreCursorAfterPopup();
+                }
+
                 isHackingActive = value;
                 AnyHackingActive = value;
             }
         }
 
         private bool isHackingActive;
+
+        // 현장에서 바로 뜨는 팝업(금고 등)은 1인칭 조작 중이라 커서가 잠겨 있다. 팝업 버튼을 누를 수 있게 풀고, 끝나면 되돌린다.
+        // 본부 단말기 위에서 뜬 팝업은 이미 커서가 풀려 있으므로 건드리지 않는다.
+        private bool cursorUnlockedForPopup;
+
+        private void ShowCursorForPopup()
+        {
+            cursorUnlockedForPopup = Cursor.lockState != CursorLockMode.None;
+
+            if (cursorUnlockedForPopup)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+        }
+
+        private void RestoreCursorAfterPopup()
+        {
+            // 그사이 단말기 창 등 다른 UI 가 열렸으면 그쪽이 커서를 쓰고 있으므로 잠그지 않는다.
+            if (cursorUnlockedForPopup && !GameplayInputBlocker.IsBlocked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
+            cursorUnlockedForPopup = false;
+        }
 
         /// <summary>
         /// 어느 HackingManager 든 미니게임이 진행 중이면 true.
@@ -61,6 +97,7 @@ namespace Hacking
             if (isHackingActive)
             {
                 AnyHackingActive = false;
+                HackingGameBase.Paused = false;
             }
         }
 

@@ -75,6 +75,7 @@ namespace Pawntom.TutorialBridge
         private float _nextGuideUpdate;
 
         private bool _directorLock;
+        private bool _dialogueHold;
         private bool _settlementOpening;
         private bool _ending;
         private float _nextLockReassert;
@@ -217,6 +218,8 @@ namespace Pawntom.TutorialBridge
             GameManager.OnStateChanged -= HandleGameStateChanged;
             HackingManager.PreferredGameType = null;
             TutorialInputLock.ForgetOwner(this);
+            TutorialInputLock.ForgetOwner(_dialogue);
+            Hacking.HackingGameBase.Paused = false;
             _factory?.DestroyOwnedTextures();
             _factory?.DestroyRuntimeFont();
         }
@@ -229,6 +232,7 @@ namespace Pawntom.TutorialBridge
             }
 
             _sequencer.Tick(Time.unscaledDeltaTime);
+            UpdateDialogueHold();
             _hints.SetDialogueIdle(_sequencer.IsDialogueIdle && !_ending);
             _probe.SetDialogueBusy(!_sequencer.IsDialogueIdle || _ending);
 
@@ -347,7 +351,12 @@ namespace Pawntom.TutorialBridge
 
         private void HandleLineStarted(TutorialLine line)
         {
-            _dialogue.Show(line);
+            // 메인 대사는 Space·클릭으로 넘기고, 떠 있는 동안 이동·시점을 막는다.
+            // 상황 대사(추격 경고·재촉 등)는 플레이 도중에 끼어들므로 막지 않고 저절로 넘긴다 — 쫓기는 중에 멈춰 세우면 그대로 잡힌다.
+            TutorialBeat beat = _sequencer.CurrentBeat;
+            bool waitForConfirm = beat != null && beat.Kind == TutorialBeatKind.Main;
+            _dialogue.Show(line, waitForConfirm);
+            UpdateDialogueHold();
             _radio.SetMode(line.Speaker == TutorialSpeaker.Command
                 ? TutorialRadioIndicatorView.Mode.Receiving
                 : TutorialRadioIndicatorView.Mode.Transmitting);
@@ -632,6 +641,31 @@ namespace Pawntom.TutorialBridge
             {
                 _guide.Hide();
             }
+        }
+
+        /// <summary>
+        /// 넘기기를 기다리는 메인 대사가 떠 있으면 이동·시점을 막는다. 대사 창이 소유자다(오프닝·정산 잠금과 별개).
+        /// 풀 때는 넘기기에 쓴 Space 를 뗀 뒤에 푼다 — 누른 채로 풀면 다음 틱에 "새로 눌림"으로 읽혀 점프가 나간다.
+        /// </summary>
+        private void UpdateDialogueHold()
+        {
+            if (_dialogue.IsHoldingPlayer)
+            {
+                if (!_dialogueHold)
+                {
+                    _dialogueHold = true;
+                    TutorialInputLock.Acquire(_dialogue);
+                }
+            }
+            else if (_dialogueHold && !TutorialDialogueView.IsConfirmHeld())
+            {
+                _dialogueHold = false;
+                TutorialInputLock.Release(_dialogue);
+            }
+
+            // 대사를 읽는 동안 해킹 미니게임의 제한 시간이 흐르지 않게 멈춘다. 넘기기에 쓴 Space 를 뗀 뒤에 다시 돌린다
+            // (누른 채로 풀면 그 Space 가 타이밍 미니게임 입력으로 읽힌다).
+            Hacking.HackingGameBase.Paused = _dialogueHold;
         }
 
         private void LockControl(bool locked)
