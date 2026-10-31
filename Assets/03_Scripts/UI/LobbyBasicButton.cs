@@ -23,6 +23,11 @@ public class LobbyBasicButton : MonoBehaviour
         await NetworkManager.Instance.StartNetworkGame(GameMode.Client);
     }
 
+    public async void OnClickStartTutorial()
+    {
+        await GameManager.Instance.StartTutorialAsync();
+    }
+
     public void OnClickQuit()
     {
 #if UNITY_EDITOR

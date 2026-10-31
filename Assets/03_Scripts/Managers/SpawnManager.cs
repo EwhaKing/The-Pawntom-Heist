@@ -126,6 +126,43 @@ public class SpawnManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 죽은 플레이어를 지우고 새로 생성합니다(튜토리얼 사망 후 재개용).
+    /// 위치를 주면 그곳으로, 없으면 기본 스폰 지점에서 시작합니다.
+    /// 새 오브젝트라 체력·스태미나·가방이 초기 상태가 됩니다.
+    /// </summary>
+    public void RespawnPlayer(NetworkRunner runner, PlayerRef player, Vector3? position = null, Quaternion? rotation = null)
+    {
+        if (!runner.IsServer)
+            return;
+
+        if (spawnedPlayers.TryGetValue(player, out NetworkObject oldObject))
+        {
+            runner.Despawn(oldObject);
+            spawnedPlayers.Remove(player);
+        }
+
+        SpawnPlayer(runner, player);
+
+        if (position == null ||
+            !spawnedPlayers.TryGetValue(player, out NetworkObject newObject) ||
+            newObject == null)
+            return;
+
+        // 기본 스폰 지점에서 태어난 직후 지정 위치로 옮긴다. 컨트롤러가 있으면 텔레포트로 옮겨야 보간이 튀지 않는다.
+        NetworkCharacterController controller = newObject.GetComponent<NetworkCharacterController>();
+        Quaternion facing = rotation ?? newObject.transform.rotation;
+
+        if (controller != null)
+        {
+            controller.Teleport(position.Value, facing);
+        }
+        else
+        {
+            newObject.transform.SetPositionAndRotation(position.Value, facing);
+        }
+    }
+
+    /// <summary>
     /// 플레이어 제거
     /// Fusion OnPlayerLeft에서 호출
     /// </summary>

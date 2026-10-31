@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Fusion;
 using Hacking;
 using Pawntom.Tutorial.Core;
 using TMPro;
@@ -52,6 +53,14 @@ namespace Pawntom.TutorialBridge
         [Tooltip("비우면 TMP 기본 폰트(NanumBarunpenR SDF)")]
         [SerializeField] private TMP_FontAsset fontOverride;
 
+        [Header("사망 후 재개")]
+        [Tooltip("죽은 뒤 사망 대사를 들려주고 화면이 어두워지기까지의 시간")]
+        [SerializeField, Min(0f)] private float respawnDelaySeconds = 3.5f;
+
+        [Header("종료")]
+        [Tooltip("'교신 종료' 카드를 보여 준 뒤 메인(로비) 화면으로 돌아가기까지의 시간")]
+        [SerializeField, Min(0f)] private float endCardHoldSeconds = 2.5f;
+
         [Header("정산")]
         [Tooltip("7-10 대사가 끝난 뒤 정산 창을 띄우기까지의 시간")]
         [SerializeField, Min(0f)] private float settlementDelay = 1.2f;
@@ -79,6 +88,12 @@ namespace Pawntom.TutorialBridge
         private bool _settlementOpening;
         private bool _ending;
         private float _nextLockReassert;
+
+        // 사망 후 돌아갈 지점: 마지막으로 마무리된 메인 대사 끝에서의 플레이어 위치. 아직 없으면 기본 스폰 지점.
+        private bool _hasCheckpoint;
+        private Vector3 _checkpointPosition;
+        private Quaternion _checkpointRotation;
+        private bool _respawning;
 
         /// <summary>지금 씬에서 동작 중인 디렉터. 없으면 null.</summary>
         public static TutorialDirector Active { get; private set; }
@@ -184,12 +199,14 @@ namespace Pawntom.TutorialBridge
             _sequencer.ActionRequested += HandleActionRequested;
             _sequencer.BeatStarted += HandleBeatStarted;
             _sequencer.BeatSkipped += HandleBeatSkipped;
+            _sequencer.MainBeatCompleted += HandleMainBeatCompleted;
             _sequencer.HintAdded += _hints.OnHintAdded;
             _sequencer.HintRemoved += _hints.OnHintRemoved;
             _sequencer.HintRecalled += _hints.OnHintRecalled;
             _sequencer.Finished += HandleFinished;
 
             _probe.SignalRaised += _sequencer.Raise;
+            _probe.SignalRaised += HandleProbeSignal;
             GameManager.OnStateChanged += HandleGameStateChanged;
 
             _eyelids.SetBlackout(playOpening ? 1f : 0f);
@@ -213,6 +230,7 @@ namespace Pawntom.TutorialBridge
             if (_probe != null && _sequencer != null)
             {
                 _probe.SignalRaised -= _sequencer.Raise;
+                _probe.SignalRaised -= HandleProbeSignal;
             }
 
             GameManager.OnStateChanged -= HandleGameStateChanged;
@@ -441,6 +459,101 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        // ───────────── 사망 후 재개 ─────────────
+
+        private void HandleMainBeatCompleted(TutorialBeat beat)
+        {
+            Transform player = _probe.LocalPlayerTransform;
+
+            if (_respawning || player == null || _probe.LocalPlayer == null || _probe.LocalPlayer.IsDead)
+            {
+                return;
+            }
+
+            _hasCheckpoint = true;
+            _checkpointPosition = player.position;
+            _checkpointRotation = player.rotation;
+        }
+
+        private void HandleProbeSignal(TutorialSignal signal)
+        {
+            if (signal == TutorialSignal.PlayerDied && !_respawning && !_ending && !_settlementOpening)
+            {
+                StartCoroutine(RespawnAfterDeath());
+            }
+        }
+
+        /// <summary>
+        /// 죽으면 사망 대사를 들려준 뒤 화면을 어둡게 하고, 마지막으로 마무리한 대사 지점에 새로 스폰해 이어 간다.
+        /// 시퀀서는 건드리지 않는다 — 이미 끝난 대사는 그대로 끝난 채이고, 다음 대사는 거기서부터 기다린다.
+        /// </summary>
+        private IEnumerator RespawnAfterDeath()
+        {
+            _respawning = true;
+
+            yield return new WaitForSecondsRealtime(respawnDelaySeconds);
+
+            if (_ending || _settlementOpening)
+            {
+                _respawning = false;
+                yield break;
+            }
+
+            bool lockedHere = !_directorLock;
+            LockControl(true);
+
+            float fade = 0f;
+
+            while (fade < 1f)
+            {
+                fade += Time.unscaledDeltaTime / 0.5f;
+                _eyelids.SetBlackout(fade);
+                yield return null;
+            }
+
+            PlayerData oldPlayer = _probe.LocalPlayer;
+            NetworkRunner runner = NetworkManager.Instance.Runner;
+
+            if (runner != null && runner.IsServer && SpawnManager.Instance != null)
+            {
+                if (_hasCheckpoint)
+                {
+                    SpawnManager.Instance.RespawnPlayer(runner, runner.LocalPlayer, _checkpointPosition, _checkpointRotation);
+                }
+                else
+                {
+                    SpawnManager.Instance.RespawnPlayer(runner, runner.LocalPlayer);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[TutorialDirector] 호스트가 아니거나 SpawnManager가 없어 부활시키지 못했습니다.");
+            }
+
+            // 새 플레이어가 수집기에 잡힐 때까지 기다린다. 늦어도 멈추지 않도록 시간 제한을 둔다.
+            float waited = 0f;
+
+            while (waited < 4f && (_probe.LocalPlayer == null || _probe.LocalPlayer == oldPlayer || _probe.LocalPlayer.IsDead))
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            while (fade > 0f)
+            {
+                fade -= Time.unscaledDeltaTime / 0.5f;
+                _eyelids.SetBlackout(Mathf.Max(0f, fade));
+                yield return null;
+            }
+
+            if (lockedHere)
+            {
+                LockControl(false);
+            }
+
+            _respawning = false;
+        }
+
         // ───────────── 정산 ─────────────
 
         private IEnumerator OpenSettlement(float delay)
@@ -559,6 +672,10 @@ namespace Pawntom.TutorialBridge
 
             Debug.Log("[TutorialDirector] 튜토리얼 완료 — 질의응답 단계로 전환합니다(Completed 이벤트).");
             Completed?.Invoke();
+
+            // 카드를 잠시 보여 준 뒤 메인(로비) 화면으로 돌아간다. 씬이 바뀌면 이 디렉터도 함께 사라진다.
+            yield return new WaitForSecondsRealtime(endCardHoldSeconds);
+            _ = GameManager.Instance.ReturnToMainMenuAsync();
         }
 
         // ───────────── 내부 ─────────────

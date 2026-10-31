@@ -152,6 +152,9 @@ namespace Pawntom.Tutorial.Core
 
         public event Action<TutorialBeat> BeatSkipped;
 
+        /// <summary>메인 비트의 마지막 대사까지 끝났을 때. 사망 후 되돌아갈 지점을 잡는 데 쓴다.</summary>
+        public event Action<TutorialBeat> MainBeatCompleted;
+
         public event Action<TutorialHint> HintAdded;
 
         public event Action<TutorialHint, TutorialHintRemoval> HintRemoved;
@@ -321,6 +324,7 @@ namespace Pawntom.Tutorial.Core
                     if (_mainStates[index] == TutorialBeatState.Playing)
                     {
                         _mainStates[index] = TutorialBeatState.Done;
+                        MainBeatCompleted?.Invoke(done.Owner);
                     }
                 }
                 else
