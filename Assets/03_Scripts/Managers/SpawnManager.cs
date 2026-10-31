@@ -88,6 +88,11 @@ public class SpawnManager : MonoBehaviour
         }
 
         Transform spawnPoint = _playerSpawnPoints[spawnIndex];
+        if (spawnPoint == null)
+        {
+            Debug.LogError($"[SpawnManager] Spawn Point {spawnIndex}가 비어 있습니다.");
+            return;
+        }
         CatType selectedCatType = CatType.BlackCat;
 
         if (NetworkManager.Instance == null ||

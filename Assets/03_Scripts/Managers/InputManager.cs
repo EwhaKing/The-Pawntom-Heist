@@ -124,7 +124,7 @@ public class InputManager : PawntomSingleton<InputManager>
         data.SlotScrollDirection = 0;
 
         // 입력 시스템이 꺼져 있거나 InputActions가 없으면 빈 입력 반환
-        if (!_isGameplayInputEnabled || _inputActions == null)
+        if (!_isGameplayInputEnabled || _inputActions == null || PlayerData.IsLocalPlayerDead)
         {
             return data;
         }

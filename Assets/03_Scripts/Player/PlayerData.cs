@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -12,6 +13,29 @@ using UnityEngine;
 /// </summary>
 public class PlayerData : NetworkBehaviour
 {
+    public static readonly List<PlayerData> ActivePlayers = new List<PlayerData>();
+    public static bool IsLocalPlayerDead
+    {
+        get
+        {
+            foreach (PlayerData player in ActivePlayers)
+                if (player != null && player.Object != null && player.Object.IsValid && player.Object.HasInputAuthority)
+                    return player.IsDead;
+            return false;
+        }
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetPlayers() => ActivePlayers.Clear();
+
+    [Header("Death Sequence")]
+    [Tooltip("애니메이션 종료 이벤트가 없거나 누락됐을 때 드롭으로 넘어가는 최대 대기 시간(초)")]
+    [SerializeField, Min(0.1f)] private float _deathAnimationTimeout = 1.5f;
+    [Networked] public NetworkBool DeathSequenceCompleted { get; private set; }
+    [Networked] public Vector3 DeathPosition { get; private set; }
+    [Networked] private TickTimer DeathTimer { get; set; }
+    private bool _animationFinished;
+    private InventoryManager _inventory;
     private const float DefaultMaxHealth = 100f;
     private const float DefaultMaxStamina = 100f;
     private const float DefaultStaminaRegenRate = 20f;
@@ -28,7 +52,8 @@ public class PlayerData : NetworkBehaviour
     [Networked] public NetworkBool IsSprinting { get; set; }
     [Networked] public NetworkBool IsParkouring { get; set; }
     [Networked] public NetworkBool IsExhausted { get; private set; }
-    [Networked] public NetworkBool IsDead { get; set; }
+    [Networked, OnChangedRender(nameof(OnDeathChanged))]
+    public NetworkBool IsDead { get; private set; }
     [Networked] private TickTimer ExhaustedTimer { get; set; }
 
     [Networked, OnChangedRender(nameof(OnHealthChanged))]
@@ -48,13 +73,22 @@ public class PlayerData : NetworkBehaviour
     public float HealthRatio => MaxHealth > 0f ? CurrentHealth / MaxHealth : 0f;
     public float StaminaRatio => MaxStamina > 0f ? CurrentStamina / MaxStamina : 0f;
 
+    /// <summary>각 클라이언트에서 사망 상태가 반영되면 한 번 알립니다. 연출 전용이며 게임 판정에 사용하지 않습니다.</summary>
+    public event Action Died;
+    private bool _deathNotified;
+
     public event Action<float, float> HealthChanged;
     public event Action<float, float> StaminaChanged;
 
     public override void Spawned()
     {
+        if (!ActivePlayers.Contains(this)) ActivePlayers.Add(this);
+        _inventory = GetComponent<InventoryManager>();
+        _animationFinished = false;
+        _deathNotified = false;
         if (!Object.HasStateAuthority)
         {
+            OnDeathChanged();
             return;
         }
 
@@ -64,10 +98,37 @@ public class PlayerData : NetworkBehaviour
         IsExhausted = false;
         ExhaustedTimer = TickTimer.None;
         IsDead = false;
+        DeathSequenceCompleted = false;
+        DeathTimer = TickTimer.None;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        ActivePlayers.Remove(this);
+    }
+
+    private void OnDestroy() => ActivePlayers.Remove(this);
+
+    /// <summary>Animation Event의 서버 측 수신점. 클라이언트가 드롭 시점을 결정하지 않습니다.</summary>
+    public void NotifyDeathAnimationFinished()
+    {
+        if (Object != null && Object.IsValid && Object.HasStateAuthority && IsDead)
+            _animationFinished = true;
     }
 
     public override void FixedUpdateNetwork()
     {
+        if (Object.HasStateAuthority && IsDead && !DeathSequenceCompleted &&
+            (_animationFinished || DeathTimer.Expired(Runner)))
+        {
+            // 성공한 슬롯만 지웁니다. 스폰 실패 시 남은 슬롯만 다시 시도합니다.
+            _animationFinished = false;
+            if (_inventory == null || _inventory.TryDropAllOnDeath(DeathPosition))
+                DeathSequenceCompleted = true;
+            else
+                DeathTimer = TickTimer.CreateFromSeconds(Runner, 1f);
+        }
+
         if (Object.HasStateAuthority &&
             IsExhausted &&
             ExhaustedTimer.Expired(Runner))
@@ -122,7 +183,7 @@ public class PlayerData : NetworkBehaviour
 
     public void ApplyDamage(float amount)
     {
-        if (!Object.HasStateAuthority || IsDead || amount <= 0f)
+        if (!Object.HasStateAuthority || IsDead || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
         {
             return;
         }
@@ -131,6 +192,8 @@ public class PlayerData : NetworkBehaviour
 
         if (CurrentHealth <= 0f)
         {
+            DeathPosition = transform.position;
+            DeathTimer = TickTimer.CreateFromSeconds(Runner, Mathf.Max(0.1f, _deathAnimationTimeout));
             IsDead = true;
             IsSprinting = false;
             IsParkouring = false;
@@ -141,7 +204,7 @@ public class PlayerData : NetworkBehaviour
 
     public void RestoreHealth(float amount)
     {
-        if (!Object.HasStateAuthority || IsDead || amount <= 0f)
+        if (!Object.HasStateAuthority || IsDead || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
         {
             return;
         }
@@ -177,7 +240,7 @@ public class PlayerData : NetworkBehaviour
 
     public void RestoreStamina(float amount)
     {
-        if (!Object.HasStateAuthority || IsDead || amount <= 0f)
+        if (!Object.HasStateAuthority || IsDead || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
         {
             return;
         }
@@ -272,6 +335,17 @@ public class PlayerData : NetworkBehaviour
             Runner,
             ExhaustedDuration
         );
+    }
+
+    private void OnDeathChanged()
+    {
+        if (!IsDead || _deathNotified)
+        {
+            return;
+        }
+
+        _deathNotified = true;
+        Died?.Invoke();
     }
 
     private void OnHealthChanged()

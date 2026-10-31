@@ -22,6 +22,11 @@ public class PlayerTarget : MonoBehaviour
     [Header("Marker Target")]
     [Tooltip("마커 위치 기준점 비워두면 이 오브젝트의 Transform을 사용")]
     [SerializeField] private Transform markerTarget;
+    private PlayerData _playerData;
+    public bool IsVisibleOnMap => isActiveAndEnabled && _playerData != null &&
+        _playerData.Object != null && _playerData.Object.IsValid && !_playerData.IsDead;
+
+    private void Awake() => _playerData = GetComponent<PlayerData>();
 
     /// <summary>
     /// CCTV 마커가 따라갈 실제 위치

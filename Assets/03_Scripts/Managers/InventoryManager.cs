@@ -18,6 +18,9 @@ using UnityEngine;
 /// </summary>
 public class InventoryManager : NetworkBehaviour
 {
+    private PlayerData _playerData;
+    private bool IsOwnerDead => _playerData != null && _playerData.IsDead;
+
     public const int MaxSlotCount = 4;
     // 비어있는 슬롯은 0으로 처리
     public const int EmptySlot = 0;
@@ -48,6 +51,7 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public override void Spawned()
     {
+        _playerData = GetComponent<PlayerData>();
         if(!AllInventories.Contains(this))
             AllInventories.Add(this);
 
@@ -92,7 +96,7 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public override void FixedUpdateNetwork()
     {
-        if (!GetInput(out NetworkInputData input))
+        if (IsOwnerDead || !GetInput(out NetworkInputData input))
         {
             return;
         }
@@ -319,7 +323,8 @@ public class InventoryManager : NetworkBehaviour
     {
         foreach (InventoryManager inventory in AllInventories)
         {
-            if (inventory != null && inventory.HasItem(itemId))
+            if (inventory != null && inventory.Object != null && inventory.Object.IsValid &&
+                !inventory.IsOwnerDead && inventory.HasItem(itemId))
                 return true;
         }
         return false;
@@ -331,7 +336,7 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public bool TryAddItem(int itemId)
     {
-        if (!Object.HasStateAuthority)
+        if (!Object.HasStateAuthority || IsOwnerDead)
             return false;
         
         // 빈 슬롯에 저장
@@ -361,7 +366,7 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public bool TryUseItem(int slotIndex)
     {
-        if (!Object.HasStateAuthority)
+        if (!Object.HasStateAuthority || IsOwnerDead)
             return false;
         
         if (slotIndex < 0 || slotIndex >= MaxSlotCount)
@@ -399,7 +404,7 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public bool TryDropItem(int slotIndex)
     {
-        if (!Object.HasStateAuthority)
+        if (!Object.HasStateAuthority || IsOwnerDead)
             return false;
         
         if (slotIndex < 0 || slotIndex >= MaxSlotCount)
@@ -416,5 +421,52 @@ public class InventoryManager : NetworkBehaviour
 
         Debug.Log($"[InventoryManager] ItemId={itemId} 버림");
         return true;
+    }
+
+    /// <summary>사망 전용: 열쇠와 캣닢을 포함해 canDrop과 무관하게 전부 현장에 남깁니다.</summary>
+    public bool TryDropAllOnDeath(Vector3 deathPosition)
+    {
+        if (!Object.HasStateAuthority || !IsOwnerDead) return false;
+
+        bool completed = true;
+        for (int i = 0; i < MaxSlotCount; i++)
+        {
+            int itemId = Slots[i];
+            if (itemId == EmptySlot) continue;
+
+            ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
+            NetworkObject prefab = data != null && data.modelPrefab != null
+                ? data.modelPrefab.GetComponent<NetworkObject>() : null;
+            if (prefab == null || prefab.GetComponent<NetworkItem>() == null)
+            {
+                Debug.LogError($"[InventoryManager] 사망 드롭 프리팹 누락: ItemId={itemId}. 슬롯을 보존합니다.");
+                completed = false;
+                continue;
+            }
+
+            float angle = i * Mathf.PI * 2f / MaxSlotCount;
+            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 0.7f;
+            Vector3 position = PlayerDeathPlacement.GroundPoint(deathPosition + offset, transform, out _);
+            Quaternion rotation = Quaternion.Euler(0f, i * 90f, 0f);
+            try
+            {
+                NetworkObject dropped = Runner.Spawn(prefab, position, rotation,
+                    onBeforeSpawned: (runner, spawned) =>
+                        spawned.GetComponent<NetworkItem>().InitializeDeathDrop(itemId, position, rotation));
+                if (dropped == null)
+                {
+                    completed = false;
+                    continue;
+                }
+                Slots.Set(i, EmptySlot);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
+                completed = false;
+            }
+        }
+        SelectedSlotIndex = -1;
+        return completed;
     }
 }
