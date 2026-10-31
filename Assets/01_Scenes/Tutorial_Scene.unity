@@ -1917,6 +1917,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e7602f337428bd14084a3b527f131958, type: 2}
   - {fileID: 11400000, guid: 876ed7bdb3cb0634083eb225e128bbef, type: 2}
   - {fileID: 11400000, guid: e560b419e8bf4b64e890cc92f4fe6201, type: 2}
+  - {fileID: 11400000, guid: 7c24530ba31c11a4eb98f668518c5fca, type: 2}
 --- !u!4 &75478817
 Transform:
   m_ObjectHideFlags: 0
@@ -5194,6 +5195,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 205061347}
   m_CullTransparentMesh: 1
+--- !u!1 &205717089
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 205717090}
+  - component: {fileID: 205717091}
+  m_Layer: 5
+  m_Name: VaultPromptUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &205717090
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205717089}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 511213021}
+  m_Father: {fileID: 1596717865}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 170}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &205717091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205717089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 648ff9952f5f77044977f46b38f36fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VaultPromptUI
+  promptText: {fileID: 511213022}
+  targetVault: {fileID: 2020277963}
 --- !u!1 &206873471
 GameObject:
   m_ObjectHideFlags: 0
@@ -48069,6 +48121,7 @@ RectTransform:
   - {fileID: 1616302358}
   - {fileID: 930483978}
   - {fileID: 1678774829}
+  - {fileID: 205717090}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -58743,6 +58796,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2020277961}
   - component: {fileID: 2020277960}
+  - component: {fileID: 2020277962}
+  - component: {fileID: 2020277963}
   m_Layer: 0
   m_Name: TutorialVault_Main
   m_TagString: Untagged
@@ -58786,8 +58841,49 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1365602797}
+  - {fileID: 1969058255}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2020277962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020277959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 2246698027
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 2020277963}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &2020277963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020277959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63d9a9f62951ca4f90fd5f3881a819a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VaultChest
+  requiredKeyCount: 1
+  maxUseDistance: 3.5
+  chestVisual: {fileID: 1365602796}
+  chestCollider: {fileID: 1365602799}
+  catnipPrefab: {fileID: -2303880833546648781, guid: 1c252805e25386a4e84a69d83e33a1f2, type: 3}
+  catnipSpawnPoint: {fileID: 1969058255}
+  _UsedKeyCount: 0
+  _IsOpened:
+    _value: 0
 --- !u!1 &2020583016
 GameObject:
   m_ObjectHideFlags: 0
@@ -63890,6 +63986,7 @@ SceneRoots:
   - {fileID: 1209305851}
   - {fileID: 255307422}
   - {fileID: 363733633}
+  - {fileID: 1233110955}
   - {fileID: 1504498667}
   - {fileID: 933139024}
   - {fileID: 1791175354}
