@@ -81,6 +81,12 @@ namespace Hacking
         public int CurrentIndex => currentIdx;
 
         /// <summary>
+        /// 순서를 틀려 처음으로 돌아간 횟수입니다.
+        /// HackingPopupView가 값이 늘어난 순간을 감지해 오답 연출(빨간 슬롯)을 보여줄 때 사용합니다.
+        /// </summary>
+        public int MistakeCount { get; private set; }
+
+        /// <summary>
         /// 기존 TMP 텍스트 표시용 프로퍼티입니다.
         ///
         /// 지금은 CommandSlot_0~7 버튼 방식으로 표시할 예정이라
@@ -144,6 +150,7 @@ namespace Hacking
             }
 
             currentIdx = 0;
+            MistakeCount = 0;
 
             Debug.Log($"[CommandOverrideGame] 게임 시작. 시퀀스 길이: {targetSequence.Length}");
         }
@@ -244,6 +251,7 @@ namespace Hacking
             if (slotIndex != currentIdx)
             {
                 currentIdx = 0;
+                MistakeCount++;
                 Debug.Log("[CommandOverrideGame] 순서 불일치! 처음부터 다시 시작합니다.");
                 return;
             }
@@ -287,6 +295,7 @@ namespace Hacking
             else
             {
                 currentIdx = 0;
+                MistakeCount++;
                 Debug.Log("[CommandOverrideGame] 입력 불일치! 처음부터 다시 시작합니다.");
             }
         }
