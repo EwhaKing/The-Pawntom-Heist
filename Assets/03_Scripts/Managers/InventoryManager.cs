@@ -399,6 +399,47 @@ public class InventoryManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// 현재 선택한 슬롯의 아이템이 requiredItemId와 같으면 해당 아이템 1개를 소비
+    /// 반드시 StateAuthority에서 실행
+    /// </summary>
+    public bool TryConsumeSelectedItem(int requiredItemId)
+    {
+        if (Object == null || !Object.HasStateAuthority)
+            return false;
+
+        if (requiredItemId <= EmptySlot)
+            return false;
+
+        if (SelectedSlotIndex < 0 ||
+            SelectedSlotIndex >= MaxSlotCount)
+        {
+            Debug.Log("[InventoryManager] 맨손 상태입니다.");
+            return false;
+        }
+
+        int heldItemId = Slots[SelectedSlotIndex];
+
+        if (heldItemId != requiredItemId)
+        {
+            Debug.Log(
+                $"[InventoryManager] 선택한 아이템이 열쇠가 아닙니다. " +
+                $"Held={heldItemId}, Required={requiredItemId}"
+            );
+            return false;
+        }
+
+        // 선택한 슬롯만 비움
+        // 나머지 아이템을 앞으로 당기지 않음
+        Slots.Set(SelectedSlotIndex, EmptySlot);
+
+        Debug.Log(
+            $"[InventoryManager] 열쇠 소비 완료: 슬롯 {SelectedSlotIndex + 1}"
+        );
+
+        return true;
+    }
+
+    /// <summary>
     /// 아이템 버리기
     /// canDrop이 false인 아이템은 버릴 수 없음
     /// </summary>

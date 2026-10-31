@@ -194,6 +194,42 @@ public class PlayerInteraction : NetworkBehaviour
         );
 
         // ==========================================
+        // 0. 금고 상호작용
+        // ==========================================
+
+        VaultChest vaultChest =
+            hit.collider.GetComponentInParent<VaultChest>();
+
+        // 디버깅: 현재 충돌한 오브젝트의 종류 확인
+        Debug.Log(
+            $"[PlayerInteraction] 충돌 대상 검사 / " +
+            $"Vault={vaultChest != null}, " +
+            $"Wall={hit.collider.GetComponentInParent<ControllableWall>() != null}, " +
+            $"Machine={hit.collider.GetComponentInParent<ControlMachine>() != null}"
+        );
+
+        if (vaultChest != null)
+        {
+            Debug.Log("[PlayerInteraction] VaultChest 감지 성공!");
+
+            // 현재 인벤토리 상태 확인
+            InventoryManager inventory =
+                GetComponent<InventoryManager>();
+
+            if (inventory != null)
+            {
+                Debug.Log(
+                    $"[PlayerInteraction] 선택 슬롯={inventory.SelectedSlotIndex}, " +
+                    $"손에 든 ItemId={inventory.GetHeldItemId()}"
+                );
+            }
+
+            // 열쇠 사용과 금고 개봉은 VaultChest가 판정
+            vaultChest.RequestInteract(Object);
+            return;
+        }
+
+        // ==========================================
         // 1. 본부 조작 기계
         // ==========================================
 
@@ -582,7 +618,8 @@ public class PlayerInteraction : NetworkBehaviour
                     col.GetComponentInParent<ControlMachine>() != null ||
                     col.GetComponentInParent<EscapeButtonInteraction>() != null ||
                     col.GetComponentInParent<ControllableWall>() != null ||
-                    col.GetComponentInParent<NetworkItem>() != null;
+                    col.GetComponentInParent<NetworkItem>() != null ||
+                    col.GetComponentInParent<VaultChest>() != null;
 
                 // 발견 구역, MainbaseZone 같은
                 // 상호작용과 무관한 Trigger는 무시
