@@ -107,6 +107,10 @@ namespace Pawntom.TutorialBridge
         /// <summary>사망 재시도로 단계를 처음부터 다시 시작한 직후(<see cref="ResumeStage"/>). 부서진 금고 복구 같은 연출 정리에 쓴다.</summary>
         public static event Action StageResumed;
 
+        // 이번 사망 뒤 StageResumed 를 이미 보냈는가. 재시도 도중 예외로 못 보냈을 때 Update 가 대신 보낸다.
+        private bool _stageResumedSent = true;
+        private bool _deathShowingLastFrame;
+
         private const string CatnipBeatId = "7-4";
 
         public TutorialSequencer Sequencer
@@ -246,7 +250,17 @@ namespace Pawntom.TutorialBridge
 
         private void Update()
         {
-            if (_sequencer == null || (_deathFlow != null && _deathFlow.IsShowing))
+            bool deathShowing = _deathFlow != null && _deathFlow.IsShowing;
+
+            // 실패 화면이 닫혔는데 재시도 알림이 못 나갔다면(재시도 도중 예외 등) 여기서 대신 보낸다.
+            if (_deathShowingLastFrame && !deathShowing && !_stageResumedSent)
+            {
+                RaiseStageResumed();
+            }
+
+            _deathShowingLastFrame = deathShowing;
+
+            if (_sequencer == null || deathShowing)
             {
                 return;
             }
@@ -702,6 +716,7 @@ namespace Pawntom.TutorialBridge
         public void SuspendForDeath()
         {
             // 사망 처리는 실패 연출(TutorialDeathFlow)이 맡는다. 경보·소집 같은 연출은 여기서 끈다.
+            _stageResumedSent = false;
             LocalPlayerDied?.Invoke();
             StopAllCoroutines();
             LockControl(true);
@@ -728,8 +743,39 @@ namespace Pawntom.TutorialBridge
             _controlEverEnabled = true;
             LockControl(false);
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Idle);
-            _sequencer.RestartStage(stage);
-            StageResumed?.Invoke();
+
+            try
+            {
+                _sequencer.RestartStage(stage);
+            }
+            finally
+            {
+                RaiseStageResumed();
+            }
+        }
+
+        // 구독자 하나가 예외를 내도 나머지(금고 복구·적 초기화)는 실행되게 하나씩 부른다.
+        private void RaiseStageResumed()
+        {
+            _stageResumedSent = true;
+            Action handlers = StageResumed;
+
+            if (handlers == null)
+            {
+                return;
+            }
+
+            foreach (Delegate handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    ((Action)handler)();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
         }
 
         /// <summary>
