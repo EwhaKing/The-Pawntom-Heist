@@ -853,16 +853,17 @@ public class PlayerInteraction : NetworkBehaviour
         }
 
         // 클라이언트가 보낸 좌표/아이템 ID를 믿지 않고 호스트의 월드 상태로 검사합니다.
-        Vector3 origin = playerCamera != null ? playerCamera.transform.position : transform.position;
-        Collider itemCollider = itemObject.GetComponentInChildren<Collider>();
-        Vector3 closest = itemCollider != null ? itemCollider.ClosestPoint(origin) : itemObject.transform.position;
-        Vector3 delta = closest - origin;
-        if (delta.sqrMagnitude > (interactDistance + interactRadius) * (interactDistance + interactRadius))
+        // 검사 기준은 클라이언트의 안내·E 입력과 같다(IsItemInRange / FindAimedItem). 기준이 다르면
+        // "이름은 떴는데 안 줍히는" 일이 생긴다 — 특히 콜라이더가 보이는 모양과 다르고 벽에 붙은 그림에서.
+        Vector3 origin = PickupOrigin();
+        float distance = InteractRange.DistanceTo(item, origin);
+        float allowed = itemInteractDistance + PickupHostTolerance;
+        if (distance > allowed)
         {
-            RPC_PickupFeedback($"획득 거절: 거리 초과 ({delta.magnitude:F2}m / 허용 {interactDistance + interactRadius:F2}m)");
+            RPC_PickupFeedback($"획득 거절: 거리 초과 ({distance:F2}m / 허용 {allowed:F2}m)");
             return;
         }
-        if (itemCollider != null && !HasClearInteractionPath(origin, itemCollider))
+        if (!HasClearPickupPath(origin, item))
         {
             RPC_PickupFeedback($"획득 거절: {itemObject.name} 앞에 장애물이 있습니다.");
             return;
@@ -877,6 +878,65 @@ public class PlayerInteraction : NetworkBehaviour
         RPC_PickupFeedback($"획득 성공: {itemObject.name}, ItemId={item.ItemId}");
         item.IsPickedUp = true;
         Runner.Despawn(itemObject);
+    }
+
+    // 호스트는 클라이언트보다 조금 늦은 위치를 본다. 클라이언트가 가까이 갔다고 본 줍기가 지연 때문에 거절되지 않게 여유를 둔다.
+    private const float PickupHostTolerance = 1f;
+
+    // 시선 경로의 끝에서 이만큼은 막힘으로 세지 않는다. 벽에 딱 붙은 그림은 벽 표면이 도착점과 같은 자리에 있다.
+    private const float PickupPathEndMargin = 0.15f;
+
+    /// <summary>
+    /// 줍기 판정의 눈 위치. 호스트에서 다른 플레이어를 검사할 때는 그 플레이어의 카메라가 아직 없을 수 있어 그때 찾아 둔다.
+    /// 카메라가 없으면 발 위치를 쓴다.
+    /// </summary>
+    private Vector3 PickupOrigin()
+    {
+        if (playerCamera == null)
+        {
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponentInChildren<Camera>(true);
+            }
+        }
+
+        return playerCamera != null ? playerCamera.transform.position : transform.position;
+    }
+
+    /// <summary>
+    /// 눈에서 아이템의 보이는 모양까지 벽·선반 같은 단단한 물체가 가로막는가.
+    /// 클라이언트의 조준 판정(CollectItems)과 같은 규칙이다: 다른 아이템의 콜라이더는 막힘이 아니다
+    /// (보이는 모양보다 큰 콜라이더가 많고, 옆 아이템 위에 놓인 물건도 줍혀야 한다).
+    /// 도착점 근처(PickupPathEndMargin)는 보지 않는다.
+    /// </summary>
+    private bool HasClearPickupPath(Vector3 origin, NetworkItem item)
+    {
+        Vector3 target = VisualBounds(item).ClosestPoint(origin);
+        Vector3 delta = target - origin;
+        float length = delta.magnitude - PickupPathEndMargin;
+
+        if (length <= 0f)
+        {
+            return true;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(origin, delta.normalized, length, interactLayerMask, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i].collider;
+
+            if (col == null || IsMyCollider(col) || col.GetComponentInParent<NetworkItem>() != null)
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]

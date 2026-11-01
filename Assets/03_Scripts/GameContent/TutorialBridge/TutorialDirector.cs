@@ -82,6 +82,13 @@ namespace Pawntom.TutorialBridge
         private TutorialSettlementView _settlement;
         private TutorialEyelidView _eyelids;
         private TutorialGuideMarker _guide;
+
+        // 전리품 방에서는 여러 개를 동시에 띄운다(_guide 가 첫째, 나머지는 여기). 구역용보다 작은 상자를 쓴다.
+        private const int MaxItemGuides = 4;
+        private const float ItemGuideMinWidth = 0.7f;
+        private const float ItemGuideMinHeight = 0.9f;
+        private TutorialGuideMarker[] _extraGuides = new TutorialGuideMarker[0];
+        private readonly List<Bounds> _itemGuideBounds = new List<Bounds>(MaxItemGuides);
         private TutorialDeathFlow _deathFlow;
         private Func<TutorialSignal, bool> _canResolveGuide;
         private bool _controlEverEnabled;
@@ -693,6 +700,17 @@ namespace Pawntom.TutorialBridge
 
             _guide = GetOrAdd<TutorialGuideMarker>();
             _guide.Build();
+
+            _extraGuides = new TutorialGuideMarker[MaxItemGuides - 1];
+
+            for (int i = 0; i < _extraGuides.Length; i++)
+            {
+                GameObject holder = new GameObject("TutorialGuideExtra" + i);
+                holder.transform.SetParent(transform, false);
+                _extraGuides[i] = holder.AddComponent<TutorialGuideMarker>();
+                _extraGuides[i].Build();
+            }
+
             _canResolveGuide = _probe.CanResolveGuide; // 대리자는 한 번만 만든다(주기 호출마다 할당하지 않도록)
 
             _eyelids = overlay.gameObject.AddComponent<TutorialEyelidView>();
@@ -713,7 +731,7 @@ namespace Pawntom.TutorialBridge
             _hints.HideAll();
             _castBar.Hide();
             _settlement.Close();
-            _guide.Hide();
+            HideAllGuides();
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
             _eyelids.SetBlackout(0f);
             _eyelids.SetOpenness(1f, 0f);
@@ -777,9 +795,33 @@ namespace Pawntom.TutorialBridge
 
             if (!_controlEverEnabled || _ending || _directorLock || player == null)
             {
-                _guide.Hide();
+                HideAllGuides();
                 return;
             }
+
+            // 전리품 방(5단계): 전리품들을 먼저, 그다음 열쇠. 이 안내가 맡는 동안은 일반 안내 대신 이쪽을 띄운다.
+            int itemCount = Mathf.Min(_probe.CollectLootRoomGuide(_itemGuideBounds), MaxItemGuides);
+
+            if (itemCount > 0)
+            {
+                for (int i = 0; i < MaxItemGuides; i++)
+                {
+                    TutorialGuideMarker marker = i == 0 ? _guide : _extraGuides[i - 1];
+
+                    if (i < itemCount)
+                    {
+                        marker.Show(_itemGuideBounds[i], player.position, ItemGuideMinWidth, ItemGuideMinHeight);
+                    }
+                    else
+                    {
+                        marker.Hide();
+                    }
+                }
+
+                return;
+            }
+
+            HideExtraGuides();
 
             TutorialSignal target = TutorialGuidePlanner.Choose(_sequencer, _canResolveGuide);
             Bounds bounds;
@@ -792,6 +834,23 @@ namespace Pawntom.TutorialBridge
             {
                 _guide.Hide();
             }
+        }
+
+        private void HideExtraGuides()
+        {
+            for (int i = 0; i < _extraGuides.Length; i++)
+            {
+                if (_extraGuides[i] != null)
+                {
+                    _extraGuides[i].Hide();
+                }
+            }
+        }
+
+        private void HideAllGuides()
+        {
+            _guide.Hide();
+            HideExtraGuides();
         }
 
         /// <summary>

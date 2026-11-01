@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: -2641519256140472174}
   - component: {fileID: 6334529334843353458}
   - component: {fileID: 1548388900211741413}
+  - component: {fileID: 5442280832393477631}
   m_Layer: 6
   m_Name: Diamond
   m_TagString: Untagged
@@ -144,6 +145,8 @@ MonoBehaviour:
   _ItemId: 2
   _IsPickedUp:
     _value: 0
+  _IsDeathDrop:
+    _value: 0
 --- !u!114 &1548388900211741413
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,3 +166,22 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 6334529334843353458}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &5442280832393477631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489075253358649210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 219c36caeca89d4449d20f0ef6f5065e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupDisplay
+  spinDegreesPerSecond: 30
+  layFlatIfThin: 1
+  thinRatio: 0.4
+  snapToGround: 1
+  hoverHeight: 0.35
+  groundSearchUp: 0.6
+  groundSearchDown: 3

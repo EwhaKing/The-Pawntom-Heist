@@ -115,6 +115,12 @@ namespace Pawntom.TutorialBridge
         // 씬의 열쇠 금고와 열쇠(줍기 전) 캐시.
         private VaultChest[] _vaultChests = new VaultChest[0];
         private NetworkItem[] _keyItems = new NetworkItem[0];
+        private NetworkItem[] _lootItems = new NetworkItem[0];
+
+        // 5단계 안내 순서: 전리품 방에 처음 들어오면 전리품들 → (하나라도 줍고 나면) 열쇠.
+        private bool _lootRoomEntered;
+        private bool _lootedAny;
+        private bool _keyAcquired;
 
         // ── 상황 감지 ──
         private bool _dialogueBusy;
@@ -230,6 +236,7 @@ namespace Pawntom.TutorialBridge
             _pendingKindDelay = 0f;
             _cctvSeconds = _movedDistance = _turnedDegrees = 0f;
             _lastInventoryCount = -1;
+            _lootRoomEntered = _lootedAny = _keyAcquired = false;
             _enemyStates.Clear();
             _nextSceneCache = _nextPoll = 0f;
             ResetIdleTimers();
@@ -612,6 +619,110 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        /// <summary>
+        /// 전리품 방 안내 순서(5단계). 전리품 방에 처음 들어온 뒤에는 아직 줍지 않은 전리품마다 상자를 먼저 띄우고,
+        /// 하나라도 주운 뒤(또는 남은 전리품이 없으면) 열쇠 쪽으로 넘긴다. 열쇠를 챙기면 끝나고, 이후는 일반 안내가 맡는다.
+        /// <para>결과는 <paramref name="results"/>에 담는다(비우고 채운다). 돌려주는 값은 상자 개수이고 0이면 이 안내가 맡지 않는다.</para>
+        /// </summary>
+        public int CollectLootRoomGuide(System.Collections.Generic.List<Bounds> results)
+        {
+            results.Clear();
+
+            if (!_controlEnabled || !_lootRoomEntered || _keyAcquired)
+            {
+                return 0;
+            }
+
+            if (!_lootedAny)
+            {
+                for (int i = 0; i < _lootItems.Length; i++)
+                {
+                    NetworkItem item = _lootItems[i];
+
+                    if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+                    {
+                        continue;
+                    }
+
+                    results.Add(ItemGuideBounds(item));
+                }
+
+                if (results.Count > 0)
+                {
+                    return results.Count;
+                }
+            }
+
+            Bounds keyBounds;
+
+            if (TryGetGuideBounds(TutorialSignal.NearKey, out keyBounds))
+            {
+                results.Add(keyBounds);
+            }
+
+            return results.Count;
+        }
+
+        // 아이템의 보이는 모양(렌더러) 경계를 조금 넓힌 것. 렌더러가 없으면 충돌체 경계, 그것도 없으면 위치 기준 작은 상자.
+        private static Bounds ItemGuideBounds(NetworkItem item)
+        {
+            const float Padding = 0.25f;
+
+            bool has = false;
+            Bounds bounds = new Bounds(item.transform.position, Vector3.zero);
+            Renderer[] renderers = item.GetComponentsInChildren<Renderer>();
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+
+                if (!renderer.enabled || renderer.bounds.size.sqrMagnitude < 0.0001f)
+                {
+                    continue;
+                }
+
+                if (!has)
+                {
+                    bounds = renderer.bounds;
+                    has = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            if (!has)
+            {
+                Collider[] colliders = item.GetComponentsInChildren<Collider>();
+
+                for (int i = 0; i < colliders.Length; i++)
+                {
+                    if (colliders[i] == null || colliders[i].isTrigger)
+                    {
+                        continue;
+                    }
+
+                    if (!has)
+                    {
+                        bounds = colliders[i].bounds;
+                        has = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(colliders[i].bounds);
+                    }
+                }
+            }
+
+            // 아이템이 천천히 돌아서 축 정렬 경계는 계속 변한다(안내 상자가 흔들린다). 수평 크기는 회전과 무관한 대각선 길이로 고정한다.
+            float horizontal = Mathf.Sqrt(bounds.size.x * bounds.size.x + bounds.size.z * bounds.size.z);
+            bounds.size = new Vector3(horizontal, bounds.size.y, horizontal);
+
+            bounds.Expand(Padding * 2f);
+            return bounds;
+        }
+
         private static bool TryGetZoneBounds(TutorialSignal signal, out Bounds bounds)
         {
             bounds = default;
@@ -709,6 +820,11 @@ namespace Pawntom.TutorialBridge
                 {
                     EmitBlueDoorState(zone.transform.position);
                     continue;
+                }
+
+                if (zone.Signal == TutorialSignal.LootRoomEntered)
+                {
+                    _lootRoomEntered = true;
                 }
 
                 Emit(zone.Signal);
@@ -1054,7 +1170,13 @@ namespace Pawntom.TutorialBridge
 
             if (key)
             {
+                _keyAcquired = true;
                 Emit(TutorialSignal.KeyAcquired);
+            }
+
+            if (loot > 0)
+            {
+                _lootedAny = true;
             }
 
             if (_lastInventoryCount >= 0 && filled < _lastInventoryCount)
@@ -1241,19 +1363,33 @@ namespace Pawntom.TutorialBridge
 
             _vaultChests = FindObjectsByType<VaultChest>(FindObjectsSortMode.None);
 
-            // 줍기 전 열쇠만 모은다. 줍히면 목록에서 빠져 다음 캐시 때 사라진다.
+            // 줍기 전 열쇠·전리품만 모은다. 줍히면 목록에서 빠져 다음 캐시 때 사라진다.
+            // 전리품은 열쇠와 탈출 아이템(캣닢)을 뺀 월드 아이템이다.
             NetworkItem[] items = FindObjectsByType<NetworkItem>(FindObjectsSortMode.None);
             System.Collections.Generic.List<NetworkItem> keys = new System.Collections.Generic.List<NetworkItem>(2);
+            System.Collections.Generic.List<NetworkItem> loot = new System.Collections.Generic.List<NetworkItem>(4);
 
             for (int i = 0; i < items.Length; i++)
             {
-                if (items[i] != null && items[i].Object != null && items[i].Object.IsValid && items[i].ItemId == keyItemId)
+                NetworkItem item = items[i];
+
+                if (item == null || item.Object == null || !item.Object.IsValid)
                 {
-                    keys.Add(items[i]);
+                    continue;
+                }
+
+                if (item.ItemId == keyItemId)
+                {
+                    keys.Add(item);
+                }
+                else if (item.ItemId != catnipItemId)
+                {
+                    loot.Add(item);
                 }
             }
 
             _keyItems = keys.ToArray();
+            _lootItems = loot.ToArray();
 
             _enemies = FindObjectsByType<EnemyAgent>(FindObjectsSortMode.None);
             _networkEnemies = new NetworkEnemyAgent[_enemies.Length];
