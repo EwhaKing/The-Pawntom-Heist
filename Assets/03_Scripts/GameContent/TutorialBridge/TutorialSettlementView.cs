@@ -33,6 +33,8 @@ namespace Pawntom.TutorialBridge
         private TutorialAudio _audio;
 
         private float _targetAlpha;
+        private Image _backdrop;
+        private float _backdropAlpha;
         private bool _counting;
         private float _countTime;
         private int _totalValue;
@@ -47,6 +49,12 @@ namespace Pawntom.TutorialBridge
         public void Build(TutorialUIFactory factory, Transform parent, TutorialAudio audioPlayer)
         {
             _audio = audioPlayer;
+
+            // 정산은 검은 화면 위에 뜬다. 패널보다 아래(먼저 만든 형제)에 전체 화면 검은 바탕을 둔다.
+            _backdrop = factory.CreateImage("SettlementBackdrop", parent, Color.black);
+            TutorialUIFactory.Stretch(_backdrop.rectTransform);
+            _backdrop.raycastTarget = false;
+            _backdrop.gameObject.SetActive(false);
 
             _root = factory.CreateRect("Settlement", parent);
             TutorialUIFactory.Place(_root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), TutorialTheme.SettlementSize);
@@ -132,6 +140,11 @@ namespace Pawntom.TutorialBridge
 
             _root.gameObject.SetActive(true);
             _targetAlpha = 1f;
+
+            // 검은 바탕은 처음부터 꽉 차 있다. 디렉터가 화면을 검게 페이드시킨 뒤 이 바탕으로 이어받는다.
+            _backdropAlpha = 1f;
+            _backdrop.color = Color.black;
+            _backdrop.gameObject.SetActive(true);
         }
 
         /// <summary>합계를 0부터 세어 올린 뒤 onRevealed 를 부른다.</summary>
@@ -152,6 +165,19 @@ namespace Pawntom.TutorialBridge
         {
             float deltaTime = Time.unscaledDeltaTime;
             _group.alpha = Mathf.MoveTowards(_group.alpha, _targetAlpha, deltaTime / FadeSeconds);
+
+            // 닫히면 패널과 함께 검은 바탕도 사라진다.
+            _backdropAlpha = Mathf.MoveTowards(_backdropAlpha, _targetAlpha > 0f ? 1f : 0f, deltaTime / FadeSeconds);
+
+            if (_backdrop.gameObject.activeSelf)
+            {
+                _backdrop.color = new Color(0f, 0f, 0f, _backdropAlpha);
+
+                if (_backdropAlpha <= 0f)
+                {
+                    _backdrop.gameObject.SetActive(false);
+                }
+            }
 
             if (_targetAlpha <= 0f && _group.alpha <= 0f && _root.gameObject.activeSelf)
             {

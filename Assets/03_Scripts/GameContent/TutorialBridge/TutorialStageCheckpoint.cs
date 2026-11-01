@@ -58,7 +58,8 @@ namespace Pawntom.TutorialBridge
             {
                 TutorialVault captured = vault;
                 bool opened = vault.IsOpened;
-                _restoreWorld.Add(() => { if (captured != null) captured.RestoreCheckpoint(opened); });
+                int usedKeys = vault.UsedKeyCount;
+                _restoreWorld.Add(() => { if (captured != null) captured.RestoreCheckpoint(opened, usedKeys); });
             }
             foreach (var enemy in Pawntom.Enemy.Authoring.EnemyAgent.Active)
             {

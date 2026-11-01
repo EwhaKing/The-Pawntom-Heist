@@ -73,6 +73,11 @@ namespace Hacking
         [Tooltip("SignalDivide 키 버튼 그림. 순서: W, A, S, D. 비우면 키 글자 텍스트만 씁니다.")]
         [SerializeField] private SignalKeySprites[] signalKeySprites;
 
+        [Header("Input")]
+        [Tooltip("끄면 방향키 순서·두 키 번갈아 누르기 미니게임의 버튼을 마우스로 눌러도 입력이 되지 않는다(키보드 전용).\n" +
+                 "타이밍 맞추기(원형)는 자체 버튼이라 이 설정과 무관하게 마우스로도 할 수 있다.")]
+        [SerializeField] private bool allowMouseInput = false;
+
         [SerializeField, Min(0f)] private float keyFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float commandErrorFlashSeconds = 0.3f;
 
@@ -516,6 +521,12 @@ namespace Hacking
         /// </summary>
         public void PressCommandSlot(int slotIndex)
         {
+            // 방향키·두 키 미니게임은 키보드로만 한다. 마우스로 버튼을 눌러도 입력으로 치지 않는다.
+            if (!allowMouseInput)
+            {
+                return;
+            }
+
             CommandOverrideGame commandGame = currentGame as CommandOverrideGame;
 
             if (commandGame == null)
@@ -552,6 +563,12 @@ namespace Hacking
         /// </summary>
         private void SendVirtualInput(KeyCode key)
         {
+            // 키보드 전용. 마우스 클릭은 입력으로 치지 않는다.
+            if (!allowMouseInput)
+            {
+                return;
+            }
+
             if (currentGame == null)
             {
                 Debug.LogWarning("[HackingPopupView] 현재 실행 중인 미니게임이 없습니다.");

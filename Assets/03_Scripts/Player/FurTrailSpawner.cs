@@ -45,8 +45,15 @@ public class FurTrailSpawner : NetworkBehaviour
     [Tooltip("활성화하면 털공의 위쪽 방향을 경사진 바닥의 노멀에 맞춥니다.")]
     [SerializeField] private bool alignToGroundNormal = true;
 
-    [Tooltip("활성화하면 생성될 때마다 바닥 방향을 기준으로 임의의 회전을 적용합니다.")]
-    [SerializeField] private bool randomizeRotation = true;
+    [Tooltip("발자국이 플레이어가 바라보는 방향을 향하게 하되, 이 각도(도) 안에서 좌우로 조금씩 비틀어 자연스럽게 보이게 합니다.")]
+    [SerializeField, Range(0f, 45f)] private float headingJitterDegrees = 12f;
+
+    [Header("Footprint Size")]
+    [Tooltip("걸을 때 찍히는 발자국 크기 배율입니다. 프리팹에 그려진 기본 크기가 1입니다.")]
+    [SerializeField, Min(0.1f)] private float walkFootprintScale = 1f;
+
+    [Tooltip("달릴 때 찍히는 발자국 크기 배율입니다. 걷기보다 크게 찍힙니다.")]
+    [SerializeField, Min(0.1f)] private float sprintFootprintScale = 1.7f;
 
     [Networked] private int NextSequence { get; set; }
 
@@ -139,6 +146,7 @@ public class FurTrailSpawner : NetworkBehaviour
         int sequence = NextSequence++;
         PlayerRef creator = Object.InputAuthority;
         int spawnTick = Runner.Tick.Raw;
+        float visualScale = _playerData.IsSprinting ? sprintFootprintScale : walkFootprintScale;
 
         Runner.Spawn(
             furBallPrefab,
@@ -150,7 +158,7 @@ public class FurTrailSpawner : NetworkBehaviour
 
                 if (trace != null)
                 {
-                    trace.Initialize(creator, sequence, spawnTick);
+                    trace.Initialize(creator, sequence, spawnTick, visualScale);
                 }
             }
         );
@@ -179,17 +187,27 @@ public class FurTrailSpawner : NetworkBehaviour
         return right * horizontalOffset + forward * longitudinalOffset;
     }
 
+    /// <summary>
+    /// 발자국의 위쪽(발가락 쪽)이 플레이어가 바라보는 방향을 향하도록 회전을 정합니다.
+    /// 오브젝트의 위(Y)는 바닥 노멀, 앞(Z)은 바닥에 눕힌 진행 방향입니다.
+    /// </summary>
     private Quaternion GetSpawnRotation(Vector3 groundNormal)
     {
-        Quaternion rotation = alignToGroundNormal
-            ? Quaternion.FromToRotation(Vector3.up, groundNormal)
-            : Quaternion.identity;
+        Vector3 up = alignToGroundNormal ? groundNormal : Vector3.up;
+        Vector3 heading = Vector3.ProjectOnPlane(transform.forward, up);
 
-        if (randomizeRotation)
+        if (heading.sqrMagnitude < 0.0001f)
+        {
+            heading = Vector3.ProjectOnPlane(Vector3.forward, up);
+        }
+
+        Quaternion rotation = Quaternion.LookRotation(heading.normalized, up);
+
+        if (headingJitterDegrees > 0f)
         {
             rotation = Quaternion.AngleAxis(
-                Random.Range(0f, 360f),
-                groundNormal
+                Random.Range(-headingJitterDegrees, headingJitterDegrees),
+                up
             ) * rotation;
         }
 

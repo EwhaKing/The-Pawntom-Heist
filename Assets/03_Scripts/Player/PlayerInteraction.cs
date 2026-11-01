@@ -40,6 +40,18 @@ public class PlayerInteraction : NetworkBehaviour
     [SerializeField, Min(0.5f)]
     private float wallInteractDistance = 3f;
 
+    [Tooltip("월드 아이템(열쇠·전리품)을 줍기 위해 카메라에서 아이템 경계까지 다가가야 하는 거리(m). 조준선만 맞으면 멀리서도 줍히던 것을 막는다.\n" +
+             "플레이어 발 위치가 아니라 카메라 기준이라, 벽에 걸린 큰 그림도 조준한 만큼 닿는다.")]
+    [SerializeField, Min(0.5f)]
+    private float itemInteractDistance = 2.5f;
+
+    // 아이템 줍기 범위 판정. 안내 표시와 E 입력이 같은 기준을 쓴다.
+    private bool IsItemInRange(NetworkItem item)
+    {
+        Vector3 origin = playerCamera != null ? playerCamera.transform.position : transform.position;
+        return InteractRange.DistanceTo(item, origin) <= itemInteractDistance;
+    }
+
     [Header("Interaction Layer")]
     [Tooltip("상호작용 탐색에 포함할 레이어입니다.")]
     [SerializeField] private LayerMask interactLayerMask = ~0;
@@ -211,7 +223,7 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (escapeButton != null)
         {
-            return escapeButton.InteractName;
+            return escapeButton.IsPlayerInRange(transform.position) ? escapeButton.InteractName : null;
         }
 
         ControllableWall wall = hit.collider.GetComponentInParent<ControllableWall>();
@@ -229,6 +241,12 @@ public class PlayerInteraction : NetworkBehaviour
         NetworkItem item = FindAimedItem(ray);
 
         if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+        {
+            return null;
+        }
+
+        // 가까이 가야만 안내가 뜬다(E 입력과 같은 기준).
+        if (!IsItemInRange(item))
         {
             return null;
         }
@@ -306,6 +324,48 @@ public class PlayerInteraction : NetworkBehaviour
         );
 
         // ==========================================
+        // 0. 금고 상호작용
+        // ==========================================
+
+        VaultChest vaultChest =
+            hit.collider.GetComponentInParent<VaultChest>();
+
+        // 디버깅: 현재 충돌한 오브젝트의 종류 확인
+        Debug.Log(
+            $"[PlayerInteraction] 충돌 대상 검사 / " +
+            $"Vault={vaultChest != null}, " +
+            $"Wall={hit.collider.GetComponentInParent<ControllableWall>() != null}, " +
+            $"Machine={hit.collider.GetComponentInParent<ControlMachine>() != null}"
+        );
+
+        if (vaultChest != null)
+        {
+            if (!vaultChest.IsPlayerInRange(transform.position))
+            {
+                Debug.Log("[PlayerInteraction] 금고에서 너무 멀어 상호작용할 수 없습니다.");
+                return;
+            }
+
+            Debug.Log("[PlayerInteraction] VaultChest 감지 성공!");
+
+            // 현재 인벤토리 상태 확인
+            InventoryManager inventory =
+                GetComponent<InventoryManager>();
+
+            if (inventory != null)
+            {
+                Debug.Log(
+                    $"[PlayerInteraction] 선택 슬롯={inventory.SelectedSlotIndex}, " +
+                    $"손에 든 ItemId={inventory.GetHeldItemId()}"
+                );
+            }
+
+            // 열쇠 사용과 금고 개봉은 VaultChest가 판정
+            vaultChest.RequestInteract(Object);
+            return;
+        }
+
+        // ==========================================
         // 1. 본부 조작 기계
         // ==========================================
 
@@ -341,6 +401,12 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (escapeButton != null)
         {
+            if (!escapeButton.IsPlayerInRange(transform.position))
+            {
+                Debug.Log("[PlayerInteraction] 출발 버튼에서 너무 멀어 상호작용할 수 없습니다.");
+                return;
+            }
+
             Debug.Log(
                 "[PlayerInteraction] 출발 버튼 발견"
             );
@@ -421,6 +487,12 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] 이미 획득된 아이템입니다."
             );
 
+            return;
+        }
+
+        if (!IsItemInRange(item))
+        {
+            Debug.Log("[PlayerInteraction] 아이템에서 너무 멀어 주울 수 없습니다.");
             return;
         }
 
@@ -727,7 +799,8 @@ public class PlayerInteraction : NetworkBehaviour
                     col.GetComponentInParent<ControlMachine>() != null ||
                     col.GetComponentInParent<EscapeButtonInteraction>() != null ||
                     col.GetComponentInParent<ControllableWall>() != null ||
-                    col.GetComponentInParent<NetworkItem>() != null;
+                    col.GetComponentInParent<NetworkItem>() != null ||
+                    col.GetComponentInParent<VaultChest>() != null;
 
                 // 발견 구역, MainbaseZone 같은
                 // 상호작용과 무관한 Trigger는 무시
@@ -814,16 +887,17 @@ public class PlayerInteraction : NetworkBehaviour
         }
 
         // 클라이언트가 보낸 좌표/아이템 ID를 믿지 않고 호스트의 월드 상태로 검사합니다.
-        Vector3 origin = playerCamera != null ? playerCamera.transform.position : transform.position;
-        Collider itemCollider = itemObject.GetComponentInChildren<Collider>();
-        Vector3 closest = itemCollider != null ? itemCollider.ClosestPoint(origin) : itemObject.transform.position;
-        Vector3 delta = closest - origin;
-        if (delta.sqrMagnitude > (interactDistance + interactRadius) * (interactDistance + interactRadius))
+        // 검사 기준은 클라이언트의 안내·E 입력과 같다(IsItemInRange / FindAimedItem). 기준이 다르면
+        // "이름은 떴는데 안 줍히는" 일이 생긴다 — 특히 콜라이더가 보이는 모양과 다르고 벽에 붙은 그림에서.
+        Vector3 origin = PickupOrigin();
+        float distance = InteractRange.DistanceTo(item, origin);
+        float allowed = itemInteractDistance + PickupHostTolerance;
+        if (distance > allowed)
         {
-            RPC_PickupFeedback($"획득 거절: 거리 초과 ({delta.magnitude:F2}m / 허용 {interactDistance + interactRadius:F2}m)");
+            RPC_PickupFeedback($"획득 거절: 거리 초과 ({distance:F2}m / 허용 {allowed:F2}m)");
             return;
         }
-        if (itemCollider != null && !HasClearInteractionPath(origin, itemCollider))
+        if (!HasClearPickupPath(origin, item))
         {
             RPC_PickupFeedback($"획득 거절: {itemObject.name} 앞에 장애물이 있습니다.");
             return;
@@ -838,6 +912,65 @@ public class PlayerInteraction : NetworkBehaviour
         RPC_PickupFeedback($"획득 성공: {itemObject.name}, ItemId={item.ItemId}");
         item.IsPickedUp = true;
         Runner.Despawn(itemObject);
+    }
+
+    // 호스트는 클라이언트보다 조금 늦은 위치를 본다. 클라이언트가 가까이 갔다고 본 줍기가 지연 때문에 거절되지 않게 여유를 둔다.
+    private const float PickupHostTolerance = 1f;
+
+    // 시선 경로의 끝에서 이만큼은 막힘으로 세지 않는다. 벽에 딱 붙은 그림은 벽 표면이 도착점과 같은 자리에 있다.
+    private const float PickupPathEndMargin = 0.15f;
+
+    /// <summary>
+    /// 줍기 판정의 눈 위치. 호스트에서 다른 플레이어를 검사할 때는 그 플레이어의 카메라가 아직 없을 수 있어 그때 찾아 둔다.
+    /// 카메라가 없으면 발 위치를 쓴다.
+    /// </summary>
+    private Vector3 PickupOrigin()
+    {
+        if (playerCamera == null)
+        {
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponentInChildren<Camera>(true);
+            }
+        }
+
+        return playerCamera != null ? playerCamera.transform.position : transform.position;
+    }
+
+    /// <summary>
+    /// 눈에서 아이템의 보이는 모양까지 벽·선반 같은 단단한 물체가 가로막는가.
+    /// 클라이언트의 조준 판정(CollectItems)과 같은 규칙이다: 다른 아이템의 콜라이더는 막힘이 아니다
+    /// (보이는 모양보다 큰 콜라이더가 많고, 옆 아이템 위에 놓인 물건도 줍혀야 한다).
+    /// 도착점 근처(PickupPathEndMargin)는 보지 않는다.
+    /// </summary>
+    private bool HasClearPickupPath(Vector3 origin, NetworkItem item)
+    {
+        Vector3 target = VisualBounds(item).ClosestPoint(origin);
+        Vector3 delta = target - origin;
+        float length = delta.magnitude - PickupPathEndMargin;
+
+        if (length <= 0f)
+        {
+            return true;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(origin, delta.normalized, length, interactLayerMask, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i].collider;
+
+            if (col == null || IsMyCollider(col) || col.GetComponentInParent<NetworkItem>() != null)
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]

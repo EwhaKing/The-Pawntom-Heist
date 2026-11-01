@@ -62,8 +62,11 @@ namespace Pawntom.TutorialBridge
         [SerializeField, Min(0f)] private float endCardHoldSeconds = 2.5f;
 
         [Header("정산")]
-        [Tooltip("7-10 대사가 끝난 뒤 정산 창을 띄우기까지의 시간")]
+        [Tooltip("출발 버튼을 누른 뒤 정산 창을 띄우기까지의 시간(출발 버튼 경로는 0.3초로 부른다)")]
         [SerializeField, Min(0f)] private float settlementDelay = 1.2f;
+
+        [Tooltip("정산이 뜨기 전에 화면이 까맣게 페이드되는 시간(초)")]
+        [SerializeField, Min(0.1f)] private float settlementFadeSeconds = 0.9f;
 
         private static bool _bootstrapRegistered;
 
@@ -79,6 +82,13 @@ namespace Pawntom.TutorialBridge
         private TutorialSettlementView _settlement;
         private TutorialEyelidView _eyelids;
         private TutorialGuideMarker _guide;
+
+        // 전리품 방에서는 여러 개를 동시에 띄운다(_guide 가 첫째, 나머지는 여기). 구역용보다 작은 상자를 쓴다.
+        private const int MaxItemGuides = 4;
+        private const float ItemGuideMinWidth = 0.7f;
+        private const float ItemGuideMinHeight = 0.9f;
+        private TutorialGuideMarker[] _extraGuides = new TutorialGuideMarker[0];
+        private readonly List<Bounds> _itemGuideBounds = new List<Bounds>(MaxItemGuides);
         private TutorialDeathFlow _deathFlow;
         private Func<TutorialSignal, bool> _canResolveGuide;
         private bool _controlEverEnabled;
@@ -243,6 +253,8 @@ namespace Pawntom.TutorialBridge
             HackingManager.PreferredGameType = null;
             TutorialInputLock.ForgetOwner(this);
             TutorialInputLock.ForgetOwner(_dialogue);
+            GameWorldPause.ForgetOwner(this);
+            GameWorldPause.ForgetOwner(_dialogue);
             Hacking.HackingGameBase.Paused = false;
             _factory?.DestroyOwnedTextures();
             _factory?.DestroyRuntimeFont();
@@ -427,19 +439,9 @@ namespace Pawntom.TutorialBridge
             _probe.ResetLookReference();
             _deathFlow?.CaptureCheckpoint(beat.Stage);
 
-            // 단계별 안내와 미니게임을 맞춘다: 4단계 격벽 = 방향키 순서 입력, 6단계 이후 금고 = Space 타이밍.
-            if (beat.Stage >= 6)
-            {
-                HackingManager.PreferredGameType = HackingGameType.DigitalSync;
-            }
-            else if (beat.Stage >= 4)
-            {
-                HackingManager.PreferredGameType = HackingGameType.CommandOverride;
-            }
-            else
-            {
-                HackingManager.PreferredGameType = null;
-            }
+            // 단계별 미니게임을 맞춘다: 격벽 해킹(4단계)은 세 종류 중 무작위(4-7~4-10 이 걸린 종류를 안내한다),
+            // 6단계 이후 금고는 Space 타이밍(DigitalSync)으로 고정한다.
+            HackingManager.PreferredGameType = beat.Stage >= 6 ? HackingGameType.DigitalSync : (HackingGameType?)null;
 
             Debug.Log("[TutorialDirector] 비트 시작 " + beat.Id + " (" + beat.Stage + "단계)");
         }
@@ -544,7 +546,19 @@ namespace Pawntom.TutorialBridge
 
             yield return new WaitForSecondsRealtime(delay);
 
+            // 화면이 까맣게 페이드된 뒤 정산이 뜬다(눈꺼풀 연출 없이 검은 화면만).
+            float fade = 0f;
+
+            while (fade < 1f)
+            {
+                fade += Time.unscaledDeltaTime / settlementFadeSeconds;
+                _eyelids.SetBlackout(fade);
+                yield return null;
+            }
+
+            // 정산의 검은 바탕이 이어받고, 위에 덮었던 검은 막은 걷는다(같은 프레임이라 깜빡임이 없다).
             _settlement.Open(BuildSettlementEntries());
+            _eyelids.SetBlackout(0f);
             _audio.PlaySquelch();
 
             yield return new WaitForSecondsRealtime(0.6f);
@@ -605,27 +619,7 @@ namespace Pawntom.TutorialBridge
 
             yield return new WaitForSecondsRealtime(1.4f);
 
-            _settlement.Close();
-
-            EyelidTimeline closing = EyelidTimeline.CreateClosing();
-            float time = 0f;
-            bool beat = false;
-
-            while (time < closing.Duration)
-            {
-                time += Time.unscaledDeltaTime;
-
-                if (!beat && time >= 0.6f)
-                {
-                    beat = true;
-                    _audio.PlayHeartbeat(0.5f);
-                }
-
-                float openness = closing.Evaluate(time);
-                _eyelids.SetOpenness(openness, 1f - openness);
-                yield return null;
-            }
-
+            // 눈꺼풀 연출 없이 검은 화면만 페이드한다. 정산 패널은 그 아래에서 가려진다.
             float fade = 0f;
 
             while (fade < 1f)
@@ -634,6 +628,8 @@ namespace Pawntom.TutorialBridge
                 _eyelids.SetBlackout(fade);
                 yield return null;
             }
+
+            _settlement.Close(); // 이미 검은 막에 가려져 있다
 
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
 
@@ -704,6 +700,17 @@ namespace Pawntom.TutorialBridge
 
             _guide = GetOrAdd<TutorialGuideMarker>();
             _guide.Build();
+
+            _extraGuides = new TutorialGuideMarker[MaxItemGuides - 1];
+
+            for (int i = 0; i < _extraGuides.Length; i++)
+            {
+                GameObject holder = new GameObject("TutorialGuideExtra" + i);
+                holder.transform.SetParent(transform, false);
+                _extraGuides[i] = holder.AddComponent<TutorialGuideMarker>();
+                _extraGuides[i].Build();
+            }
+
             _canResolveGuide = _probe.CanResolveGuide; // 대리자는 한 번만 만든다(주기 호출마다 할당하지 않도록)
 
             _eyelids = overlay.gameObject.AddComponent<TutorialEyelidView>();
@@ -724,7 +731,7 @@ namespace Pawntom.TutorialBridge
             _hints.HideAll();
             _castBar.Hide();
             _settlement.Close();
-            _guide.Hide();
+            HideAllGuides();
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
             _eyelids.SetBlackout(0f);
             _eyelids.SetOpenness(1f, 0f);
@@ -737,6 +744,7 @@ namespace Pawntom.TutorialBridge
             _dialogue.Close();
             _dialogueHold = false;
             TutorialInputLock.Release(_dialogue);
+            GameWorldPause.Release(_dialogue);
             Hacking.HackingGameBase.Paused = false;
             _probe.ResetForRetry();
             _probe.enabled = true;
@@ -787,9 +795,33 @@ namespace Pawntom.TutorialBridge
 
             if (!_controlEverEnabled || _ending || _directorLock || player == null)
             {
-                _guide.Hide();
+                HideAllGuides();
                 return;
             }
+
+            // 전리품 방(5단계): 전리품들을 먼저, 그다음 열쇠. 이 안내가 맡는 동안은 일반 안내 대신 이쪽을 띄운다.
+            int itemCount = Mathf.Min(_probe.CollectLootRoomGuide(_itemGuideBounds), MaxItemGuides);
+
+            if (itemCount > 0)
+            {
+                for (int i = 0; i < MaxItemGuides; i++)
+                {
+                    TutorialGuideMarker marker = i == 0 ? _guide : _extraGuides[i - 1];
+
+                    if (i < itemCount)
+                    {
+                        marker.Show(_itemGuideBounds[i], player.position, ItemGuideMinWidth, ItemGuideMinHeight);
+                    }
+                    else
+                    {
+                        marker.Hide();
+                    }
+                }
+
+                return;
+            }
+
+            HideExtraGuides();
 
             TutorialSignal target = TutorialGuidePlanner.Choose(_sequencer, _canResolveGuide);
             Bounds bounds;
@@ -804,6 +836,23 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        private void HideExtraGuides()
+        {
+            for (int i = 0; i < _extraGuides.Length; i++)
+            {
+                if (_extraGuides[i] != null)
+                {
+                    _extraGuides[i].Hide();
+                }
+            }
+        }
+
+        private void HideAllGuides()
+        {
+            _guide.Hide();
+            HideExtraGuides();
+        }
+
         /// <summary>
         /// 넘기기를 기다리는 메인 대사가 떠 있으면 이동·시점을 막는다. 대사 창이 소유자다(오프닝·정산 잠금과 별개).
         /// 풀 때는 넘기기에 쓴 Space 를 뗀 뒤에 푼다 — 누른 채로 풀면 다음 틱에 "새로 눌림"으로 읽혀 점프가 나간다.
@@ -816,12 +865,14 @@ namespace Pawntom.TutorialBridge
                 {
                     _dialogueHold = true;
                     TutorialInputLock.Acquire(_dialogue);
+                    GameWorldPause.Acquire(_dialogue); // 대사만 움직이고 적·상호작용 대상은 멈춘다
                 }
             }
             else if (_dialogueHold && !TutorialDialogueView.IsConfirmHeld())
             {
                 _dialogueHold = false;
                 TutorialInputLock.Release(_dialogue);
+                GameWorldPause.Release(_dialogue);
             }
 
             // 대사를 읽는 동안 해킹 미니게임의 제한 시간이 흐르지 않게 멈춘다. 넘기기에 쓴 Space 를 뗀 뒤에 다시 돌린다
@@ -841,10 +892,12 @@ namespace Pawntom.TutorialBridge
             if (locked)
             {
                 TutorialInputLock.Acquire(this);
+                GameWorldPause.Acquire(this); // 오프닝·정산·엔딩·부활 연출 중에도 월드는 멈춘다
             }
             else
             {
                 TutorialInputLock.Release(this);
+                GameWorldPause.Release(this);
             }
         }
 

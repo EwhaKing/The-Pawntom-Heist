@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 4285729618004671050}
   - component: {fileID: -2391757967359772159}
   - component: {fileID: -8876168770000840532}
+  - component: {fileID: 3404100495704919243}
   m_Layer: 6
   m_Name: Painting
   m_TagString: Untagged
@@ -136,6 +137,8 @@ MonoBehaviour:
   _ItemId: 5
   _IsPickedUp:
     _value: 0
+  _IsDeathDrop:
+    _value: 0
 --- !u!114 &-8876168770000840532
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -155,6 +158,25 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: -2391757967359772159}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &3404100495704919243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6035396468826116320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 219c36caeca89d4449d20f0ef6f5065e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupDisplay
+  spinDegreesPerSecond: 30
+  layFlatIfThin: 1
+  thinRatio: 0.4
+  snapToGround: 1
+  hoverHeight: 0.35
+  groundSearchUp: 0.6
+  groundSearchDown: 3
 --- !u!1001 &2623387645396389882
 PrefabInstance:
   m_ObjectHideFlags: 0

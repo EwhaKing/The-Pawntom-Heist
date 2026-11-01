@@ -431,6 +431,35 @@ public class InventoryManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// 가방(핫바 4칸)에 든 아이템 무게의 합. 이동 속도 감소(PlayerController)에 쓴다.
+    /// 데이터를 못 찾은 아이템은 1 로 센다.
+    /// </summary>
+    public float GetTotalWeight()
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return 0f;
+        }
+
+        float total = 0f;
+
+        for (int i = 0; i < MaxSlotCount; i++)
+        {
+            int itemId = Slots[i];
+
+            if (itemId == EmptySlot)
+            {
+                continue;
+            }
+
+            ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
+            total += data != null ? data.weight : 1f;
+        }
+
+        return total;
+    }
+
+    /// <summary>
     /// 특정 itemId를 인벤토리에 가지고 있는지 확인
     /// ex. Catleaf 탈출 조건이 맞는지 확인 
     /// </summary>
@@ -553,6 +582,47 @@ public class InventoryManager : NetworkBehaviour
         {
             Slots.Set(slotIndex, EmptySlot);
         }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 현재 선택한 슬롯의 아이템이 requiredItemId와 같으면 해당 아이템 1개를 소비
+    /// 반드시 StateAuthority에서 실행
+    /// </summary>
+    public bool TryConsumeSelectedItem(int requiredItemId)
+    {
+        if (Object == null || !Object.HasStateAuthority)
+            return false;
+
+        if (requiredItemId <= EmptySlot)
+            return false;
+
+        if (SelectedSlotIndex < 0 ||
+            SelectedSlotIndex >= MaxSlotCount)
+        {
+            Debug.Log("[InventoryManager] 맨손 상태입니다.");
+            return false;
+        }
+
+        int heldItemId = Slots[SelectedSlotIndex];
+
+        if (heldItemId != requiredItemId)
+        {
+            Debug.Log(
+                $"[InventoryManager] 선택한 아이템이 열쇠가 아닙니다. " +
+                $"Held={heldItemId}, Required={requiredItemId}"
+            );
+            return false;
+        }
+
+        // 선택한 슬롯만 비움
+        // 나머지 아이템을 앞으로 당기지 않음
+        Slots.Set(SelectedSlotIndex, EmptySlot);
+
+        Debug.Log(
+            $"[InventoryManager] 열쇠 소비 완료: 슬롯 {SelectedSlotIndex + 1}"
+        );
 
         return true;
     }

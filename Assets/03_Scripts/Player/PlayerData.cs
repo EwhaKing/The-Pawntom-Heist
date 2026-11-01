@@ -139,7 +139,8 @@ public class PlayerData : NetworkBehaviour
             ExhaustedTimer = TickTimer.None;
         }
 
-        if (Object.HasStateAuthority && !IsDead)
+        // 대사·연출로 월드가 멈춰 있는 동안은 접촉 피해 시간도 흐르지 않는다.
+        if (Object.HasStateAuthority && !IsDead && !GameWorldPause.IsPaused)
         {
             TickEnemyContactDamage();
         }

@@ -41,6 +41,10 @@ public class ItemData : ScriptableObject
     public int buyPrice;
     public int sellPrice;
 
+    [Header("Weight")]
+    [Tooltip("소지 무게. 가방에 든 아이템 무게의 합이 클수록 이동 속도가 줄어든다(페널티는 이동 속도 감소 하나뿐). 수치는 임시값이다.")]
+    [Min(0f)] public float weight = 1f;
+
     [Header("World")]
     public GameObject modelPrefab;
 }

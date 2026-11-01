@@ -1292,9 +1292,15 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 897765660}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
+  allowFieldOpen: 1
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -1584,6 +1590,8 @@ MonoBehaviour:
   iconImage: {fileID: 1367117770}
   slotNumberText: {fileID: 1482605831}
   selectedBorder: {fileID: 1701972096}
+  selectedScale: 1.12
+  scaleSpeed: 18
 --- !u!114 &48202145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2069,9 +2077,15 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 1371443514}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
+  allowFieldOpen: 1
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -4732,6 +4746,8 @@ MonoBehaviour:
   iconImage: {fileID: 1997839503}
   slotNumberText: {fileID: 1501174334}
   selectedBorder: {fileID: 1455092414}
+  selectedScale: 1.12
+  scaleSpeed: 18
 --- !u!114 &221844075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6160,9 +6176,15 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 1115078565}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
+  allowFieldOpen: 1
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -7265,6 +7287,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4693d96ce832344e876213e7fb955f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EscapeButtonInteraction
+  interactName: "\uCD9C\uBC1C"
+  interactMargin: 1.5
 --- !u!114 &396744820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12557,9 +12581,15 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 915995994}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
+  allowFieldOpen: 1
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
   _IsUnlocked:
@@ -13209,6 +13239,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ControlMachine
   controlUI: {fileID: 2001068474}
+  interactName: "\uBCF8\uBD80 \uB2E8\uB9D0\uAE30"
+  interactMargin: 1.2
 --- !u!1 &719316588
 GameObject:
   m_ObjectHideFlags: 0
@@ -23931,6 +23963,8 @@ MonoBehaviour:
   iconImage: {fileID: 1716087185}
   slotNumberText: {fileID: 577930177}
   selectedBorder: {fileID: 1206656129}
+  selectedScale: 1.12
+  scaleSpeed: 18
 --- !u!114 &1222162520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29528,6 +29562,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4693d96ce832344e876213e7fb955f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EscapeButtonInteraction
+  interactName: "\uCD9C\uBC1C"
+  interactMargin: 1.5
 --- !u!114 &1483303669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29694,9 +29730,13 @@ MonoBehaviour:
   hackingManager: {fileID: 1394358608}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1485699161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30074,6 +30114,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   _Slots: 
   _SelectedSlotIndex: 0
+  dropDistance: 0.8
 --- !u!1 &1510579377
 GameObject:
   m_ObjectHideFlags: 0
@@ -30467,9 +30508,13 @@ MonoBehaviour:
   hackingManager: {fileID: 1394358608}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1519755565
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31041,6 +31086,8 @@ MonoBehaviour:
   iconImage: {fileID: 1776876259}
   slotNumberText: {fileID: 1202747905}
   selectedBorder: {fileID: 1823916608}
+  selectedScale: 1.12
+  scaleSpeed: 18
 --- !u!114 &1549740766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35304,9 +35351,13 @@ MonoBehaviour:
   hackingManager: {fileID: 1394358608}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1809381743
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37099,9 +37150,13 @@ MonoBehaviour:
   hackingManager: {fileID: 1394358608}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1908656320
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -6,33 +6,34 @@ namespace Pawntom.Tutorial.Tests
 {
     public class TutorialScriptLibraryTests
     {
-        // 튜토리얼 기획서(튜토리얼.txt) 1~8단계 대본의 번호 전체.
+        // 튜토리얼 대본(최종 수정본, docs/project/TUTORIAL_SCRIPT.md) 1~8단계 대본의 번호 전체.
         private static readonly string[] ScriptIds =
         {
-            "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7",
+            "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
             "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10", "2-11", "2-12",
-            "3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-8",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9", "4-10", "4-11",
-            "5-1", "5-2", "5-3", "5-4", "5-5", "5-6", "5-7", "5-8",
+            "3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-8", "3-9",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-12", "4-13", "4-14",
+            "5-1", "5-1b", "5-2", "5-3", "5-4", "5-5", "5-6", "5-6b", "5-7", "5-8", "5-9", "5-10",
             "6-1", "6-2", "6-3", "6-4", "6-5",
-            "7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-7", "7-8", "7-9", "7-10",
+            "7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-7", "7-8", "7-9", "7-10", "7-11", "7-12", "7-13",
             "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7",
 
             // 상황별 반복 대사(후보 포함)
-            "R-move-1", "R-move-2", "R-door-1", "R-door-2", "R-vault-1", "R-vault-2",
+            "R-move-1", "R-move-2", "R-door-1", "R-door-2", "R-gate-1", "R-gate-2", "R-vault-1", "R-vault-2",
             "R-chase-end-1", "R-health-1", "R-death-1", "R-retry-1"
         };
 
         // 모든 상황이 순조로울 때(실패·추격·스태미나 경고 없이) 재생되는 순서.
+        // 4-8~4-10 은 걸린 종류 하나만(여기서는 방향키 순서 입력) 나온다.
         private static readonly string[] HappyPathOrder =
         {
-            "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7",
+            "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
             "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-9", "2-10", "2-11", "2-12",
-            "3-1", "3-2", "3-3", "3-4", "3-6", "3-7", "3-8",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9",
-            "5-1", "5-2", "5-3", "5-4", "5-5", "5-6", "5-8",
-            "6-1", "6-2", "6-3", "6-5",
-            "7-1", "7-2", "7-4", "7-5", "7-6", "7-7", "7-8", "7-10",
+            "3-1", "3-2", "3-3", "3-4", "3-5", "3-7", "3-8", "3-9",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-11", "4-12", "4-13",
+            "5-1", "5-2", "5-3", "5-4", "5-5", "5-7", "5-8", "5-9", "5-10",
+            "6-1", "6-2", "6-3", "6-4",
+            "7-1", "7-2", "7-3", "7-4", "7-6", "7-8", "7-9", "7-10", "7-11", "7-12", "7-13",
             "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7"
         };
 
@@ -51,19 +52,22 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal.SafeInMainbase,
             TutorialSignal.NearTerminal,
             TutorialSignal.TerminalOpened,
-            TutorialSignal.CctvChecked,
             TutorialSignal.DoorHackStarted,
+            TutorialSignal.DoorGameCommand,
             TutorialSignal.DoorHackSucceeded,
+            TutorialSignal.DoorOpened,
             TutorialSignal.BlueDoorAhead,
             TutorialSignal.LootRoomEntered,
-            TutorialSignal.NearLoot,
             TutorialSignal.ItemLooted,
             TutorialSignal.InventoryThreeFilled,
+            TutorialSignal.NearKey,
+            TutorialSignal.KeyAcquired,
             TutorialSignal.LootRoomExiting,
             TutorialSignal.VaultCorridorEntered,
-            TutorialSignal.VaultRoomEntered,
             TutorialSignal.VaultFront,
+            TutorialSignal.VaultUnlocked,
             TutorialSignal.VaultHackStarted,
+            TutorialSignal.VaultHackSucceeded,
             TutorialSignal.CatnipAcquired,
             TutorialSignal.PlayerInMainbase,
             TutorialSignal.SettlementShown,
@@ -187,8 +191,230 @@ namespace Pawntom.Tutorial.Tests
                 Pump(sequencer, 0f);
             }
 
-            // 4-10(실패) → 4-11(재시도 성공) → 4-9(단말기 나오기)
-            CollectionAssert.AreEqual(new[] { "4-10", "4-11", "4-9" }, started.GetRange(started.Count - 3, 3));
+            // 4-14(실패) → 4-11·4-12(재시도 성공, 푸른 격벽 열기 안내)
+            CollectionAssert.AreEqual(new[] { "4-14", "4-11", "4-12" }, started.GetRange(started.Count - 3, 3));
+        }
+
+        // 격벽 해킹 시작(4-7)까지 마친 상태.
+        private static TutorialSequencer StartedAtDoorHack(List<string> started)
+        {
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
+                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
+                TutorialSignal.DoorHackStarted
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            return sequencer;
+        }
+
+        [Test]
+        public void CreateDefault_DoorHackKind_PlaysOnlyTheMatchingGuide()
+        {
+            // 4-8~4-10 [택1]: 걸린 종류의 안내만 나온다.
+            foreach (var pair in new[]
+            {
+                new KeyValuePair<TutorialSignal, string>(TutorialSignal.DoorGameCommand, "4-8"),
+                new KeyValuePair<TutorialSignal, string>(TutorialSignal.DoorGameSignal, "4-9"),
+                new KeyValuePair<TutorialSignal, string>(TutorialSignal.DoorGameSync, "4-10")
+            })
+            {
+                List<string> started = new List<string>();
+                TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+                sequencer.Raise(pair.Key);
+                Pump(sequencer, 0f);
+
+                Assert.AreEqual(pair.Value, started[started.Count - 1], pair.Key.ToString());
+
+                foreach (string other in new[] { "4-8", "4-9", "4-10" })
+                {
+                    if (other != pair.Value)
+                    {
+                        CollectionAssert.DoesNotContain(started, other, pair.Key.ToString());
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void CreateDefault_DoorHackRetryWithOtherKind_PlaysThatGuideToo()
+        {
+            // 실패 뒤 다시 걸린 종류가 달라도 그 종류의 안내가 나온다(시도마다 안내).
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            sequencer.Raise(TutorialSignal.DoorGameCommand);
+            Pump(sequencer, 0f);
+            sequencer.Raise(TutorialSignal.DoorHackFailed);
+            Pump(sequencer, 0f);
+            Pump(sequencer, 5f); // 반복 간격 경과
+            sequencer.Raise(TutorialSignal.DoorGameSignal);
+            Pump(sequencer, 0f);
+
+            CollectionAssert.AreEqual(new[] { "4-8", "4-14", "4-9" }, started.GetRange(started.Count - 3, 3));
+        }
+
+        [Test]
+        public void CreateDefault_ClosedBlueDoor_PlaysClosedHintThenOpenHint()
+        {
+            // 문 앞에 왔는데 문이 닫혀 있으면 5-1b, 열려 있으면 5-1.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened, TutorialSignal.BlueDoorClosedAhead
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual("5-1b", started[started.Count - 1]);
+
+            sequencer.Raise(TutorialSignal.BlueDoorAhead);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("5-1", started[started.Count - 1]);
+        }
+
+        [Test]
+        public void CreateDefault_KeyAcquired_ClearsKeyHintAndPlaysKeyExplanation()
+        {
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead,
+                TutorialSignal.LootRoomEntered, TutorialSignal.NearKey
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual("5-8", sequencer.Hints[sequencer.Hints.Count - 1].Line.Id);
+
+            sequencer.Raise(TutorialSignal.KeyAcquired);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("5-9", started[started.Count - 1]);
+
+            bool stillShown = false;
+
+            for (int i = 0; i < sequencer.Hints.Count; i++)
+            {
+                stillShown |= sequencer.Hints[i].Line.Id == "5-8";
+            }
+
+            Assert.IsFalse(stillShown);
+        }
+
+        // 금고 앞(7-1)까지 마친 상태.
+        private static TutorialSequencer StartedAtVault(List<string> started)
+        {
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
+                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
+                TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened,
+                TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered, TutorialSignal.NearKey,
+                TutorialSignal.KeyAcquired, TutorialSignal.LootRoomExiting, TutorialSignal.VaultCorridorEntered,
+                TutorialSignal.VaultFront
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+                Pump(sequencer, 3.5f);
+            }
+
+            return sequencer;
+        }
+
+        [Test]
+        public void CreateDefault_VaultKeyUsed_ClearsKeyHintAndPlaysUnlockLines()
+        {
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtVault(started);
+
+            Assert.AreEqual("7-1", sequencer.Hints[sequencer.Hints.Count - 1].Line.Id);
+
+            sequencer.Raise(TutorialSignal.VaultUnlocked);
+            Pump(sequencer, 0f);
+
+            CollectionAssert.AreEqual(new[] { "7-2", "7-3" }, started.GetRange(started.Count - 2, 2));
+        }
+
+        [Test]
+        public void CreateDefault_CatnipPickupWithFullBag_PlaysFullBagLine()
+        {
+            // 금고 성공 뒤 캣닢을 주우려는데 가방이 가득이면 7-7. 7단계 한정(캣닢을 얻으면 닫힌다).
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtVault(started);
+
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.VaultUnlocked, TutorialSignal.VaultHackStarted, TutorialSignal.VaultHackSucceeded,
+                TutorialSignal.InventoryFullRejected
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual("7-7", started[started.Count - 1]);
+            Assert.AreEqual("7-7", sequencer.Hints[sequencer.Hints.Count - 1].Line.Id);
+        }
+
+        [Test]
+        public void CreateDefault_FullBagBeforeCatnipDrop_DoesNotPlayStageSevenLine()
+        {
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtVault(started);
+
+            sequencer.Raise(TutorialSignal.InventoryFullRejected);
+            Pump(sequencer, 0f);
+
+            CollectionAssert.DoesNotContain(started, "7-7");
+        }
+
+        [Test]
+        public void CreateDefault_TerminalIdleAfterDoorUnlocked_PlaysGateReminder()
+        {
+            // 격벽 해킹 성공 뒤 단말기를 연 채 가만히 있으면 R-door 가 아니라 R-gate 가 나온다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            sequencer.Raise(TutorialSignal.DoorHackSucceeded);
+            Pump(sequencer, 0f);
+            sequencer.Raise(TutorialSignal.IdleAtTerminal);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("R-gate-1", started[started.Count - 1]);
         }
 
         [Test]

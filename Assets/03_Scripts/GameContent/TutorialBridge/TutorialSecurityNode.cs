@@ -113,6 +113,13 @@ namespace Pawntom.TutorialBridge
                 director.Raise(TutorialSignal.NearSecurityNode);
             }
 
+            // 대사가 떠 있는 동안은 상호작용 안내도, 캐스팅 진행도 멈춘다. 캐스팅 도중이면 취소하지 않고
+            // 진행도를 그대로 둔 채 대사가 끝나면 이어 간다(3-2 처럼 캐스팅 중에 나오는 대사가 있다).
+            if (GameWorldPause.IsPaused)
+            {
+                return;
+            }
+
             if (near && !_casting && !GameplayInputBlocker.IsBlocked && !director.IsControlLockedByDirector)
             {
                 InteractPrompt.Show(interactName);

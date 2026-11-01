@@ -390,6 +390,7 @@ GameObject:
   - component: {fileID: 5152516341703195541}
   - component: {fileID: 871239876451230001}
   - component: {fileID: 871239876451230002}
+  - component: {fileID: 496279426571805133}
   - component: {fileID: 4455241085619077530}
   m_Layer: 0
   m_Name: player
@@ -729,6 +730,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7726f63943674b1492601faf95e7300a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSpectator
+--- !u!114 &496279426571805133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0461e0f2e1ef24741931ab5f9bdf3003, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VaultKeyInventoryBridge
+  vaultKeyItemId: 10
 --- !u!114 &4455241085619077530
 MonoBehaviour:
   m_ObjectHideFlags: 0

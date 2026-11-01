@@ -126,8 +126,44 @@ namespace Pawntom.EnemyBridge
                 return;
             }
 
+            // 대사·연출이 떠 있는 동안은 두뇌도 이동도 멈춘다. 두뇌만 안 돌리면 NavMeshAgent 가 목적지를 향해 계속 걷는다.
+            if (GameWorldPause.IsPaused)
+            {
+                SetMotionFrozen(true);
+                return;
+            }
+
+            SetMotionFrozen(false);
+
             _agent.Tick(Runner.DeltaTime);
             ReplicatedState = _agent.State;
+        }
+
+        private bool _motionFrozen;
+
+        /// <summary>
+        /// NavMeshAgent 를 세웠다 풀어 준다. 경로와 목적지는 그대로 두므로 풀리면 하던 걸음을 이어 간다.
+        /// </summary>
+        private void SetMotionFrozen(bool frozen)
+        {
+            if (_motionFrozen == frozen)
+            {
+                return;
+            }
+
+            _motionFrozen = frozen;
+
+            if (_navMeshAgent == null || !_navMeshAgent.enabled || !_navMeshAgent.isOnNavMesh)
+            {
+                return;
+            }
+
+            _navMeshAgent.isStopped = frozen;
+
+            if (frozen)
+            {
+                _navMeshAgent.velocity = Vector3.zero;
+            }
         }
     }
 }

@@ -51,6 +51,14 @@ namespace Pawntom.TutorialBridge
         [Header("아이템")]
         [Tooltip("전설의 캣닢 아이템 ID. RuleManager/MainbaseManager 기본값(1)과 같다")]
         [SerializeField] private int catnipItemId = 1;
+        [Tooltip("금고 열쇠 아이템 ID. ItemData_VaultKey 와 같다. 전리품으로 세지 않는다")]
+        [SerializeField] private int keyItemId = 10;
+        [Tooltip("이 거리(m) 안으로 열쇠에 다가가면 5-7 '열쇠 발견' 대사가 나온다")]
+        [SerializeField, Min(0.5f)] private float keyNoticeRadius = 4f;
+
+        [Header("4단계 해킹 종류 안내")]
+        [Tooltip("격벽 해킹이 시작된 뒤 이만큼 지나서 걸린 종류의 신호를 보낸다. 4-7 이 먼저 재생 중이어야 4-8~4-10 창이 열려 있다")]
+        [SerializeField, Min(0.1f)] private float hackKindSignalDelay = 0.4f;
 
         [Header("상황별 반복 대사 (튜토리얼 기획서 '상황별 반복 대사')")]
         [Tooltip("이동 입력 없이 이만큼 지나면 '입력 없음(이동)'")]
@@ -99,6 +107,20 @@ namespace Pawntom.TutorialBridge
         private bool _hackIsVault;
         private bool _hackActive;
         private int _lastInventoryCount = -1;
+
+        // 격벽 해킹이 시작된 뒤 걸린 종류의 신호를 잠시 뒤에 한 번 보낸다(4-7 이 먼저 시작돼야 4-8~4-10 창이 열린다).
+        private TutorialSignal _pendingKindSignal;
+        private float _pendingKindDelay;
+
+        // 씬의 열쇠 금고와 열쇠(줍기 전) 캐시.
+        private VaultChest[] _vaultChests = new VaultChest[0];
+        private NetworkItem[] _keyItems = new NetworkItem[0];
+        private NetworkItem[] _lootItems = new NetworkItem[0];
+
+        // 5단계 안내 순서: 전리품 방에 처음 들어오면 전리품들 → (하나라도 줍고 나면) 열쇠.
+        private bool _lootRoomEntered;
+        private bool _lootedAny;
+        private bool _keyAcquired;
 
         // ── 상황 감지 ──
         private bool _dialogueBusy;
@@ -210,8 +232,11 @@ namespace Pawntom.TutorialBridge
         {
             _isDead = _awaitingRespawn = _lowHealthFired = false;
             _terminalOpen = _cctvTabVisible = _cctvChecked = _hackIsVault = _hackActive = false;
+            _pendingKindSignal = TutorialSignal.None;
+            _pendingKindDelay = 0f;
             _cctvSeconds = _movedDistance = _turnedDegrees = 0f;
             _lastInventoryCount = -1;
+            _lootRoomEntered = _lootedAny = _keyAcquired = false;
             _enemyStates.Clear();
             _nextSceneCache = _nextPoll = 0f;
             ResetIdleTimers();
@@ -251,6 +276,7 @@ namespace Pawntom.TutorialBridge
 
             TrackMovement();
             TrackCctv(Time.unscaledDeltaTime);
+            TrackHackKindSignal(Time.unscaledDeltaTime);
             DetectJump();
             TrackIdle(Time.unscaledDeltaTime);
 
@@ -559,6 +585,20 @@ namespace Pawntom.TutorialBridge
 
                     return false;
 
+                case TutorialSignal.NearKey:
+                    for (int i = 0; i < _keyItems.Length; i++)
+                    {
+                        NetworkItem item = _keyItems[i];
+
+                        if (item != null && item.Object != null && item.Object.IsValid && !item.IsPickedUp)
+                        {
+                            bounds = RadiusBounds(item.transform.position, keyNoticeRadius * 0.5f);
+                            return true;
+                        }
+                    }
+
+                    return false;
+
                 case TutorialSignal.VaultFront:
                     var vaults = TutorialVault.All;
 
@@ -577,6 +617,110 @@ namespace Pawntom.TutorialBridge
                     // 상자 앞·복도 A 끝·파밍 방·금고 복도는 TutorialZone 이 있어야 한다.
                     return false;
             }
+        }
+
+        /// <summary>
+        /// 전리품 방 안내 순서(5단계). 전리품 방에 처음 들어온 뒤에는 아직 줍지 않은 전리품마다 상자를 먼저 띄우고,
+        /// 하나라도 주운 뒤(또는 남은 전리품이 없으면) 열쇠 쪽으로 넘긴다. 열쇠를 챙기면 끝나고, 이후는 일반 안내가 맡는다.
+        /// <para>결과는 <paramref name="results"/>에 담는다(비우고 채운다). 돌려주는 값은 상자 개수이고 0이면 이 안내가 맡지 않는다.</para>
+        /// </summary>
+        public int CollectLootRoomGuide(System.Collections.Generic.List<Bounds> results)
+        {
+            results.Clear();
+
+            if (!_controlEnabled || !_lootRoomEntered || _keyAcquired)
+            {
+                return 0;
+            }
+
+            if (!_lootedAny)
+            {
+                for (int i = 0; i < _lootItems.Length; i++)
+                {
+                    NetworkItem item = _lootItems[i];
+
+                    if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+                    {
+                        continue;
+                    }
+
+                    results.Add(ItemGuideBounds(item));
+                }
+
+                if (results.Count > 0)
+                {
+                    return results.Count;
+                }
+            }
+
+            Bounds keyBounds;
+
+            if (TryGetGuideBounds(TutorialSignal.NearKey, out keyBounds))
+            {
+                results.Add(keyBounds);
+            }
+
+            return results.Count;
+        }
+
+        // 아이템의 보이는 모양(렌더러) 경계를 조금 넓힌 것. 렌더러가 없으면 충돌체 경계, 그것도 없으면 위치 기준 작은 상자.
+        private static Bounds ItemGuideBounds(NetworkItem item)
+        {
+            const float Padding = 0.25f;
+
+            bool has = false;
+            Bounds bounds = new Bounds(item.transform.position, Vector3.zero);
+            Renderer[] renderers = item.GetComponentsInChildren<Renderer>();
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+
+                if (!renderer.enabled || renderer.bounds.size.sqrMagnitude < 0.0001f)
+                {
+                    continue;
+                }
+
+                if (!has)
+                {
+                    bounds = renderer.bounds;
+                    has = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            if (!has)
+            {
+                Collider[] colliders = item.GetComponentsInChildren<Collider>();
+
+                for (int i = 0; i < colliders.Length; i++)
+                {
+                    if (colliders[i] == null || colliders[i].isTrigger)
+                    {
+                        continue;
+                    }
+
+                    if (!has)
+                    {
+                        bounds = colliders[i].bounds;
+                        has = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(colliders[i].bounds);
+                    }
+                }
+            }
+
+            // 아이템이 천천히 돌아서 축 정렬 경계는 계속 변한다(안내 상자가 흔들린다). 수평 크기는 회전과 무관한 대각선 길이로 고정한다.
+            float horizontal = Mathf.Sqrt(bounds.size.x * bounds.size.x + bounds.size.z * bounds.size.z);
+            bounds.size = new Vector3(horizontal, bounds.size.y, horizontal);
+
+            bounds.Expand(Padding * 2f);
+            return bounds;
         }
 
         private static bool TryGetZoneBounds(TutorialSignal signal, out Bounds bounds)
@@ -665,11 +809,57 @@ namespace Pawntom.TutorialBridge
             {
                 TutorialZone zone = zones[i];
 
-                if (zone != null && zone.Contains(position))
+                if (zone == null || !zone.Contains(position))
                 {
-                    Emit(zone.Signal);
+                    continue;
+                }
+
+                // 푸른 문 앞 영역은 문 상태로 나눈다. 열려 있으면 5-1(들어가십시오), 해금됐지만 닫혀 있으면 5-1b(단말기에서 여십시오).
+                // 아직 잠긴(붉은) 문이면 아무 신호도 내지 않는다 — 해금 전에는 5단계 안내를 할 때가 아니다.
+                if (zone.Signal == TutorialSignal.BlueDoorAhead)
+                {
+                    EmitBlueDoorState(zone.transform.position);
+                    continue;
+                }
+
+                if (zone.Signal == TutorialSignal.LootRoomEntered)
+                {
+                    _lootRoomEntered = true;
+                }
+
+                Emit(zone.Signal);
+            }
+        }
+
+        private void EmitBlueDoorState(Vector3 zonePosition)
+        {
+            ControllableWall nearest = null;
+            float best = float.MaxValue;
+
+            for (int i = 0; i < _walls.Length; i++)
+            {
+                ControllableWall wall = _walls[i];
+
+                if (wall == null || wall.Object == null || !wall.Object.IsValid)
+                {
+                    continue;
+                }
+
+                float sqr = _wallBounds[i].SqrDistance(zonePosition);
+
+                if (sqr < best)
+                {
+                    best = sqr;
+                    nearest = wall;
                 }
             }
+
+            if (nearest == null || !nearest.IsUnlocked)
+            {
+                return;
+            }
+
+            Emit(nearest.IsOpen ? TutorialSignal.BlueDoorAhead : TutorialSignal.BlueDoorClosedAhead);
         }
 
         // ───────────── 적 ─────────────
@@ -830,6 +1020,54 @@ namespace Pawntom.TutorialBridge
             _hackIsVault = level == SecurityLevel.VaultFinal || TutorialVault.IsVaultHackPending;
             _hackActive = true;
             Emit(_hackIsVault ? TutorialSignal.VaultHackStarted : TutorialSignal.DoorHackStarted);
+
+            // 격벽 해킹은 종류가 무작위다. 걸린 종류의 안내(4-8~4-10)를 위해 잠시 뒤 종류 신호를 한 번 보낸다.
+            if (!_hackIsVault)
+            {
+                _pendingKindSignal = KindSignalFor(type);
+                _pendingKindDelay = hackKindSignalDelay;
+            }
+        }
+
+        private static TutorialSignal KindSignalFor(HackingGameType type)
+        {
+            switch (type)
+            {
+                case HackingGameType.CommandOverride:
+                    return TutorialSignal.DoorGameCommand;
+                case HackingGameType.SignalDivide:
+                    return TutorialSignal.DoorGameSignal;
+                case HackingGameType.DigitalSync:
+                    return TutorialSignal.DoorGameSync;
+                default:
+                    return TutorialSignal.None;
+            }
+        }
+
+        private void TrackHackKindSignal(float deltaTime)
+        {
+            if (_pendingKindSignal == TutorialSignal.None)
+            {
+                return;
+            }
+
+            // 해킹이 이미 끝났으면(아주 짧게 끝난 경우) 안내할 필요가 없다.
+            if (!_hackActive)
+            {
+                _pendingKindSignal = TutorialSignal.None;
+                return;
+            }
+
+            _pendingKindDelay -= deltaTime;
+
+            if (_pendingKindDelay > 0f)
+            {
+                return;
+            }
+
+            TutorialSignal signal = _pendingKindSignal;
+            _pendingKindSignal = TutorialSignal.None;
+            Emit(signal);
         }
 
         private void HandleHackingFinished(SecurityLevel level, bool success)
@@ -902,6 +1140,7 @@ namespace Pawntom.TutorialBridge
             int filled = 0;
             int loot = 0;
             bool catnip = false;
+            bool key = false;
 
             for (int i = 0; i < InventoryManager.MaxSlotCount; i++)
             {
@@ -918,10 +1157,26 @@ namespace Pawntom.TutorialBridge
                 {
                     catnip = true;
                 }
+                else if (itemId == keyItemId)
+                {
+                    // 열쇠는 전리품이 아니다. 5-3(첫 전리품)과 5-5(가방 참)을 열쇠 하나로 앞당기지 않게 따로 센다.
+                    key = true;
+                }
                 else
                 {
                     loot++;
                 }
+            }
+
+            if (key)
+            {
+                _keyAcquired = true;
+                Emit(TutorialSignal.KeyAcquired);
+            }
+
+            if (loot > 0)
+            {
+                _lootedAny = true;
             }
 
             if (_lastInventoryCount >= 0 && filled < _lastInventoryCount)
@@ -957,6 +1212,9 @@ namespace Pawntom.TutorialBridge
 
         private void PollLoot(Vector3 position)
         {
+            PollKey(position);
+            PollVaultUnlock();
+
             int count = Physics.OverlapSphereNonAlloc(position, lootRadius, _overlap, ~0, QueryTriggerInteraction.Collide);
 
             for (int i = 0; i < count; i++)
@@ -970,9 +1228,51 @@ namespace Pawntom.TutorialBridge
 
                 NetworkItem item = hit.GetComponentInParent<NetworkItem>();
 
-                if (item != null && item.Object != null && item.Object.IsValid && !item.IsPickedUp)
+                // 열쇠는 전리품이 아니다(NearLoot 에 세지 않는다). 열쇠 근처는 PollKey 가 따로 알린다.
+                if (item != null && item.Object != null && item.Object.IsValid && !item.IsPickedUp &&
+                    item.ItemId != keyItemId)
                 {
                     Emit(TutorialSignal.NearLoot);
+                    return;
+                }
+            }
+        }
+
+        // 5-7: 아직 줍지 않은 열쇠가 가까이(keyNoticeRadius) 있다. 방 한가운데 열쇠를 발견하는 순간이다.
+        private void PollKey(Vector3 position)
+        {
+            float radiusSq = keyNoticeRadius * keyNoticeRadius;
+
+            for (int i = 0; i < _keyItems.Length; i++)
+            {
+                NetworkItem item = _keyItems[i];
+
+                if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+                {
+                    continue;
+                }
+
+                Vector3 delta = item.transform.position - position;
+                delta.y = 0f;
+
+                if (delta.sqrMagnitude <= radiusSq)
+                {
+                    Emit(TutorialSignal.NearKey);
+                    return;
+                }
+            }
+        }
+
+        // 7-2: 열쇠를 써서 금고 잠금이 풀렸다. 풀린 동안 계속 알린다(상태형).
+        private void PollVaultUnlock()
+        {
+            for (int i = 0; i < _vaultChests.Length; i++)
+            {
+                VaultChest chest = _vaultChests[i];
+
+                if (chest != null && chest.IsUnlocked)
+                {
+                    Emit(TutorialSignal.VaultUnlocked);
                     return;
                 }
             }
@@ -1060,6 +1360,36 @@ namespace Pawntom.TutorialBridge
             {
                 _baseBoxes[i] = _bases[i].GetComponent<BoxCollider>();
             }
+
+            _vaultChests = FindObjectsByType<VaultChest>(FindObjectsSortMode.None);
+
+            // 줍기 전 열쇠·전리품만 모은다. 줍히면 목록에서 빠져 다음 캐시 때 사라진다.
+            // 전리품은 열쇠와 탈출 아이템(캣닢)을 뺀 월드 아이템이다.
+            NetworkItem[] items = FindObjectsByType<NetworkItem>(FindObjectsSortMode.None);
+            System.Collections.Generic.List<NetworkItem> keys = new System.Collections.Generic.List<NetworkItem>(2);
+            System.Collections.Generic.List<NetworkItem> loot = new System.Collections.Generic.List<NetworkItem>(4);
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                NetworkItem item = items[i];
+
+                if (item == null || item.Object == null || !item.Object.IsValid)
+                {
+                    continue;
+                }
+
+                if (item.ItemId == keyItemId)
+                {
+                    keys.Add(item);
+                }
+                else if (item.ItemId != catnipItemId)
+                {
+                    loot.Add(item);
+                }
+            }
+
+            _keyItems = keys.ToArray();
+            _lootItems = loot.ToArray();
 
             _enemies = FindObjectsByType<EnemyAgent>(FindObjectsSortMode.None);
             _networkEnemies = new NetworkEnemyAgent[_enemies.Length];

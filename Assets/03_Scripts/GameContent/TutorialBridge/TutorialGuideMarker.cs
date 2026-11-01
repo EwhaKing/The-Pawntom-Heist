@@ -59,13 +59,16 @@ namespace Pawntom.TutorialBridge
             _root.gameObject.SetActive(false);
         }
 
-        /// <summary>목적지를 보여 준다. 플레이어가 이미 안에 있으면 숨긴다(도착).</summary>
-        public void Show(Bounds bounds, Vector3 viewerPosition)
+        /// <summary>
+        /// 목적지를 보여 준다. 플레이어가 이미 안에 있으면 숨긴다(도착).
+        /// 작은 물건(전리품·열쇠)을 가리킬 때는 최소 크기를 줄여 넘긴다(기본은 구역용 크기).
+        /// </summary>
+        public void Show(Bounds bounds, Vector3 viewerPosition, float minWidth = MinWidth, float minHeight = MinHeight)
         {
             Vector3 size = bounds.size;
-            size.x = Mathf.Max(size.x, MinWidth);
-            size.z = Mathf.Max(size.z, MinWidth);
-            size.y = Mathf.Max(size.y, MinHeight);
+            size.x = Mathf.Max(size.x, minWidth);
+            size.z = Mathf.Max(size.z, minWidth);
+            size.y = Mathf.Max(size.y, minHeight);
             bounds.size = size;
 
             if (bounds.Contains(viewerPosition))

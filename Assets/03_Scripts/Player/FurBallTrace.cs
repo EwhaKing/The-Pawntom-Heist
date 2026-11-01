@@ -12,7 +12,13 @@ public class FurBallTrace : NetworkBehaviour
     // 살아 있는 털공 전체. 감지 소스가 매 틱 물리 질의를 하지 않도록 여기에 모읍니다.
     private static readonly List<FurBallTrace> _active = new List<FurBallTrace>(64);
 
+    [Tooltip("보이는 발자국 모양. 걷기/달리기에 따라 이 오브젝트의 크기만 바꿉니다(충돌체·판정은 그대로).")]
+    [SerializeField] private Transform visual;
+
     [Networked] private TickTimer DespawnTimer { get; set; }
+
+    // 발자국 크기 배율. 달릴 때 찍힌 발자국은 더 크게 보입니다. 모든 피어가 같은 크기를 보도록 동기화합니다.
+    [Networked] private float VisualScale { get; set; }
     [Networked] private Vector3 SpawnPosition { get; set; }
     [Networked] private Quaternion SpawnRotation { get; set; }
 
@@ -49,6 +55,7 @@ public class FurBallTrace : NetworkBehaviour
         // Runner.Spawn의 위치/회전 인자는 원격 클라이언트에 자동 전송되지 않습니다.
         // 생성 후 움직이지 않는 흔적이므로 최초 배치만 복원합니다.
         transform.SetPositionAndRotation(SpawnPosition, SpawnRotation);
+        ApplyVisualScale();
 
         // 중복 추가 방지. 재진입이나 재스폰 경로에서 같은 개체가 두 번 들어올 수 있습니다.
         for (int i = 0; i < _active.Count; i++)
@@ -87,11 +94,23 @@ public class FurBallTrace : NetworkBehaviour
     /// <summary>
     /// State Authority가 털공을 네트워크 스폰하기 직전에 호출합니다.
     /// </summary>
-    public void Initialize(PlayerRef creator, int sequence, int spawnTick)
+    public void Initialize(PlayerRef creator, int sequence, int spawnTick, float visualScale = 1f)
     {
         Creator = creator;
         Sequence = sequence;
         SpawnTick = spawnTick;
+        VisualScale = visualScale;
+    }
+
+    private void ApplyVisualScale()
+    {
+        if (visual == null)
+        {
+            return;
+        }
+
+        float scale = VisualScale > 0f ? VisualScale : 1f;
+        visual.localScale = Vector3.one * scale;
     }
 
     /// <summary>

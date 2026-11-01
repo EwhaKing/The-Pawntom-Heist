@@ -17,13 +17,33 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
     private Button _button;
     private TitleMenuUI _menu;
 
+    private bool _initialized;
+
     public Button Button
     {
-        get { return _button; }
+        get
+        {
+            Initialize();
+            return _button;
+        }
     }
 
     private void Awake()
     {
+        Initialize();
+    }
+
+    // TitleMenuUI.Awake 가 이 버튼의 Awake 보다 먼저 실행되면 SetHighlighted 가 먼저 불린다(오브젝트 사이 Awake 순서는 정해져 있지 않다).
+    // 그때 _image 가 비어 NullReferenceException 이 나고, 콘솔 Error Pause 가 켜져 있으면 플레이가 2프레임째에 멈춘다.
+    // 그래서 필요한 참조를 쓰기 직전에 한 번만 채운다.
+    private void Initialize()
+    {
+        if (_initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
         _image = GetComponent<Image>();
         _button = GetComponent<Button>();
 
@@ -40,6 +60,8 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
 
     public void SetHighlighted(bool highlighted)
     {
+        Initialize();
+
         Sprite sprite = highlighted ? highlightSprite : normalSprite;
 
         if (_image.sprite != sprite)
