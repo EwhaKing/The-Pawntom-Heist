@@ -388,6 +388,7 @@ GameObject:
   - component: {fileID: 6927131166089411136}
   - component: {fileID: 7650601162378760883}
   - component: {fileID: 5152516341703195541}
+  - component: {fileID: 2827236474488226256}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -537,6 +538,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
   _Slots: 00000000000000000000000000000000
   _SelectedSlotIndex: 0
+  dropDistance: 0.8
 --- !u!54 &7937757339757577455
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -679,6 +681,58 @@ MonoBehaviour:
   speedSmoothing: 12
   airborneGraceSeconds: 0.12
   jumpVelocityThreshold: 0.5
+--- !u!114 &2827236474488226256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee15c42f61a45644bbf30558ff4b32cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstPersonArmsView
+  armPrefab: {fileID: 919132149155446097, guid: 6cbd1909169dfb142810cf1e8cfa9ed4, type: 3}
+  armLayerName: FirstPersonArms
+  armLayerFallback: 29
+  shoulderPosition: {x: 0.18, y: -0.25, z: 0.05}
+  armRotation: {x: -30, y: -16, z: -25}
+  armScale: 1.4
+  armsFieldOfView: 55
+  holdPoint: {x: 0, y: 0.03, z: 0.25}
+  holdRotation: {x: 0, y: 0, z: 0}
+  holdSize: 0.065
+  pickupFlySeconds: 0.16
+  dropFlySeconds: 0.2
+  motion:
+    breathFrequency: 0.35
+    breathAmplitude: 0.004
+    walkStepFrequency: 1.8
+    runStepFrequency: 2.6
+    walkBobAmplitude: {x: 0.008, y: 0.01}
+    runBobAmplitude: {x: 0.016, y: 0.024}
+    bobRollDegrees: 1.6
+    runPoseOffset: {x: 0.01, y: -0.025, z: -0.03}
+    runPoseRotation: {x: 10, y: 0, z: 0}
+    airLagPerSpeed: 0.006
+    airLagMax: 0.035
+    landingImpulsePerSpeed: 0.12
+    landingStiffness: 220
+    landingDamping: 18
+    swayPerDegreePerSecond: 0.00012
+    swayMax: 0.03
+    swaySmoothTime: 0.08
+    reachOutSeconds: 0.09
+    reachHoldSeconds: 0.04
+    reachBackSeconds: 0.2
+    reachOffset: {x: -0.04, y: 0.03, z: 0.12}
+    reachRotation: {x: -10, y: -8, z: 0}
+    placeOffset: {x: -0.03, y: -0.035, z: 0.1}
+    placeRotation: {x: 16, y: -6, z: 0}
+    switchSeconds: 0.3
+    switchOffset: {x: 0, y: -0.09, z: -0.02}
+    switchRotation: {x: 20, y: 0, z: 0}
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0

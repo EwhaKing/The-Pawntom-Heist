@@ -47,6 +47,25 @@ public class PlayerInteraction : NetworkBehaviour
     private InventoryManager inventoryManager;
 
     /// <summary>
+    /// 내 플레이어가 E 로 무언가(기계·출발 버튼·격벽·아이템)를 건드렸다. 인자는 맞은 지점.
+    /// 1인칭 팔이 "톡" 뻗는 연출에 쓴다. 아이템을 실제로 주웠을 때는 <see cref="LocalItemPickedUp"/> 이 대신 온다.
+    /// </summary>
+    public static event System.Action<Vector3> LocalInteracted;
+
+    /// <summary>
+    /// 내 플레이어가 아이템을 주웠다(월드 아이템이 사라지기 직전). 인자는 그 아이템의 Transform 과 itemId.
+    /// 1인칭 팔이 손을 뻗어 아이템을 손으로 끌어오는 연출에 쓴다.
+    /// </summary>
+    public static event System.Action<Transform, int> LocalItemPickedUp;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        LocalInteracted = null;
+        LocalItemPickedUp = null;
+    }
+
+    /// <summary>
     /// Fusion에서 로컬 플레이어가 생성되었을 때
     /// 인벤토리와 카메라를 초기화
     /// </summary>
@@ -198,6 +217,7 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] ControlMachine 감지 성공"
             );
 
+            LocalInteracted?.Invoke(hit.point);
             controlMachine.TryInteract();
             return;
         }
@@ -215,6 +235,7 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] 출발 버튼 발견"
             );
 
+            LocalInteracted?.Invoke(hit.point);
             escapeButton.TryInteract();
             return;
         }
@@ -241,6 +262,7 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] 현장 격벽 상호작용"
             );
 
+            LocalInteracted?.Invoke(hit.point);
             wall.TryFieldOpen();
             return;
         }
@@ -314,12 +336,17 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] 인벤토리에 아이템 추가 실패"
             );
 
+            // 가방이 꽉 차도 손은 톡 건드린다
+            LocalInteracted?.Invoke(item.transform.position);
             return;
         }
 
         Debug.Log(
             $"[PlayerInteraction] 아이템 획득 성공 ItemId={item.ItemId}"
         );
+
+        // 아이템이 사라지기 전에 알린다 — 팔 연출이 이 자리에서 손으로 끌어온다
+        LocalItemPickedUp?.Invoke(item.transform, item.ItemId);
 
         // 기존 아이템 상태 변경 로직 유지
         item.IsPickedUp = true;

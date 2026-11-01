@@ -34,6 +34,21 @@ public class InputManager : PawntomSingleton<InputManager>
     private int _pendingScroll;
     private bool _pendingDrop;
 
+    /// <summary>
+    /// 켜져 있으면 Q 를 바로 보내지 않고 <see cref="DropPressed"/> 로 알린다. 1인칭 팔이 손을 뻗어 바닥에 닿는 순간
+    /// <see cref="RequestDrop"/> 로 실제 버리기를 보낸다 — 손에서 놓는 순간과 월드에 아이템이 생기는 순간을 맞춘다.
+    /// </summary>
+    public bool DeferDropToArms { get; set; }
+
+    /// <summary>Q 가 눌렸다(<see cref="DeferDropToArms"/> 가 켜져 있을 때만).</summary>
+    public event Action DropPressed;
+
+    /// <summary>다음 네트워크 입력에 "버리기"를 한 번 싣는다.</summary>
+    public void RequestDrop()
+    {
+        _pendingDrop = true;
+    }
+
     protected override void Awake()
     {
         base.Awake();
@@ -60,7 +75,14 @@ public class InputManager : PawntomSingleton<InputManager>
 
             if (keyboard.qKey.wasPressedThisFrame)
             {
-                _pendingDrop = true;
+                if (DeferDropToArms && DropPressed != null)
+                {
+                    DropPressed.Invoke();
+                }
+                else
+                {
+                    _pendingDrop = true;
+                }
             }
         }
 
