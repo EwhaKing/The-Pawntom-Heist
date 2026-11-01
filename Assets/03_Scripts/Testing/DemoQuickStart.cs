@@ -47,12 +47,28 @@ public class DemoQuickStart : MonoBehaviour
     // "지금 내가 요청한 로드를 기다리는 중"인지를 이 플래그로 가려낸다.
     private bool _waitingForDemoSceneLoad;
 
+    private static DemoQuickStart _instance;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Create()
     {
         GameObject host = new GameObject(nameof(DemoQuickStart));
         DontDestroyOnLoad(host);
-        host.AddComponent<DemoQuickStart>();
+        _instance = host.AddComponent<DemoQuickStart>();
+    }
+
+    /// <summary>
+    /// 타이틀의 TUTORIAL 버튼. P 키와 같은 경로로 혼자 Host 접속 후 튜토리얼 씬으로 간다.
+    /// 로비 씬이 아니거나 이미 진행 중이면 무시한다.
+    /// </summary>
+    public static void RequestStart()
+    {
+        if (_instance == null || _instance._isRunning || !SceneUtilityHelper.IsActiveScene(SceneNames.Lobby))
+        {
+            return;
+        }
+
+        _ = _instance.QuickStartAsync();
     }
 
     private void OnEnable()
