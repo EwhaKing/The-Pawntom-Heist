@@ -138,7 +138,7 @@ public class TitleMenuUI : MonoBehaviour
             // 처음 등장: 위에서부터 차례로 왼쪽에서 미끄러져 들어오며 나타난다
             float u = Mathf.Clamp01((_introTime - i * introStagger) / introSeconds);
             float eased = 1f - (1f - u) * (1f - u) * (1f - u);
-            _buttonGroups[i].alpha = eased;
+            _buttonGroups[i].alpha = eased * (buttons[i].UnderDevelopment ? 0.35f : 1f);
 
             _rects[i].anchoredPosition = _home[i] + new Vector2(_offsets[i] - (1f - eased) * introDistance, 0f);
         }
@@ -165,7 +165,11 @@ public class TitleMenuUI : MonoBehaviour
         }
         else if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame)
         {
-            buttons[_current].Button.onClick.Invoke();
+            // Invoke 는 interactable 을 보지 않으므로 잠긴 버튼은 여기서 막는다.
+            if (!buttons[_current].UnderDevelopment)
+            {
+                buttons[_current].Button.onClick.Invoke();
+            }
         }
     }
 

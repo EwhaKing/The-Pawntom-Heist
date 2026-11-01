@@ -1924,6 +1924,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TitleMenuButton
   normalSprite: {fileID: 21300000, guid: f35e59129d1d81044ae728ba9bcc1413, type: 3}
   highlightSprite: {fileID: 21300000, guid: e7ffcc0711da6164abc747c84cb694c3, type: 3}
+  underDevelopment: 1
 --- !u!114 &1112419457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3102,6 +3103,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TitleMenuButton
   normalSprite: {fileID: 21300000, guid: 7819fa5801e8d8242b34d88a6daa850d, type: 3}
   highlightSprite: {fileID: 21300000, guid: bbc24ded2bfde8445bc1cdab70121f9b, type: 3}
+  underDevelopment: 1
 --- !u!114 &1705173032
 MonoBehaviour:
   m_ObjectHideFlags: 0

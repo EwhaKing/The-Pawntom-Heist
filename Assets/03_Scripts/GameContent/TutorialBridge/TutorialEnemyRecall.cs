@@ -50,12 +50,12 @@ namespace Pawntom.TutorialBridge
         [Tooltip("격벽이 닫혀 길이 끊겼을 때, 이 거리 안(수평)까지 와서 멈추면 '문 앞에 도착'으로 본다")]
         [SerializeField, Min(0.5f)] private float doorArriveRadius = 9f;
         [Tooltip("경보가 시작된 뒤 경비견들이 금고방으로 움직이기 시작하기까지 기다리는 시간(초). 대사로 월드가 멈춰 있는 동안은 세지 않는다")]
-        [SerializeField, Min(0f)] private float gatherDelaySeconds = 2f;
+        [SerializeField, Min(0f)] private float gatherDelaySeconds = 6f;
         [Tooltip("도착 전까지 집결 좌표를 다시 알려 주는 간격(초)")]
         [SerializeField, Min(0.5f)] private float resendSeconds = 3f;
 
         [Tooltip("경보 중(모이기·수색·자유 순찰) 적 개체의 조사 속도에 곱하는 배율. 추격 속도를 넘지 않게 자동으로 제한한다")]
-        [SerializeField, Range(1f, 3f)] private float gatherSpeedMultiplier = 1.8f;
+        [SerializeField, Range(1f, 3f)] private float gatherSpeedMultiplier = 1.2f;
 
         [Tooltip("모이는 동안 한 지점에 도착한 뒤 주변을 서성이는 반경(m). 적 개체 기본값(배회 반경)은 넓어서 줄여 쓴다")]
         [SerializeField, Min(0f)] private float gatherWanderRadius = 2.5f;

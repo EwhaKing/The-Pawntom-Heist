@@ -13,6 +13,11 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
     [SerializeField] private Sprite normalSprite;
     [SerializeField] private Sprite highlightSprite;
 
+    [Tooltip("임시 잠금. 켜면 클릭·Enter 모두 막고 메뉴에서 흐리게 보인다. 개발이 끝나면 끈다.")]
+    [SerializeField] private bool underDevelopment;
+
+    public bool UnderDevelopment => underDevelopment;
+
     private Image _image;
     private Button _button;
     private TitleMenuUI _menu;
@@ -51,6 +56,7 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
         _button.transition = Selectable.Transition.None;
         Navigation none = new Navigation { mode = Navigation.Mode.None };
         _button.navigation = none;
+        _button.interactable = !underDevelopment;
     }
 
     public void Bind(TitleMenuUI menu)
