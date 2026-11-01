@@ -111,6 +111,29 @@ namespace Pawntom.Tutorial.Core
         // TutorialZone 이 이 값을 정수로 직렬화하므로, 중간에 끼우면 씬에 배치된 영역의 신호가 밀린다.
 
         /// <summary>2-9 장애물(상자)을 넘어 반대편(zoneEnd)에 도착했다.</summary>
-        ObstacleCleared
+        ObstacleCleared,
+
+        // ───────────── 개정 대본(최종 수정본) 신호 ─────────────
+
+        /// <summary>5-1b 푸른 문(Gate A) 앞에 왔는데 해금된 문이 닫혀 있다. 상태형.</summary>
+        BlueDoorClosedAhead,
+
+        /// <summary>4-8 격벽 해킹에 방향키 순서 입력이 걸렸다. 해킹 시작 직후 한 번(사건형).</summary>
+        DoorGameCommand,
+
+        /// <summary>4-9 격벽 해킹에 두 키 번갈아 누르기가 걸렸다. 사건형.</summary>
+        DoorGameSignal,
+
+        /// <summary>4-10 격벽 해킹에 타이밍 맞추기가 걸렸다. 사건형.</summary>
+        DoorGameSync,
+
+        /// <summary>5-7 금고 열쇠가 줍기 가까이에 있다(아직 줍지 않음). 상태형.</summary>
+        NearKey,
+
+        /// <summary>5-9 금고 열쇠가 가방에 들어 있다. 상태형.</summary>
+        KeyAcquired,
+
+        /// <summary>7-2 열쇠를 금고에 써서 잠금이 풀렸다. 상태형.</summary>
+        VaultUnlocked
     }
 }

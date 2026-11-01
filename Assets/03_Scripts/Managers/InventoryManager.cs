@@ -302,6 +302,35 @@ public class InventoryManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// 가방(핫바 4칸)에 든 아이템 무게의 합. 이동 속도 감소(PlayerController)에 쓴다.
+    /// 데이터를 못 찾은 아이템은 1 로 센다.
+    /// </summary>
+    public float GetTotalWeight()
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return 0f;
+        }
+
+        float total = 0f;
+
+        for (int i = 0; i < MaxSlotCount; i++)
+        {
+            int itemId = Slots[i];
+
+            if (itemId == EmptySlot)
+            {
+                continue;
+            }
+
+            ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
+            total += data != null ? data.weight : 1f;
+        }
+
+        return total;
+    }
+
+    /// <summary>
     /// 특정 itemId를 인벤토리에 가지고 있는지 확인
     /// ex. Catleaf 탈출 조건이 맞는지 확인 
     /// </summary>

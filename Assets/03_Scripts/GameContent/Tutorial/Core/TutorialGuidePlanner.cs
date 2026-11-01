@@ -26,6 +26,7 @@ namespace Pawntom.Tutorial.Core
                 case TutorialSignal.NearTerminal:
                 case TutorialSignal.BlueDoorAhead:
                 case TutorialSignal.LootRoomEntered:
+                case TutorialSignal.NearKey:
                 case TutorialSignal.VaultCorridorEntered:
                 case TutorialSignal.VaultRoomEntered:
                 case TutorialSignal.VaultFront:

@@ -37,12 +37,35 @@ public class ControllableWall : NetworkBehaviour
     [Tooltip("CCTV/미니맵에 보이는 격벽 표시용 Renderer")]
     [SerializeField] private Renderer minimapWallRenderer;
 
+    // 세 상태를 색(빨강·파랑·초록)과 모양(꽉 찬 막대 / 얇은 막대 / 자물쇠)으로 이중 구분한다.
+    // 해금 안 된 격벽은 열 수 없으므로 실제 상태는 이 셋뿐이다(UI_SPEC 3.2 참고).
     [Header("Minimap Colors")]
-    [SerializeField] private Color minimapClosedColor = new Color(1f, 0.15f, 0.1f, 1f);
-    [SerializeField] private Color minimapOpenColor = new Color(0.1f, 0.55f, 1f, 1f);
+    [Tooltip("잠김(해금 안 됨, 닫힘) = 빨강 #E5342B")]
+    [SerializeField] private Color minimapClosedColor = new Color(0.898f, 0.204f, 0.169f, 1f);
 
-    [Tooltip("해금됐지만 닫혀 있을 때(UI_SPEC: 열림·해금 = 푸른색)")]
-    [SerializeField] private Color minimapUnlockedColor = new Color(0.1f, 0.45f, 0.9f, 1f);
+    [Tooltip("열림 = 초록 #2ED47A. 막대가 얇아져 통로가 뚫린 모양으로 보인다")]
+    [SerializeField] private Color minimapOpenColor = new Color(0.180f, 0.831f, 0.478f, 1f);
+
+    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2E7DE0 (대본의 \"푸른색이 됐습니다\")")]
+    [SerializeField] private Color minimapUnlockedColor = new Color(0.180f, 0.490f, 0.878f, 1f);
+
+    [Header("Minimap Shape")]
+    [Tooltip("열림일 때 표시용 막대의 두께 비율. 작을수록 가늘다. 1이면 두께 변화 없음")]
+    [SerializeField, Range(0.1f, 1f)] private float openThicknessRatio = 0.3f;
+
+    [Tooltip("잠김일 때 격벽 위에 띄울 자물쇠 아이콘(위에서 본 모양). 비우면 표시하지 않는다")]
+    [SerializeField] private Sprite lockIcon;
+
+    [Tooltip("자물쇠 아이콘의 월드 크기(m)")]
+    [SerializeField, Min(0.2f)] private float lockIconSize = 1.4f;
+
+    // 월드(3D)에서도 육안으로 상태를 구분할 수 있게 한다. 실제 벽은 열리면 사라지므로 표시는 벽과 따로 둔다.
+    [Header("World Indicator (현장 육안 구분)")]
+    [Tooltip("바닥 문턱 띠에 쓰는 단색 재질(URP Unlit). 비우면 띠는 만들지 않고 벽 틴트만 적용한다")]
+    [SerializeField] private Material indicatorMaterial;
+
+    [Tooltip("닫힌 실제 벽에 상태색을 섞는 비율. 0 이면 벽 색은 그대로")]
+    [SerializeField, Range(0f, 0.8f)] private float worldTintStrength = 0.35f;
 
     [Header("Field Open (현장 상호작용)")]
     [Tooltip("끄면 현장에서 상호작용 키로 격벽을 열 수 없다. 본부(OpenWall/CloseWall)에서만 열고 닫으며, 한 번 열린 격벽은 본부에서 닫기 전까지 열려 있다")]
@@ -385,13 +408,225 @@ public class ControllableWall : NetworkBehaviour
             navMeshObstacle.enabled = !IsOpen;
         }
 
-        // 미니맵/CCTV 표시용 벽만 색상 변경
+        // 미니맵/CCTV 표시용 벽만 색상·모양 변경
         if (minimapWallRenderer != null)
         {
-            // 잠김 = 빨강, 해금(닫힘) = 파랑, 열림 = 밝은 파랑 (UI_SPEC 색 의미 규칙)
+            // 잠김 = 빨강, 해금(닫힘) = 파랑, 열림 = 초록 (UI_SPEC 색 의미 규칙)
             minimapWallRenderer.material.color = !IsUnlocked
                 ? minimapClosedColor
                 : (IsOpen ? minimapOpenColor : minimapUnlockedColor);
+
+            ApplyMinimapShape();
+        }
+
+        ApplyWorldIndicator(IsUnlocked, IsOpen);
+    }
+
+    private Color StateColor(bool unlocked, bool open)
+    {
+        return !unlocked ? minimapClosedColor : (open ? minimapOpenColor : minimapUnlockedColor);
+    }
+
+    private MaterialPropertyBlock _worldBlock;
+    private Transform _indicatorRoot;
+    private Renderer[] _indicatorRenderers;
+
+    /// <summary>
+    /// 월드에서 상태를 구분한다: 닫힌 벽에 상태색 틴트 + 바닥 문턱 띠(열려서 벽이 사라져도 남는다).
+    /// 색은 미니맵·CCTV 버튼과 같다(잠김 빨강 / 해금 파랑 / 열림 초록).
+    /// </summary>
+    private void ApplyWorldIndicator(bool unlocked, bool open)
+    {
+        Color state = StateColor(unlocked, open);
+
+        if (_worldBlock == null)
+        {
+            _worldBlock = new MaterialPropertyBlock();
+        }
+
+        // 1) 닫힌 실제 벽에 상태색을 섞는다. 원래 색(재질)은 건드리지 않고 인스턴스별 값만 바꾼다.
+        if (actualWallRenderers != null && worldTintStrength > 0f)
+        {
+            Color tint = Color.Lerp(Color.white, state, worldTintStrength);
+
+            for (int i = 0; i < actualWallRenderers.Length; i++)
+            {
+                Renderer wallRenderer = actualWallRenderers[i];
+
+                if (wallRenderer == null || wallRenderer.sharedMaterial == null || !wallRenderer.sharedMaterial.HasProperty("_BaseColor"))
+                {
+                    continue;
+                }
+
+                wallRenderer.GetPropertyBlock(_worldBlock);
+                _worldBlock.SetColor("_BaseColor", tint);
+                wallRenderer.SetPropertyBlock(_worldBlock);
+            }
+        }
+
+        // 2) 문 위 램프와 바닥 문턱 띠.
+        EnsureIndicators();
+
+        if (_indicatorRenderers == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _indicatorRenderers.Length; i++)
+        {
+            _worldBlock.Clear();
+            _worldBlock.SetColor("_BaseColor", state);
+            _indicatorRenderers[i].SetPropertyBlock(_worldBlock);
+        }
+    }
+
+    // 벽의 자식으로 두지 않는다 — Awake 의 자식 Renderer 자동 탐색에 섞이면 벽이 열릴 때 같이 사라진다.
+    private void EnsureIndicators()
+    {
+        if (_indicatorRoot != null || indicatorMaterial == null)
+        {
+            return;
+        }
+
+        Vector3 lossy = transform.lossyScale;
+        bool alongZ = lossy.z >= lossy.x;
+        float length = alongZ ? lossy.z : lossy.x;
+        float thickness = alongZ ? lossy.x : lossy.z;
+
+        GameObject root = new GameObject("GateIndicators_" + gameObject.name);
+        root.transform.SetPositionAndRotation(transform.position, transform.rotation);
+        _indicatorRoot = root.transform;
+
+        // 바닥 문턱 띠: 문이 열려 벽이 사라져도 어디가 격벽인지, 어떤 상태인지 남는다.
+        // (문 위 램프도 시도했지만 문틀 윗부분에 가려서 보이지 않아 뺐다.) 벽보다 조금만 넓게 해서 양면에서 보이게 한다.
+        Vector3 stripSize = alongZ
+            ? new Vector3(thickness + 0.15f, 0.04f, length * 0.96f)
+            : new Vector3(length * 0.96f, 0.04f, thickness + 0.15f);
+        Renderer strip = CreateIndicatorBar("Threshold", new Vector3(0f, -lossy.y * 0.5f + 0.03f, 0f), stripSize);
+
+        _indicatorRenderers = new[] { strip };
+    }
+
+    private Renderer CreateIndicatorBar(string barName, Vector3 localPosition, Vector3 size)
+    {
+        GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bar.name = barName;
+
+        Collider barCollider = bar.GetComponent<Collider>();
+
+        if (barCollider != null)
+        {
+            // 표시용이라 충돌·길찾기에 관여하지 않는다. (에디터 모드 검증에서도 호출되므로 Play 여부로 가른다)
+            if (Application.isPlaying)
+            {
+                Destroy(barCollider);
+            }
+            else
+            {
+                DestroyImmediate(barCollider);
+            }
+        }
+
+        bar.transform.SetParent(_indicatorRoot, false);
+        bar.transform.localPosition = localPosition;
+        bar.transform.localScale = size;
+
+        Renderer barRenderer = bar.GetComponent<Renderer>();
+        barRenderer.sharedMaterial = indicatorMaterial;
+        barRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        barRenderer.receiveShadows = false;
+
+        return barRenderer;
+    }
+
+    private Vector3 _minimapBaseScale;
+    private bool _minimapScaleCached;
+    private Transform _lockIconTransform;
+
+    /// <summary>
+    /// 색만으로 구분하지 않도록 모양도 바꾼다. 열림 = 얇은 막대(통로가 뚫린 느낌), 잠김 = 자물쇠 아이콘.
+    /// </summary>
+    private void ApplyMinimapShape()
+    {
+        Transform bar = minimapWallRenderer.transform;
+
+        if (!_minimapScaleCached)
+        {
+            _minimapBaseScale = bar.localScale;
+            _minimapScaleCached = true;
+        }
+
+        // 두께 축 = 수평 두 축 중 작은 쪽. 길이(문 폭)는 그대로 둔다.
+        Vector3 scale = _minimapBaseScale;
+
+        if (IsUnlocked && IsOpen)
+        {
+            if (scale.x <= scale.z)
+            {
+                scale.x *= openThicknessRatio;
+            }
+            else
+            {
+                scale.z *= openThicknessRatio;
+            }
+        }
+
+        bar.localScale = scale;
+
+        UpdateLockIcon(!IsUnlocked);
+    }
+
+    private void UpdateLockIcon(bool show)
+    {
+        if (lockIcon == null)
+        {
+            return;
+        }
+
+        if (_lockIconTransform == null)
+        {
+            if (!show)
+            {
+                return;
+            }
+
+            // 표시용 막대의 부모는 비균일 스케일이라 아이콘이 찌그러진다. 씬 루트에 따로 둔다.
+            // 격벽의 자식으로도 두지 않는다(Awake 의 자식 Renderer 자동 탐색에 섞이지 않게).
+            GameObject icon = new GameObject("GateLockIcon_" + gameObject.name);
+            icon.layer = minimapWallRenderer.gameObject.layer;
+
+            SpriteRenderer spriteRenderer = icon.AddComponent<SpriteRenderer>();
+            spriteRenderer.sprite = lockIcon;
+            spriteRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            spriteRenderer.receiveShadows = false;
+            spriteRenderer.sortingOrder = 5;
+
+            float spriteWidth = Mathf.Max(0.01f, lockIcon.bounds.size.x);
+            icon.transform.localScale = Vector3.one * (lockIconSize / spriteWidth);
+
+            _lockIconTransform = icon.transform;
+        }
+
+        if (show)
+        {
+            Bounds bounds = minimapWallRenderer.bounds;
+            _lockIconTransform.position = new Vector3(bounds.center.x, bounds.max.y + 0.05f, bounds.center.z);
+            _lockIconTransform.rotation = Quaternion.Euler(90f, 0f, 0f); // 위에서 내려다보는 미니맵 카메라를 향한다
+        }
+
+        _lockIconTransform.gameObject.SetActive(show);
+    }
+
+    private void OnDestroy()
+    {
+        if (_lockIconTransform != null)
+        {
+            Destroy(_lockIconTransform.gameObject);
+        }
+
+        if (_indicatorRoot != null)
+        {
+            Destroy(_indicatorRoot.gameObject);
         }
     }
 }

@@ -49,6 +49,8 @@ namespace Pawntom.TutorialBridge
         [SerializeField] private Renderer roomFloor;
         [Tooltip("격벽이 닫혀 길이 끊겼을 때, 이 거리 안(수평)까지 와서 멈추면 '문 앞에 도착'으로 본다")]
         [SerializeField, Min(0.5f)] private float doorArriveRadius = 9f;
+        [Tooltip("경보가 시작된 뒤 경비견들이 금고방으로 움직이기 시작하기까지 기다리는 시간(초). 대사로 월드가 멈춰 있는 동안은 세지 않는다")]
+        [SerializeField, Min(0f)] private float gatherDelaySeconds = 2f;
         [Tooltip("도착 전까지 집결 좌표를 다시 알려 주는 간격(초)")]
         [SerializeField, Min(0.5f)] private float resendSeconds = 3f;
 
@@ -83,6 +85,7 @@ namespace Pawntom.TutorialBridge
         private readonly Dictionary<EnemyAgent, Plan> _plans = new Dictionary<EnemyAgent, Plan>(8);
         private readonly List<EnemyAgent> _gone = new List<EnemyAgent>(4);
         private bool _active;
+        private float _gatherDelayRemaining;
         private float _nextTick;
         private Bounds _navBounds;
         private bool _hasNavBounds;
@@ -114,6 +117,7 @@ namespace Pawntom.TutorialBridge
             _active = true;
             _plans.Clear();
             _nextTick = 0f;
+            _gatherDelayRemaining = gatherDelaySeconds; // 경보가 울려도 경비견은 잠시 뒤에 반응한다
             CacheNavBounds();
 
             _hasRoomBounds = roomFloor != null;
@@ -218,7 +222,25 @@ namespace Pawntom.TutorialBridge
 
         private void Update()
         {
-            if (!_active || Time.time < _nextTick)
+            // 대사 등으로 월드가 멈춘 동안에는 지연도 소집 갱신도 흐르지 않는다.
+            if (!_active || GameWorldPause.IsPaused)
+            {
+                return;
+            }
+
+            if (_gatherDelayRemaining > 0f)
+            {
+                _gatherDelayRemaining -= Time.deltaTime;
+
+                if (_gatherDelayRemaining > 0f)
+                {
+                    return;
+                }
+
+                _nextTick = 0f;
+            }
+
+            if (Time.time < _nextTick)
             {
                 return;
             }

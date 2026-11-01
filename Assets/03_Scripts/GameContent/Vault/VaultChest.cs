@@ -44,6 +44,9 @@ public class VaultChest : NetworkBehaviour
     [SerializeField] private NetworkObject catnipPrefab;
     [SerializeField] private Transform catnipSpawnPoint;
 
+    [Tooltip("바닥에 생성되는 보상의 아이템 ID. 전설의 캣닢(ItemData_Catleaf)과 같다")]
+    [SerializeField] private int rewardItemId = 1;
+
     [Networked]
     public int UsedKeyCount { get; set; }
 
@@ -51,6 +54,15 @@ public class VaultChest : NetworkBehaviour
     public NetworkBool IsOpened { get; set; }
 
     public float MaxUseDistance => maxUseDistance;
+
+    [Tooltip("금고 경계에서 이 거리(m) 안으로 다가가야 안내가 뜨고 E 가 먹는다. 서버 검증(Max Use Distance)과는 별개다")]
+    [SerializeField, Min(0f)] private float interactMargin = 1.5f;
+
+    /// <summary>플레이어가 금고 앞 상호작용 범위 안에 있는가. 안내 표시와 E 입력이 같은 기준을 쓴다.</summary>
+    public bool IsPlayerInRange(Vector3 playerPosition)
+    {
+        return InteractRange.IsInRange(this, playerPosition, interactMargin);
+    }
 
     /// <summary>잠금 해제 뒤 해킹 미니게임에 성공해야 열리는 금고인지</summary>
     public bool OpenByMinigame => openByMinigame;
@@ -280,18 +292,39 @@ public class VaultChest : NetworkBehaviour
 
         if (spawnReward)
         {
-            if (catnipPrefab == null || catnipSpawnPoint == null)
+            if (catnipPrefab == null)
             {
-                Debug.LogError(
-                    "[VaultChest] Catnip Prefab 또는 Spawn Point가 없습니다."
-                );
+                Debug.LogError("[VaultChest] Catnip Prefab이 없습니다.");
                 return;
             }
 
+            // 생성 위치가 지정돼 있지 않아도 금고가 영영 안 열리는 일이 없게, 금고 위쪽에 놓는다.
+            Vector3 rewardPosition = catnipSpawnPoint != null
+                ? catnipSpawnPoint.position
+                : transform.position + Vector3.up * 0.6f;
+            Quaternion rewardRotation = catnipSpawnPoint != null
+                ? catnipSpawnPoint.rotation
+                : transform.rotation;
+
+            // 캣닢 프리팹은 이전 맵 스케일(루트 12배, 12m×24m 단단한 충돌체)이라 그대로 생성하면 플레이어 몸속에
+            // 거대한 충돌체가 생겨 CharacterController 가 튕겨 나간다. 사망 드롭과 같은 경로로 만들면 NetworkItem 이
+            // 현재 캐릭터 크기(0.45m)에 맞추고 바닥 위에 얹어 준다. 금고(NetworkObject)는 바닥 탐색에서 빠진다.
+            Vector3 groundPosition = PlayerDeathPlacement.GroundPoint(rewardPosition, transform, out _);
+            int itemId = rewardItemId;
+
             NetworkObject spawnedCatnip = Runner.Spawn(
                 catnipPrefab,
-                catnipSpawnPoint.position,
-                catnipSpawnPoint.rotation
+                groundPosition,
+                rewardRotation,
+                onBeforeSpawned: (runner, spawned) =>
+                {
+                    NetworkItem rewardItem = spawned.GetComponent<NetworkItem>();
+
+                    if (rewardItem != null)
+                    {
+                        rewardItem.InitializeDeathDrop(itemId, groundPosition, rewardRotation);
+                    }
+                }
             );
 
             if (spawnedCatnip == null)

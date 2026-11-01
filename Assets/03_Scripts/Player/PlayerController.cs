@@ -18,6 +18,13 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float walkSpeed = 30f; //걷기 속도
     [SerializeField] private float sprintSpeed = 60f; //달리기 속도
 
+    [Header("Weight (소지 무게에 따른 이동 속도 감소)")]
+    [Tooltip("무게 1당 이동 속도가 줄어드는 비율. 0 이면 무게 감속 없음. 구간별 수치는 기획 미확정이라 임시값이다.")]
+    [SerializeField, Range(0f, 0.3f)] private float weightSlowPerUnit = 0.06f;
+
+    [Tooltip("무게가 아무리 커도 이 비율 밑으로는 느려지지 않는다.")]
+    [SerializeField, Range(0.1f, 1f)] private float minWeightSpeedRatio = 0.5f;
+
     [Header("Jump")]
     [Tooltip("점프 최고 높이(월드 단위 m). 플레이어 키(CharacterController 31 × 스케일 0.05 = 1.55m) 기준으로 잡는다.\n" +
              "기본값 0.9 는 스케일을 줄이기 전 손맛(키의 약 58%)을 그대로 옮긴 값이다.")]
@@ -41,6 +48,7 @@ public class PlayerController : NetworkBehaviour
 
     private NetworkCharacterController _controller;
     private PlayerData _playerData;
+    private InventoryManager _inventory;
 
     public float WalkSpeed => walkSpeed;
     public float SprintSpeed => sprintSpeed;
@@ -53,6 +61,21 @@ public class PlayerController : NetworkBehaviour
     {
         _controller = GetComponent<NetworkCharacterController>();
         _playerData = GetComponent<PlayerData>();
+        _inventory = GetComponent<InventoryManager>();
+    }
+
+    /// <summary>
+    /// 소지 무게에 따른 이동 속도 배율(0.5~1). 가방이 무거울수록 느려진다.
+    /// 감속은 이동 속도에만 건다 — 스태미나 소모나 흔적 생성량에는 관여하지 않는다.
+    /// </summary>
+    private float WeightSpeedRatio()
+    {
+        if (_inventory == null || weightSlowPerUnit <= 0f)
+        {
+            return 1f;
+        }
+
+        return Mathf.Max(minWeightSpeedRatio, 1f - _inventory.GetTotalWeight() * weightSlowPerUnit);
     }
 
     /// <summary>
@@ -195,7 +218,7 @@ public class PlayerController : NetworkBehaviour
 
         moveDirection.y = 0f;
 
-        float moveSpeed = isSprinting ? sprintSpeed : walkSpeed;
+        float moveSpeed = (isSprinting ? sprintSpeed : walkSpeed) * WeightSpeedRatio();
 
         _controller.maxSpeed = moveSpeed;
 

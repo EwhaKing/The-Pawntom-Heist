@@ -30,12 +30,33 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     [Header("Double Click")]
     [SerializeField] private float doubleClickInterval = 0.35f;
 
+    // 세 상태를 색(빨강·파랑·초록)과 모양(자물쇠 / 꽉 찬 바탕 / 얇은 막대)으로 이중 구분한다.
+    // 해금 안 된 격벽은 열 수 없으므로 상태는 잠김·해금(닫힘)·열림 세 가지뿐이다(UI_SPEC 3.2).
     [Header("Colors")]
-    [SerializeField] private Color openColor = new Color(0.1f, 0.55f, 1f, 1f);
-    [SerializeField] private Color hackingLockedColor = new Color(1f, 0.15f, 0.1f, 1f);
+    [Tooltip("열림 = 초록 #2ED47A")]
+    [SerializeField] private Color openColor = new Color(0.180f, 0.831f, 0.478f, 1f);
 
-    [Tooltip("해금됐지만 닫혀 있을 때(UI_SPEC: 해금·열림 = 푸른색)")]
-    [SerializeField] private Color unlockedColor = new Color(0.1f, 0.45f, 0.9f, 1f);
+    [Tooltip("잠김(해금 안 됨) = 빨강 #E5342B")]
+    [SerializeField] private Color hackingLockedColor = new Color(0.898f, 0.204f, 0.169f, 1f);
+
+    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2E7DE0 (대본의 \"푸른색이 됐습니다\")")]
+    [SerializeField] private Color unlockedColor = new Color(0.180f, 0.490f, 0.878f, 1f);
+
+    [Header("Shape")]
+    [Tooltip("열림일 때 버튼 바탕에 얹는 얇은 막대의 두께(버튼 짧은 변 대비 비율)")]
+    [SerializeField, Range(0.1f, 1f)] private float openBarThickness = 0.3f;
+
+    [Tooltip("열림일 때 바탕을 이 투명도로 흐리게 한다. 클릭 영역은 그대로 남는다")]
+    [SerializeField, Range(0.05f, 1f)] private float openBackdropAlpha = 0.25f;
+
+    [Tooltip("잠김일 때 버튼 위에 띄울 자물쇠 아이콘. 비우면 표시하지 않는다")]
+    [SerializeField] private Sprite lockIcon;
+
+    [Tooltip("자물쇠 아이콘 크기(UI 단위). 격벽 버튼이 가로로 긴 20 높이라 작게 잡는다")]
+    [SerializeField, Min(8f)] private float lockIconSize = 24f;
+
+    private Image _openBar;
+    private Image _lockImage;
 
     private float lastClickTime;
     private bool isHacking;
@@ -177,16 +198,107 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         if (targetWall == null)
         {
             wallImage.color = Color.gray;
+            SetOverlays(false, false);
             return;
         }
 
         if (!targetWall.IsUnlocked)
         {
             wallImage.color = hackingLockedColor;
+            SetOverlays(false, true);
             return;
         }
 
-        // 해금된 격벽은 닫혀 있어도 푸른색이다(잠김만 붉은색).
-        wallImage.color = targetWall.IsOpen ? openColor : unlockedColor;
+        if (targetWall.IsOpen)
+        {
+            // 열림 = 초록. 바탕은 흐리게 두고(클릭 영역은 유지) 얇은 막대를 얹어 통로가 뚫린 모양으로 보이게 한다.
+            Color backdrop = openColor;
+            backdrop.a = openBackdropAlpha;
+            wallImage.color = backdrop;
+
+            if (_openBar != null || EnsureOpenBar())
+            {
+                _openBar.color = openColor;
+            }
+
+            SetOverlays(true, false);
+            return;
+        }
+
+        // 해금된 격벽은 닫혀 있어도 파랑이다(잠김만 빨강, 열림만 초록).
+        wallImage.color = unlockedColor;
+        SetOverlays(false, false);
+    }
+
+    private void SetOverlays(bool showOpenBar, bool showLock)
+    {
+        if (_openBar != null)
+        {
+            _openBar.gameObject.SetActive(showOpenBar);
+        }
+
+        if (showLock && lockIcon != null)
+        {
+            EnsureLockImage();
+        }
+
+        if (_lockImage != null)
+        {
+            _lockImage.gameObject.SetActive(showLock);
+        }
+    }
+
+    // 버튼 가운데에 길이 방향으로 뻗은 얇은 막대. 버튼 모양(가로/세로)에 따라 짧은 변 쪽을 얇게 한다.
+    private bool EnsureOpenBar()
+    {
+        RectTransform parent = wallImage.rectTransform;
+        Vector2 size = parent.rect.size;
+
+        if (size.x <= 0f || size.y <= 0f)
+        {
+            size = parent.sizeDelta;
+        }
+
+        float half = openBarThickness * 0.5f;
+        bool vertical = size.x <= size.y;
+
+        GameObject bar = new GameObject("OpenBar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        bar.layer = wallImage.gameObject.layer;
+
+        RectTransform rect = (RectTransform)bar.transform;
+        rect.SetParent(parent, false);
+        rect.anchorMin = vertical ? new Vector2(0.5f - half, 0f) : new Vector2(0f, 0.5f - half);
+        rect.anchorMax = vertical ? new Vector2(0.5f + half, 1f) : new Vector2(1f, 0.5f + half);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        _openBar = bar.GetComponent<Image>();
+        _openBar.raycastTarget = false; // 더블클릭은 버튼 본체가 받는다
+
+        return true;
+    }
+
+    private void EnsureLockImage()
+    {
+        if (_lockImage != null)
+        {
+            return;
+        }
+
+        GameObject icon = new GameObject("LockIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        icon.layer = wallImage.gameObject.layer;
+
+        RectTransform rect = (RectTransform)icon.transform;
+        rect.SetParent(wallImage.rectTransform, false);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(lockIconSize, lockIconSize);
+
+        _lockImage = icon.GetComponent<Image>();
+        _lockImage.sprite = lockIcon;
+        _lockImage.preserveAspect = true;
+        _lockImage.raycastTarget = false;
     }
 }

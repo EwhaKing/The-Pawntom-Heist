@@ -62,8 +62,11 @@ namespace Pawntom.TutorialBridge
         [SerializeField, Min(0f)] private float endCardHoldSeconds = 2.5f;
 
         [Header("정산")]
-        [Tooltip("7-10 대사가 끝난 뒤 정산 창을 띄우기까지의 시간")]
+        [Tooltip("출발 버튼을 누른 뒤 정산 창을 띄우기까지의 시간(출발 버튼 경로는 0.3초로 부른다)")]
         [SerializeField, Min(0f)] private float settlementDelay = 1.2f;
+
+        [Tooltip("정산이 뜨기 전에 화면이 까맣게 페이드되는 시간(초)")]
+        [SerializeField, Min(0.1f)] private float settlementFadeSeconds = 0.9f;
 
         private static bool _bootstrapRegistered;
 
@@ -429,19 +432,9 @@ namespace Pawntom.TutorialBridge
             _probe.ResetLookReference();
             _deathFlow?.CaptureCheckpoint(beat.Stage);
 
-            // 단계별 안내와 미니게임을 맞춘다: 4단계 격벽 = 방향키 순서 입력, 6단계 이후 금고 = Space 타이밍.
-            if (beat.Stage >= 6)
-            {
-                HackingManager.PreferredGameType = HackingGameType.DigitalSync;
-            }
-            else if (beat.Stage >= 4)
-            {
-                HackingManager.PreferredGameType = HackingGameType.CommandOverride;
-            }
-            else
-            {
-                HackingManager.PreferredGameType = null;
-            }
+            // 단계별 미니게임을 맞춘다: 격벽 해킹(4단계)은 세 종류 중 무작위(4-7~4-10 이 걸린 종류를 안내한다),
+            // 6단계 이후 금고는 Space 타이밍(DigitalSync)으로 고정한다.
+            HackingManager.PreferredGameType = beat.Stage >= 6 ? HackingGameType.DigitalSync : (HackingGameType?)null;
 
             Debug.Log("[TutorialDirector] 비트 시작 " + beat.Id + " (" + beat.Stage + "단계)");
         }
@@ -546,7 +539,19 @@ namespace Pawntom.TutorialBridge
 
             yield return new WaitForSecondsRealtime(delay);
 
+            // 화면이 까맣게 페이드된 뒤 정산이 뜬다(눈꺼풀 연출 없이 검은 화면만).
+            float fade = 0f;
+
+            while (fade < 1f)
+            {
+                fade += Time.unscaledDeltaTime / settlementFadeSeconds;
+                _eyelids.SetBlackout(fade);
+                yield return null;
+            }
+
+            // 정산의 검은 바탕이 이어받고, 위에 덮었던 검은 막은 걷는다(같은 프레임이라 깜빡임이 없다).
             _settlement.Open(BuildSettlementEntries());
+            _eyelids.SetBlackout(0f);
             _audio.PlaySquelch();
 
             yield return new WaitForSecondsRealtime(0.6f);
@@ -607,27 +612,7 @@ namespace Pawntom.TutorialBridge
 
             yield return new WaitForSecondsRealtime(1.4f);
 
-            _settlement.Close();
-
-            EyelidTimeline closing = EyelidTimeline.CreateClosing();
-            float time = 0f;
-            bool beat = false;
-
-            while (time < closing.Duration)
-            {
-                time += Time.unscaledDeltaTime;
-
-                if (!beat && time >= 0.6f)
-                {
-                    beat = true;
-                    _audio.PlayHeartbeat(0.5f);
-                }
-
-                float openness = closing.Evaluate(time);
-                _eyelids.SetOpenness(openness, 1f - openness);
-                yield return null;
-            }
-
+            // 눈꺼풀 연출 없이 검은 화면만 페이드한다. 정산 패널은 그 아래에서 가려진다.
             float fade = 0f;
 
             while (fade < 1f)
@@ -636,6 +621,8 @@ namespace Pawntom.TutorialBridge
                 _eyelids.SetBlackout(fade);
                 yield return null;
             }
+
+            _settlement.Close(); // 이미 검은 막에 가려져 있다
 
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
 

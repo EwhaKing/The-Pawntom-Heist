@@ -81,14 +81,8 @@ public class VaultPromptUI : MonoBehaviour
             return;
         }
 
-        // 플레이어와 금고 사이의 거리
-        float distance = Vector3.Distance(
-            localPlayer.transform.position,
-            targetVault.transform.position
-        );
-
-        // 금고에서 너무 멀다면 안내 숨김
-        if (distance > targetVault.MaxUseDistance)
+        // 금고 앞 상호작용 범위 밖이면 안내 숨김(E 입력과 같은 기준)
+        if (!targetVault.IsPlayerInRange(localPlayer.transform.position))
         {
             HidePrompt();
             return;

@@ -22,3 +22,4 @@ MonoBehaviour:
   buyPrice: 0
   sellPrice: 200
   modelPrefab: {fileID: 7654520607168482787, guid: 1c252805e25386a4e84a69d83e33a1f2, type: 3}
+  weight: 3

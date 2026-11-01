@@ -44,11 +44,17 @@ public class NetworkItem : NetworkBehaviour
         if (!IsDeathDrop) return;
 
         transform.SetPositionAndRotation(DropPosition, DropRotation);
+        // Collider.bounds 는 Physics.SyncTransforms 전에는 갱신되지 않는다. 위치·크기를 바꾼 뒤에는 반드시 동기화하고 읽는다.
+        // (안 하면 크기를 줄이기 전의 낡은 경계로 높이를 보정해, 12배 스케일 프리팹인 캣닢이 12m 공중에 뜬다)
+        Physics.SyncTransforms();
+
         // 기존 아이템 프리팹은 이전 맵 스케일을 사용합니다. 드롭은 현재 캐릭터 크기에 맞춥니다.
         if (TryGetBounds(out Bounds bounds))
         {
             float size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
             if (size > 0.001f) transform.localScale *= 0.45f / size;
+            Physics.SyncTransforms();
+
             if (TryGetBounds(out bounds))
                 transform.position += Vector3.up * (DropPosition.y - bounds.min.y + 0.02f);
         }

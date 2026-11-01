@@ -40,6 +40,18 @@ public class PlayerInteraction : NetworkBehaviour
     [SerializeField, Min(0.5f)]
     private float wallInteractDistance = 3f;
 
+    [Tooltip("월드 아이템(열쇠·전리품)을 줍기 위해 카메라에서 아이템 경계까지 다가가야 하는 거리(m). 조준선만 맞으면 멀리서도 줍히던 것을 막는다.\n" +
+             "플레이어 발 위치가 아니라 카메라 기준이라, 벽에 걸린 큰 그림도 조준한 만큼 닿는다.")]
+    [SerializeField, Min(0.5f)]
+    private float itemInteractDistance = 2.5f;
+
+    // 아이템 줍기 범위 판정. 안내 표시와 E 입력이 같은 기준을 쓴다.
+    private bool IsItemInRange(NetworkItem item)
+    {
+        Vector3 origin = playerCamera != null ? playerCamera.transform.position : transform.position;
+        return InteractRange.DistanceTo(item, origin) <= itemInteractDistance;
+    }
+
     [Header("Interaction Layer")]
     [Tooltip("상호작용 탐색에 포함할 레이어입니다.")]
     [SerializeField] private LayerMask interactLayerMask = ~0;
@@ -192,7 +204,7 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (escapeButton != null)
         {
-            return escapeButton.InteractName;
+            return escapeButton.IsPlayerInRange(transform.position) ? escapeButton.InteractName : null;
         }
 
         ControllableWall wall = hit.collider.GetComponentInParent<ControllableWall>();
@@ -210,6 +222,12 @@ public class PlayerInteraction : NetworkBehaviour
         NetworkItem item = FindAimedItem(ray);
 
         if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+        {
+            return null;
+        }
+
+        // 가까이 가야만 안내가 뜬다(E 입력과 같은 기준).
+        if (!IsItemInRange(item))
         {
             return null;
         }
@@ -303,6 +321,12 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (vaultChest != null)
         {
+            if (!vaultChest.IsPlayerInRange(transform.position))
+            {
+                Debug.Log("[PlayerInteraction] 금고에서 너무 멀어 상호작용할 수 없습니다.");
+                return;
+            }
+
             Debug.Log("[PlayerInteraction] VaultChest 감지 성공!");
 
             // 현재 인벤토리 상태 확인
@@ -357,6 +381,12 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (escapeButton != null)
         {
+            if (!escapeButton.IsPlayerInRange(transform.position))
+            {
+                Debug.Log("[PlayerInteraction] 출발 버튼에서 너무 멀어 상호작용할 수 없습니다.");
+                return;
+            }
+
             Debug.Log(
                 "[PlayerInteraction] 출발 버튼 발견"
             );
@@ -435,6 +465,12 @@ public class PlayerInteraction : NetworkBehaviour
                 "[PlayerInteraction] 이미 획득된 아이템입니다."
             );
 
+            return;
+        }
+
+        if (!IsItemInRange(item))
+        {
+            Debug.Log("[PlayerInteraction] 아이템에서 너무 멀어 주울 수 없습니다.");
             return;
         }
 

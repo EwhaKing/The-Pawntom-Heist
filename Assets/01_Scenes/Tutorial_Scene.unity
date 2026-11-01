@@ -4793,6 +4793,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pawntom.TutorialBridge.TutorialSecurityNode
   interactRadius: 2.5
+  interactName: "\uBD84\uC804\uBC18 \uC811\uC18D (\uAE38\uAC8C)"
   castSeconds: 3
   threatCueAt: 0.45
   castLabel: "\uBD84\uC804\uBC18 \uC811\uC18D \uC911"
@@ -5244,8 +5245,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 511213021}
+  m_Children: []
   m_Father: {fileID: 1596717865}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
@@ -5265,7 +5265,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 648ff9952f5f77044977f46b38f36fdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VaultPromptUI
-  promptText: {fileID: 511213022}
+  promptText: {fileID: 0}
   targetVault: {fileID: 2020277963}
 --- !u!1 &206873471
 GameObject:
@@ -9904,7 +9904,7 @@ MonoBehaviour:
     gameType: 0
     gamePrefab: {fileID: 1546251667905190102, guid: b4df9ad01f28e6947937424ce6845f21, type: 3}
   - securityLevel: 0
-    gameType: 0
+    gameType: 1
     gamePrefab: {fileID: 7898979953798318568, guid: f09e7510ae5720641979692f5de5e5bf, type: 3}
   - securityLevel: 0
     gameType: 2
@@ -11977,6 +11977,71 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 451698600}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &455051057
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3721425423162576721, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: _ItemId
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4883236042277420612, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_Name
+      value: VaultKey_Tutorial
+      objectReference: {fileID: 0}
+    - target: {fileID: 6755394990970796922, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: SortKey
+      value: 2949280960
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -10.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8795004356201002222, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3cc35189dc00e714fa2a326879d7c042, type: 3}
 --- !u!1 &458710889
 GameObject:
   m_ObjectHideFlags: 0
@@ -12774,6 +12839,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4693d96ce832344e876213e7fb955f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EscapeButtonInteraction
+  interactName: "\uCD9C\uBC1C"
+  interactMargin: 1.5
 --- !u!114 &471841280
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15033,9 +15100,14 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 865044569}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
   allowFieldOpen: 0
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
@@ -44755,9 +44827,13 @@ MonoBehaviour:
   hackingManager: {fileID: 372720330}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1465022976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -47308,9 +47384,14 @@ MonoBehaviour:
   actualWallColliders: []
   navMeshObstacle: {fileID: 0}
   minimapWallRenderer: {fileID: 805645159}
-  minimapClosedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  minimapOpenColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  minimapUnlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  minimapClosedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  minimapOpenColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  minimapUnlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openThicknessRatio: 0.3
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 1.4
+  indicatorMaterial: {fileID: 2100000, guid: e630b5e96aaef474da778958d07a2d4a, type: 2}
+  worldTintStrength: 0.35
   allowFieldOpen: 0
   fieldOpenSeconds: 5
   closeRetrySeconds: 0.5
@@ -50186,9 +50267,13 @@ MonoBehaviour:
   hackingManager: {fileID: 372720330}
   hackingLevel: 0
   doubleClickInterval: 0.35
-  openColor: {r: 0.1, g: 0.55, b: 1, a: 1}
-  hackingLockedColor: {r: 1, g: 0.15, b: 0.1, a: 1}
-  unlockedColor: {r: 0.1, g: 0.45, b: 0.9, a: 1}
+  openColor: {r: 0.18, g: 0.831, b: 0.478, a: 1}
+  hackingLockedColor: {r: 0.898, g: 0.204, b: 0.169, a: 1}
+  unlockedColor: {r: 0.18, g: 0.49, b: 0.878, a: 1}
+  openBarThickness: 0.3
+  openBackdropAlpha: 0.25
+  lockIcon: {fileID: 21300000, guid: 2ed1c8bf2a0aeab469857c58c8dd7e8d, type: 3}
+  lockIconSize: 24
 --- !u!114 &1664218608
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58893,6 +58978,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pawntom.TutorialBridge.TutorialVault
   interactRadius: 2.5
+  interactName: "\uAE08\uACE0 \uC5F4\uAE30"
   securityLevel: 1
   preferredGame: 2
   rewardItemId: 1
@@ -58940,7 +59026,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1365602797}
-  - {fileID: 1969058255}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2020277962
@@ -58976,13 +59061,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VaultChest
   requiredKeyCount: 1
   maxUseDistance: 3.5
+  openByMinigame: 1
   chestVisual: {fileID: 1365602796}
   chestCollider: {fileID: 1365602799}
   catnipPrefab: {fileID: -2303880833546648781, guid: 1c252805e25386a4e84a69d83e33a1f2, type: 3}
-  catnipSpawnPoint: {fileID: 1969058255}
+  catnipSpawnPoint: {fileID: 0}
+  rewardItemId: 1
   _UsedKeyCount: 0
   _IsOpened:
     _value: 0
+  interactMargin: 1.5
 --- !u!1 &2020583016
 GameObject:
   m_ObjectHideFlags: 0
@@ -59693,6 +59781,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ControlMachine
   controlUI: {fileID: 1616302359}
+  interactName: "\uBCF8\uBD80 \uB2E8\uB9D0\uAE30"
+  interactMargin: 1.2
 --- !u!65 &2027839879
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -63721,6 +63811,7 @@ MonoBehaviour:
   gatherPoint: {fileID: 1039955970}
   roomFloor: {fileID: 2079977639}
   doorArriveRadius: 9
+  gatherDelaySeconds: 2
   resendSeconds: 3
   gatherSpeedMultiplier: 1.8
   gatherWanderRadius: 2.5
@@ -64222,7 +64313,6 @@ SceneRoots:
   - {fileID: 1209305851}
   - {fileID: 255307422}
   - {fileID: 363733633}
-  - {fileID: 1233110955}
   - {fileID: 1504498667}
   - {fileID: 933139024}
   - {fileID: 1791175354}
@@ -64238,3 +64328,4 @@ SceneRoots:
   - {fileID: 2058943094}
   - {fileID: 1039955970}
   - {fileID: 2138870736}
+  - {fileID: 455051057}
