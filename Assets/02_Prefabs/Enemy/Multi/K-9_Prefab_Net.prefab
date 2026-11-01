@@ -257,9 +257,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pawntom.Enemy::Pawntom.Enemy.Authoring.K9Agent
   _settings:
     _movement:
-      _patrolSpeed: 2.25
-      _chaseSpeed: 5
-      _investigateSpeed: 2
+      _patrolSpeed: 2
+      _chaseSpeed: 3.8
+      _investigateSpeed: 1.6
       _acceleration: 30
       _turnSpeedDegrees: 540
       _stopDistance: 1.1

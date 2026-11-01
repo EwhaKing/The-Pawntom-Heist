@@ -31,6 +31,9 @@ public class NetworkItem : NetworkBehaviour
     [Networked] private Quaternion SpawnRotation { get; set; }
     private Vector3 _prefabScale;
 
+    /// <summary>드롭된 아이템의 가장 긴 변(m). 드롭 자리 계산(InventoryManager)도 같은 값으로 크기를 맞춘다.</summary>
+    public const float DropItemSize = 0.45f;
+
     private void Awake() => _prefabScale = transform.localScale;
 
     /// <summary>
@@ -79,7 +82,7 @@ public class NetworkItem : NetworkBehaviour
         if (TryGetBounds(out Bounds bounds))
         {
             float size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-            if (size > 0.001f) transform.localScale *= 0.45f / size;
+            if (size > 0.001f) transform.localScale *= DropItemSize / size;
             Physics.SyncTransforms();
 
             if (TryGetBounds(out bounds))

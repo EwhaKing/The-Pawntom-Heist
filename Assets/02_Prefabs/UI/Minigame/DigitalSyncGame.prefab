@@ -1132,12 +1132,12 @@ MonoBehaviour:
   successZoneImage: {fileID: 8254216323438442988}
   hitButton: {fileID: 7278812342117432383}
   resultText: {fileID: 2602674793985544380}
-  normalNeedleSpeed: 180
-  vaultNeedleSpeed: 260
-  normalSuccessAngleRange: 35
-  vaultSuccessAngleRange: 22
+  normalNeedleSpeed: 140
+  vaultNeedleSpeed: 200
+  normalSuccessAngleRange: 50
+  vaultSuccessAngleRange: 35
   requiredSuccessCount: 1
-  maxMissCount: 1
+  maxMissCount: 3
 --- !u!1 &9077062148296035759
 GameObject:
   m_ObjectHideFlags: 0

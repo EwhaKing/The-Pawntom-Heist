@@ -135,19 +135,22 @@ namespace Pawntom.Tutorial.Core
                     L("4-8", Hq, "화면에 뜬 순서를 그대로 입력하십시오. 틀리면 처음부터이니 침착하게 하십시오")
                         .WithHint("[방향키]로 순서를 입력합시다 ([Esc]키로 취소)",
                             TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorHackFailed))
-                .AsRepeatable(2f));
+                .AsRepeatable(2f)
+                .WithConfirm());
 
             beats.Add(TutorialBeat.Side("4-9", 4, TutorialSignal.DoorGameSignal, "4-7", "4-11",
                     L("4-9", Hq, "화면에 표시된 두 키를 번갈아 누르십시오. 같은 키를 연달아 눌러도 소용없고, 손을 멈추면 게이지가 줄어듭니다")
                         .WithHint("[화면에 표시된 두 키]를 번갈아 눌러 게이지를 채웁시다",
                             TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorHackFailed))
-                .AsRepeatable(2f));
+                .AsRepeatable(2f)
+                .WithConfirm());
 
             beats.Add(TutorialBeat.Side("4-10", 4, TutorialSignal.DoorGameSync, "4-7", "4-11",
-                    L("4-10", Hq, "돌아가는 바늘이 색칠된 구간에 들어오는 순간을 노리십시오. 기회는 한 번뿐입니다")
+                    L("4-10", Hq, "돌아가는 바늘이 색칠된 구간에 들어오는 순간을 노리십시오. 기회는 세 번뿐입니다")
                         .WithHint("[Space]키로 타이밍을 맞춰봅시다",
                             TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorHackFailed))
-                .AsRepeatable(2f));
+                .AsRepeatable(2f)
+                .WithConfirm());
 
             beats.Add(TutorialBeat.Main("4-11", 4, TutorialSignal.DoorHackSucceeded,
                 L("4-11", Hq, "좋습니다, 푸른색이 됐습니다. 문이 닫혀 있는 동안 저 안에는 경비견이 들어오지 못합니다. 쓸 만한 은신처 겸 창고입니다"),
@@ -239,7 +242,7 @@ namespace Pawntom.Tutorial.Core
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("7-4", 7, TutorialSignal.VaultHackStarted,
-                L("7-4", Hq, "집중하십시오. 바늘이 색칠된 구간에 들어오는 순간에 눌러야 하고, 기회는 한 번뿐입니다")
+                L("7-4", Hq, "집중하십시오. 바늘이 색칠된 구간에 들어오는 순간에 눌러야 하고, 기회는 세 번뿐입니다")
                     .WithHint("[Space]키로 타이밍을 맞춰봅시다",
                         TutorialSignal.VaultHackSucceeded, TutorialSignal.VaultHackFailed))
                 .AsSkippable()

@@ -159,19 +159,23 @@ public class InventoryManager : NetworkBehaviour
             return;
         }
 
-        TryPredictDrop(itemId, out Vector3 position, out Quaternion rotation);
-        NetworkObject spawned = Runner.Spawn(prefab, position, rotation);
+        if (prefab.GetComponent<NetworkItem>() == null)
+        {
+            Debug.LogWarning($"[InventoryManager] {data.itemName} 의 월드 프리팹(modelPrefab)에 NetworkItem 이 없어 버릴 수 없습니다.");
+            return;
+        }
+
+        // 사망 드롭과 같은 경로: NetworkItem.Spawned 가 드롭 크기·바닥 높이를 맞추고 모든 피어에 자세를 복제한다.
+        // 그쪽은 DropPosition 을 바닥 높이로 읽으므로 콜라이더 바닥 보정이 들어간 위치가 아니라 바닥 위치를 넘긴다.
+        FindDropPose(prefab.transform, out Vector3 position, out Quaternion rotation, out float groundY);
+        Vector3 groundPosition = new Vector3(position.x, groundY, position.z);
+        NetworkObject spawned = Runner.Spawn(prefab, groundPosition, rotation,
+            onBeforeSpawned: (runner, spawnedObject) =>
+                spawnedObject.GetComponent<NetworkItem>().InitializeDeathDrop(itemId, groundPosition, rotation));
 
         if (spawned == null)
         {
             return;
-        }
-
-        NetworkItem item = spawned.GetComponent<NetworkItem>();
-
-        if (item != null)
-        {
-            item.Init(itemId);
         }
 
         Slots.Set(slot, EmptySlot);
@@ -193,7 +197,7 @@ public class InventoryManager : NetworkBehaviour
             return false;
         }
 
-        FindDropPose(data.modelPrefab.transform, out position, out rotation);
+        FindDropPose(data.modelPrefab.transform, out position, out rotation, out _);
         return true;
     }
 
@@ -207,7 +211,7 @@ public class InventoryManager : NetworkBehaviour
     /// 그 방향의 앞뒤 길이만 따지면 된다(그림처럼 넓적한 것은 얇은 면이 나를 향해 가까이 놓인다).
     /// 정면이 벽으로 막혀 자리가 없으면 대각선·옆·뒤 순서로 찾는다. 어디도 없으면 정면에 둔다(벽에 걸칠 수 있다).
     /// </summary>
-    private void FindDropPose(Transform prefabRoot, out Vector3 position, out Quaternion rotation)
+    private void FindDropPose(Transform prefabRoot, out Vector3 position, out Quaternion rotation, out float groundHeight)
     {
         Vector3 forward = transform.forward;
         forward.y = 0f;
@@ -271,6 +275,7 @@ public class InventoryManager : NetworkBehaviour
             groundY = ground.point.y;
         }
 
+        groundHeight = groundY;
         position = new Vector3(above.x, groundY + footprint.BottomOffset, above.z);
         rotation = Quaternion.LookRotation(direction, Vector3.up) * prefabRoot.rotation;
     }
@@ -332,8 +337,11 @@ public class InventoryManager : NetworkBehaviour
         }
 
         float lowest = float.MaxValue;
+        float highest = float.MinValue;
         float minZ = 0f;
         float maxZ = 0f;
+        float lowZ = float.MaxValue;
+        float highZ = float.MinValue;
         float minX = float.MaxValue;
         float maxX = float.MinValue;
         // 놓일 때 회전 = 플레이어 방향 × 프리팹 회전. 플레이어 방향 기준 좌표로 보려면 프리팹 회전만 적용하면 된다.
@@ -362,6 +370,9 @@ public class InventoryManager : NetworkBehaviour
                     new Vector3((c & 1) == 0 ? -1f : 1f, (c & 2) == 0 ? -1f : 1f, (c & 4) == 0 ? -1f : 1f));
                 Vector3 p = toRoot.MultiplyPoint3x4(corner);
                 lowest = Mathf.Min(lowest, p.y);
+                highest = Mathf.Max(highest, p.y);
+                lowZ = Mathf.Min(lowZ, p.z);
+                highZ = Mathf.Max(highZ, p.z);
                 minZ = Mathf.Min(minZ, p.z);
                 maxZ = Mathf.Max(maxZ, p.z);
                 minX = Mathf.Min(minX, p.x);
@@ -369,13 +380,23 @@ public class InventoryManager : NetworkBehaviour
             }
         }
 
+        // 버려진 아이템은 NetworkItem.Spawned 가 가장 긴 변을 DropItemSize 로 맞춘다(프리팹이 12배 스케일인 캣닢 등).
+        // 자리 계산도 그 크기 기준이어야 한다. 프리팹 크기로 재면 수 m 앞·위에 놓인다.
+        float dropScale = 1f;
+
+        if (minX <= maxX)
+        {
+            float size = Mathf.Max(maxX - minX, Mathf.Max(highest - lowest, highZ - lowZ));
+            dropScale = size > 0.001f ? NetworkItem.DropItemSize / size : 1f;
+        }
+
         Footprint footprint = new Footprint
         {
-            BottomOffset = lowest < float.MaxValue ? -lowest : 0f,
-            BackExtent = -minZ,
-            FrontExtent = maxZ,
-            CenterX = minX <= maxX ? (minX + maxX) * 0.5f : 0f,
-            HalfWidth = minX <= maxX ? (maxX - minX) * 0.5f : 0f
+            BottomOffset = lowest < float.MaxValue ? -lowest * dropScale : 0f,
+            BackExtent = -minZ * dropScale,
+            FrontExtent = maxZ * dropScale,
+            CenterX = minX <= maxX ? (minX + maxX) * 0.5f * dropScale : 0f,
+            HalfWidth = minX <= maxX ? (maxX - minX) * 0.5f * dropScale : 0f
         };
 
         FootprintCache[prefabRoot] = footprint;

@@ -407,7 +407,7 @@ namespace Pawntom.TutorialBridge
             // 메인 대사는 Space·클릭으로 넘기고, 떠 있는 동안 이동·시점을 막는다.
             // 상황 대사(추격 경고·재촉 등)는 플레이 도중에 끼어들므로 막지 않고 저절로 넘긴다 — 쫓기는 중에 멈춰 세우면 그대로 잡힌다.
             TutorialBeat beat = _sequencer.CurrentBeat;
-            bool waitForConfirm = beat != null && beat.Kind == TutorialBeatKind.Main;
+            bool waitForConfirm = beat != null && (beat.Kind == TutorialBeatKind.Main || beat.WaitsForConfirm);
             _dialogue.Show(line, waitForConfirm);
             UpdateDialogueHold();
             _radio.SetMode(line.Speaker == TutorialSpeaker.Command
