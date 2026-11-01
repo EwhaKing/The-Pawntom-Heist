@@ -504,7 +504,7 @@ MonoBehaviour:
   minPitch: -20
   maxPitch: 20
   walkSpeed: 1
-  sprintSpeed: 2.25
+  sprintSpeed: 2.5
   jumpHeight: 0.9
   jumpRiseSeconds: 0.6
   deriveGravityFromJump: 1
