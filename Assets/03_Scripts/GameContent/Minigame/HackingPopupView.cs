@@ -47,7 +47,45 @@ namespace Hacking
         [Header("Container")]
         [SerializeField] private Transform gameContainer;
 
+        /// <summary>SignalDivide 키 하나의 상태별 그림. 배열 순서는 W, A, S, D 입니다.</summary>
+        [System.Serializable]
+        public class SignalKeySprites
+        {
+            public Sprite normal;
+            public Sprite dim;
+            public Sprite green;
+            public Sprite red;
+        }
+
+        [Header("Sprite Skin (선택)")]
+        [Tooltip("CommandOverride 전용 보드. 미니게임 종류에 따라 켜고 끕니다.")]
+        [SerializeField] private GameObject commandFrame;
+
+        [Tooltip("SignalDivide 전용 보드. 미니게임 종류에 따라 켜고 끕니다.")]
+        [SerializeField] private GameObject signalFrame;
+
+        [Tooltip("남은 시간을 원형으로 보여 주는 이미지(Image Type: Filled / Radial 360). 비워도 됩니다.")]
+        [SerializeField] private Image timerPieFill;
+
+        [Tooltip("SignalDivide 게이지 퍼센트 글자. 비워도 됩니다.")]
+        [SerializeField] private TextMeshProUGUI gaugeText;
+
+        [Tooltip("SignalDivide 키 버튼 그림. 순서: W, A, S, D. 비우면 키 글자 텍스트만 씁니다.")]
+        [SerializeField] private SignalKeySprites[] signalKeySprites;
+
+        [SerializeField, Min(0f)] private float keyFlashSeconds = 0.12f;
+        [SerializeField, Min(0f)] private float commandErrorFlashSeconds = 0.3f;
+
         private HackingGameBase currentGame;
+
+        private int lastAcceptedPressCount;
+        private int lastRejectedPressCount;
+        private KeyCode flashKey = KeyCode.None;
+        private bool flashIsError;
+        private float keyFlashUntil;
+
+        private int lastCommandMistakeCount;
+        private float commandErrorUntil;
         private System.Action<bool> onResultCallback;
 
         private KeyCode lastDisplayedFirstKey = KeyCode.None;
@@ -90,6 +128,7 @@ namespace Hacking
             UpdateGaugeUI();
             UpdateCommandSequenceUI();
             UpdateSignalDivideTextIfNeeded();
+            UpdateSignalKeyVisuals();
         }
 
         /// <summary>
@@ -155,6 +194,16 @@ namespace Hacking
             bool isCommandGame = currentGame is CommandOverrideGame;
             bool isSignalGame = currentGame is SignalDivideGame;
             bool isDigitalSyncGame = currentGame is DigitalSyncGame;
+
+            if (commandFrame != null)
+            {
+                commandFrame.SetActive(isCommandGame);
+            }
+
+            if (signalFrame != null)
+            {
+                signalFrame.SetActive(isSignalGame);
+            }
 
             if (commandSequenceGroup != null)
             {
@@ -255,7 +304,100 @@ namespace Hacking
             lastDisplayedFirstKey = signalGame.FirstSignalKey;
             lastDisplayedSecondKey = signalGame.SecondSignalKey;
 
+            ApplySignalKeySprite(signalButton0Button, signalGame.FirstSignalKey, signalGame);
+            ApplySignalKeySprite(signalButton1Button, signalGame.SecondSignalKey, signalGame);
+
             Debug.Log($"[HackingPopupView] Signal 버튼 텍스트 갱신: {firstKeyText} / {secondKeyText}");
+        }
+
+        /// <summary>
+        /// 키 입력 피드백을 감지해 키 버튼 그림을 갱신합니다.
+        /// 지금 막 눌러서 게이지를 올린 키는 잠깐 초록, 같은 키를 연달아 눌러 무시된 키는 잠깐 빨강,
+        /// 그 외에는 방금 누른 키를 흐리게(다음엔 반대쪽 키) 보여 줍니다.
+        /// </summary>
+        private void UpdateSignalKeyVisuals()
+        {
+            SignalDivideGame signalGame = currentGame as SignalDivideGame;
+
+            if (signalGame == null || signalKeySprites == null || signalKeySprites.Length == 0)
+            {
+                return;
+            }
+
+            if (signalGame.AcceptedPressCount != lastAcceptedPressCount)
+            {
+                lastAcceptedPressCount = signalGame.AcceptedPressCount;
+                flashKey = signalGame.LastPressedKey;
+                flashIsError = false;
+                keyFlashUntil = Time.unscaledTime + keyFlashSeconds;
+            }
+
+            if (signalGame.RejectedPressCount != lastRejectedPressCount)
+            {
+                lastRejectedPressCount = signalGame.RejectedPressCount;
+                flashKey = signalGame.LastRejectedKey;
+                flashIsError = true;
+                keyFlashUntil = Time.unscaledTime + keyFlashSeconds;
+            }
+
+            ApplySignalKeySprite(signalButton0Button, signalGame.FirstSignalKey, signalGame);
+            ApplySignalKeySprite(signalButton1Button, signalGame.SecondSignalKey, signalGame);
+        }
+
+        private void ApplySignalKeySprite(Button button, KeyCode key, SignalDivideGame signalGame)
+        {
+            if (button == null || signalKeySprites == null)
+            {
+                return;
+            }
+
+            int index = SignalKeyIndex(key);
+
+            if (index < 0 || index >= signalKeySprites.Length || signalKeySprites[index] == null)
+            {
+                return;
+            }
+
+            Image image = button.targetGraphic as Image;
+
+            if (image == null)
+            {
+                image = button.GetComponent<Image>();
+            }
+
+            if (image == null)
+            {
+                return;
+            }
+
+            SignalKeySprites sprites = signalKeySprites[index];
+            Sprite sprite = sprites.normal;
+
+            if (Time.unscaledTime < keyFlashUntil && flashKey == key)
+            {
+                sprite = flashIsError ? sprites.red : sprites.green;
+            }
+            else if (signalGame.LastPressedKey == key)
+            {
+                sprite = sprites.dim;
+            }
+
+            if (sprite != null && image.sprite != sprite)
+            {
+                image.sprite = sprite;
+            }
+        }
+
+        private static int SignalKeyIndex(KeyCode key)
+        {
+            switch (key)
+            {
+                case KeyCode.W: return 0;
+                case KeyCode.A: return 1;
+                case KeyCode.S: return 2;
+                case KeyCode.D: return 3;
+                default: return -1;
+            }
         }
 
         /// <summary>
@@ -292,9 +434,16 @@ namespace Hacking
                 timerText.text = Mathf.CeilToInt(currentTime).ToString();
             }
 
+            float ratio = maxTime > 0f ? currentTime / maxTime : 0f;
+
             if (timerSlider != null)
             {
-                timerSlider.value = maxTime > 0f ? currentTime / maxTime : 0f;
+                timerSlider.value = ratio;
+            }
+
+            if (timerPieFill != null)
+            {
+                timerPieFill.fillAmount = Mathf.Clamp01(ratio);
             }
         }
 
@@ -311,6 +460,11 @@ namespace Hacking
             if (currentGame is SignalDivideGame)
             {
                 gaugeSlider.value = currentGame.Progress;
+
+                if (gaugeText != null)
+                {
+                    gaugeText.text = Mathf.RoundToInt(currentGame.Progress * 100f) + "%";
+                }
             }
         }
 
@@ -331,6 +485,15 @@ namespace Hacking
                 return;
             }
 
+            // 순서를 틀리면 모든 칸을 잠깐 빨갛게 보여 준다.
+            if (commandGame.MistakeCount != lastCommandMistakeCount)
+            {
+                lastCommandMistakeCount = commandGame.MistakeCount;
+                commandErrorUntil = Time.unscaledTime + commandErrorFlashSeconds;
+            }
+
+            bool isError = Time.unscaledTime < commandErrorUntil;
+
             for (int i = 0; i < commandSlots.Length; i++)
             {
                 if (commandSlots[i] == null)
@@ -344,7 +507,7 @@ namespace Hacking
 
                 string arrow = isVisible ? commandGame.GetArrowAt(i) : string.Empty;
 
-                commandSlots[i].SetSlot(arrow, isVisible, isCompleted, isCurrent);
+                commandSlots[i].SetSlot(arrow, isVisible, isCompleted, isCurrent, isError);
             }
         }
 

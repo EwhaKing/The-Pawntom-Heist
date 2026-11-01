@@ -80,6 +80,7 @@ public class MainbaseControlUI : MonoBehaviour
     /// </summary>
     public void Open()
     {
+        if (PlayerData.IsLocalPlayerDead) return;
         if (root != null)
         {
             root.SetActive(true);

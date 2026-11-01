@@ -32,6 +32,15 @@ namespace Pawntom.Enemy.Core
         private readonly EnemyWanderCursor _wanderCursor;
 
         private EnemyState _state = EnemyState.Patrol;
+
+        // 연출용 조사 덮어쓰기(SetInvestigateOverride). 꺼져 있으면 설정값 그대로다.
+        private bool _hasInvestigateOverride;
+        private float _investigateSpeedScale = 1f;
+        private float _investigateWanderRadius;
+
+        // 덮어쓰기 중 간접 단서(털 흔적)를 무시한다. 시야·접촉은 그대로 반응한다.
+        private bool _ignoreTraces;
+        private float _overrideSpreadRadius;
         private Vector3 _target;
         private bool _hasTarget;
 
@@ -170,6 +179,65 @@ namespace Pawntom.Enemy.Core
             _safeZone = safeZone;
         }
 
+        /// <summary>
+        /// 연출이 조사(Investigate) 동작을 잠시 바꿔 쓴다 — 조사 속도 배율과 배회 반경.
+        /// <para>
+        /// 수치 설정(<see cref="EnemySettings"/>)은 건드리지 않고 두뇌 안에서만 덮어쓴다.
+        /// <paramref name="summonSpreadRadius"/> 는 소집 좌표를 흩는 반경(설정값이 크면 지정한 지점에서 멀리 흩어진다).
+        /// <paramref name="ignoreTraces"/> 가 켜지면 털 흔적 같은 간접 단서를 따라가지 않는다(시야·접촉 반응은 그대로).
+        /// 속도는 추격 속도를 넘지 않게 제한한다. <see cref="ClearInvestigateOverride"/> 로 원래대로 돌아간다.
+        /// 아무도 부르지 않으면 기존 동작과 완전히 같다.
+        /// </para>
+        /// </summary>
+        public void SetInvestigateOverride(float speedScale, float wanderRadius, float summonSpreadRadius, bool ignoreTraces)
+        {
+            _investigateSpeedScale = Mathf.Max(0.1f, speedScale);
+            _investigateWanderRadius = Mathf.Max(0f, wanderRadius);
+            _overrideSpreadRadius = Mathf.Max(0f, summonSpreadRadius);
+            _ignoreTraces = ignoreTraces;
+            _hasInvestigateOverride = true;
+        }
+
+        /// <summary>조사 덮어쓰기를 풀고 설정값으로 되돌린다.</summary>
+        public void ClearInvestigateOverride()
+        {
+            _hasInvestigateOverride = false;
+            _investigateSpeedScale = 1f;
+            _ignoreTraces = false;
+        }
+
+        /// <summary>
+        /// 적을 시작 상태로 되돌린다 — 조사 덮어쓰기를 풀고, 순찰 상태로, 경로의 0번 지점부터 다시 돈다.
+        /// 시야 잔상·경계 대기·밀린 소집도 지운다. 연출(사망 후 미션 되돌리기)에서만 부르며, 부르지 않으면 기존 동작과 같다.
+        /// 위치는 옮기지 않는다(옮기는 일은 호출하는 쪽의 몫).
+        /// </summary>
+        public void ResetToPatrolStart()
+        {
+            ClearInvestigateOverride();
+            _hasPendingSummon = false;
+            _alertTimer = 0f;
+            _noDetectionTimer = 0f;
+            _motor.Stop();
+            _patrol.Restart();
+            EnterPatrol();
+        }
+
+        private float InvestigateSpeedNow()
+        {
+            float speed = _settings.Movement.InvestigateSpeed;
+            if (!_hasInvestigateOverride)
+            {
+                return speed;
+            }
+
+            return Mathf.Max(speed, Mathf.Min(speed * _investigateSpeedScale, _settings.Movement.ChaseSpeed));
+        }
+
+        private float InvestigateWanderRadiusNow()
+        {
+            return _hasInvestigateOverride ? _investigateWanderRadius : _settings.Investigate.WanderRadius;
+        }
+
         public void SetPatrolRoute(IReadOnlyList<Vector3> waypoints, bool loop)
         {
             _patrol.SetRoute(waypoints, loop);
@@ -275,7 +343,7 @@ namespace Pawntom.Enemy.Core
             }
 
             // 전환 1: 간접 단서 → Investigate
-            if (_snapshot.HasTrace)
+            if (_snapshot.HasTrace && !_ignoreTraces)
             {
                 return EnterInvestigate(_snapshot.TracePosition);
             }
@@ -351,7 +419,7 @@ namespace Pawntom.Enemy.Core
             // 신규 흔적을 받으면 목표를 갱신하고 무감지 타이머를 되돌린다.
             // 같은 틱에 소집이 겹쳐도 감지가 이긴다 — 직접 본 것이 전해 들은 것보다 신뢰도가 높다.
             // 이때도 소집은 위에서 이미 소비했으므로 채널에 남지 않는다.
-            if (_snapshot.HasTrace)
+            if (_snapshot.HasTrace && !_ignoreTraces)
             {
                 Vector3 next = _snapshot.TracePosition;
                 _noDetectionTimer = 0f;
@@ -388,7 +456,7 @@ namespace Pawntom.Enemy.Core
         {
             _wanderCursor.SetAnchor(destination);
             SetTarget(destination);
-            _motor.MoveTo(destination, _settings.Movement.InvestigateSpeed);
+            _motor.MoveTo(destination, InvestigateSpeedNow());
         }
 
         /// <summary>
@@ -403,7 +471,8 @@ namespace Pawntom.Enemy.Core
         /// </summary>
         private Vector3 SpreadSummon(Vector3 summon)
         {
-            return _wanderCursor.Spread(summon, _settings.Alert.SummonSpreadRadius);
+            float spread = _hasInvestigateOverride ? _overrideSpreadRadius : _settings.Alert.SummonSpreadRadius;
+            return _wanderCursor.Spread(summon, spread);
         }
 
         /// <summary>
@@ -420,7 +489,7 @@ namespace Pawntom.Enemy.Core
                 deltaTime,
                 _motor.HasArrived,
                 _settings.Investigate.WanderIntervalSeconds,
-                _settings.Investigate.WanderRadius,
+                InvestigateWanderRadiusNow(),
                 out point);
 
             if (!picked)
@@ -429,7 +498,7 @@ namespace Pawntom.Enemy.Core
             }
 
             SetTarget(point);
-            _motor.MoveTo(point, _settings.Movement.InvestigateSpeed);
+            _motor.MoveTo(point, InvestigateSpeedNow());
         }
 
         // 경계 -----------------------------------------------------------
@@ -598,7 +667,7 @@ namespace Pawntom.Enemy.Core
             _noDetectionTimer = 0f;
             _wanderCursor.SetAnchor(target);
             SetTarget(target);
-            _motor.MoveTo(target, _settings.Movement.InvestigateSpeed);
+            _motor.MoveTo(target, InvestigateSpeedNow());
             return true;
         }
 

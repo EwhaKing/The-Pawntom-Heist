@@ -66,6 +66,7 @@ public class MarketUI : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (PlayerData.IsLocalPlayerDead) return;
         if (Input.GetKeyDown(KeyCode.B))
         {
             if (root != null && root.activeSelf)

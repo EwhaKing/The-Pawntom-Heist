@@ -14,6 +14,7 @@ using UnityEngine.Rendering;
 [DisallowMultipleComponent]
 public class PlayerAnimationView : MonoBehaviour
 {
+    public Transform ModelRoot => modelRoot;
     private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
     private static readonly int AirborneHash = Animator.StringToHash("Airborne");
 

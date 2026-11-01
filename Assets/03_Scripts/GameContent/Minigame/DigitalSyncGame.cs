@@ -134,7 +134,15 @@ namespace Hacking
 
             if (successZoneImage != null)
             {
-                successZoneImage.color = new Color(0.2f, 1f, 0.25f, 0.9f);
+                // 스프라이트 색(초록)을 그대로 쓴다. 이미지가 Radial Fill 링이면 판정 각도만큼만 보이게 하고,
+                // 위쪽에서 시계 방향으로 채워지는 구간이 성공 지점(위)을 가운데로 오도록 절반만큼 돌려 둔다.
+                successZoneImage.color = Color.white;
+
+                if (successZoneImage.type == Image.Type.Filled)
+                {
+                    successZoneImage.fillAmount = Mathf.Clamp01(successAngleRange / 360f);
+                    successZoneImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, successAngleRange * 0.5f);
+                }
             }
         }
 

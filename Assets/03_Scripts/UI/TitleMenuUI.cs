@@ -169,9 +169,12 @@ public class TitleMenuUI : MonoBehaviour
         }
     }
 
-    /// <summary>TUTORIAL 버튼(onClick 연결용).</summary>
+    /// <summary>TUTORIAL 버튼(onClick 연결용). 혼자 Host 로 접속해 튜토리얼 씬으로 간다.</summary>
     public void OnClickTutorial()
     {
-        DemoQuickStart.RequestStart();
+        if (GameManager.Instance != null)
+        {
+            _ = GameManager.Instance.StartTutorialAsync();
+        }
     }
 }

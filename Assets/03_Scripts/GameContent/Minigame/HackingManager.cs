@@ -160,6 +160,7 @@ namespace Hacking
         /// </summary>
         public void OpenHackingPopup(SecurityLevel level, System.Action<bool> resultCallback)
         {
+            if (PlayerData.IsLocalPlayerDead) return;
             Debug.Log($"[HackingManager] OpenHackingPopup 호출됨. Level={level}");
 
             if (IsHackingActive)
@@ -312,6 +313,7 @@ namespace Hacking
         /// </summary>
         private void OnHackingFinished(bool isSuccess)
         {
+            if (!IsHackingActive) return;
             Debug.Log($"[HackingManager] 해킹 결과: {(isSuccess ? "성공" : "실패")}");
 
             IsHackingActive = false;
@@ -328,6 +330,17 @@ namespace Hacking
         /// <summary>
         /// 테스트 중 팝업이 중간에 삭제되거나 상태가 꼬였을 때 강제로 초기화합니다.
         /// </summary>
+        public void CancelForPlayerDeath()
+        {
+            if (!IsHackingActive) return;
+            GameObject popup = currentPopupObj;
+            GameObject game = currentGameObj;
+            // 먼저 결과를 실패로 확정해 파괴 콜백의 중복 성공 처리를 막습니다.
+            OnHackingFinished(false);
+            if (popup != null) Destroy(popup);
+            if (game != null) Destroy(game);
+        }
+
         private void ForceResetHackingState()
         {
             IsHackingActive = false;

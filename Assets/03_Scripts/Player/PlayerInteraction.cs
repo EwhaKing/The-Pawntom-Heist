@@ -44,6 +44,7 @@ public class PlayerInteraction : NetworkBehaviour
     [Tooltip("상호작용 탐색에 포함할 레이어입니다.")]
     [SerializeField] private LayerMask interactLayerMask = ~0;
 
+    private PlayerData _playerData;
     private InventoryManager inventoryManager;
 
     /// <summary>
@@ -71,6 +72,7 @@ public class PlayerInteraction : NetworkBehaviour
     /// </summary>
     public override void Spawned()
     {
+        _playerData = GetComponent<PlayerData>();
         inventoryManager = GetComponent<InventoryManager>();
 
         if (inventoryManager == null)
@@ -85,7 +87,11 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
 
-        playerCamera = Camera.main;
+        // 씬의 CCTV/다른 MainCamera가 아니라 이 플레이어의 카메라를 사용합니다.
+        if (playerCamera == null)
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+        if (playerCamera == null)
+            playerCamera = GetComponentInChildren<Camera>(true);
 
         if (playerCamera == null)
         {
@@ -130,12 +136,105 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
 
+        UpdatePrompt();
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             Debug.Log("[PlayerInteraction] E키 입력 감지");
 
             TryInteract();
         }
+    }
+
+    // ==========================================
+    // 상호작용 안내 ("E | 이름")
+    // ==========================================
+
+    private const float PromptRefreshSeconds = 0.1f;
+    private float _nextPromptRefresh;
+    private string _promptName;
+
+    /// <summary>
+    /// 지금 겨누고 있는 상호작용 대상의 이름을 화면에 띄운다. 대상 판정은 E 를 눌렀을 때와 같은 규칙이다.
+    /// 판정(Raycast·SphereCast)은 0.1초마다 한 번만 하고, 결과는 매 프레임 안내 쪽에 다시 알려 준다.
+    /// </summary>
+    private void UpdatePrompt()
+    {
+        if (Time.unscaledTime >= _nextPromptRefresh)
+        {
+            _nextPromptRefresh = Time.unscaledTime + PromptRefreshSeconds;
+            _promptName = ResolvePromptName();
+        }
+
+        InteractPrompt.Show(_promptName);
+    }
+
+    private string ResolvePromptName()
+    {
+        // 죽은 동안에는 안내를 띄우지 않는다(E 도 막혀 있다).
+        if (_playerData != null && _playerData.IsDead)
+        {
+            return null;
+        }
+
+        // 씬의 다른 MainCamera 가 아니라 이 플레이어의 카메라를 쓴다(TryInteract 와 같은 복구 순서).
+        if (playerCamera == null)
+        {
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponentInChildren<Camera>(true);
+            }
+        }
+
+        if (playerCamera == null)
+        {
+            return null;
+        }
+
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        if (!TryFindInteractionHit(ray, out RaycastHit hit, false))
+        {
+            return null;
+        }
+
+        ControlMachine controlMachine = hit.collider.GetComponentInParent<ControlMachine>();
+
+        if (controlMachine != null)
+        {
+            return controlMachine.IsPlayerInRange(transform.position) ? controlMachine.InteractName : null;
+        }
+
+        EscapeButtonInteraction escapeButton = hit.collider.GetComponentInParent<EscapeButtonInteraction>();
+
+        if (escapeButton != null)
+        {
+            return escapeButton.InteractName;
+        }
+
+        ControllableWall wall = hit.collider.GetComponentInParent<ControllableWall>();
+
+        if (wall != null)
+        {
+            return hit.distance <= wallInteractDistance ? wall.FieldInteractName : null;
+        }
+
+        if (hit.collider.GetComponentInParent<NetworkItem>() == null)
+        {
+            return null;
+        }
+
+        NetworkItem item = FindAimedItem(ray);
+
+        if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+        {
+            return null;
+        }
+
+        ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(item.ItemId) : null;
+        return data != null && !string.IsNullOrEmpty(data.itemName) ? data.itemName : "아이템";
     }
 
     /// <summary>
@@ -149,7 +248,8 @@ public class PlayerInteraction : NetworkBehaviour
     /// </summary>
     private void TryInteract()
     {
-        if (!Object.HasInputAuthority)
+        if (Object == null || !Object.IsValid || !Object.HasInputAuthority ||
+            (_playerData != null && _playerData.IsDead))
         {
             return;
         }
@@ -157,7 +257,8 @@ public class PlayerInteraction : NetworkBehaviour
         // 카메라 참조 복구
         if (playerCamera == null)
         {
-            playerCamera = Camera.main;
+            playerCamera = GetComponent<PlayerController>()?.ViewCamera;
+            if (playerCamera == null) playerCamera = GetComponentInChildren<Camera>(true);
         }
 
         if (playerCamera == null)
@@ -213,6 +314,15 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (controlMachine != null)
         {
+            if (!controlMachine.IsPlayerInRange(transform.position))
+            {
+                Debug.Log(
+                    "[PlayerInteraction] 단말기 앞 상자 밖이라 상호작용할 수 없습니다."
+                );
+
+                return;
+            }
+
             Debug.Log(
                 "[PlayerInteraction] ControlMachine 감지 성공"
             );
@@ -327,38 +437,24 @@ public class PlayerInteraction : NetworkBehaviour
             $"[PlayerInteraction] NetworkItem 발견 ItemId={item.ItemId}"
         );
 
-        // 인벤토리에 아이템 추가
-        bool added = inventoryManager.TryAddItem(item.ItemId);
-
-        if (!added)
+        // 1인칭 팔 연출. 획득 판정은 호스트가 하지만, 월드 아이템이 사라지기 전(지금)에 손으로 끌어온다.
+        // 호스트가 거절하면 손에 든 모습은 인벤토리 슬롯 상태를 따라 다시 맞춰진다.
+        if (inventoryManager.HasEmptySlot())
         {
-            Debug.Log(
-                "[PlayerInteraction] 인벤토리에 아이템 추가 실패"
-            );
-
-            // 가방이 꽉 차도 손은 톡 건드린다
-            LocalInteracted?.Invoke(item.transform.position);
-            return;
-        }
-
-        Debug.Log(
-            $"[PlayerInteraction] 아이템 획득 성공 ItemId={item.ItemId}"
-        );
-
-        // 아이템이 사라지기 전에 알린다 — 팔 연출이 이 자리에서 손으로 끌어온다
-        LocalItemPickedUp?.Invoke(item.transform, item.ItemId);
-
-        // 기존 아이템 상태 변경 로직 유지
-        item.IsPickedUp = true;
-
-        // 월드 아이템 제거
-        if (Object.HasStateAuthority)
-        {
-            Runner.Despawn(item.Object);
+            LocalItemPickedUp?.Invoke(item.transform, item.ItemId);
         }
         else
         {
-            RPC_RequestDespawnItem(item.Object);
+            // 가방이 꽉 차도 손은 톡 건드린다
+            LocalInteracted?.Invoke(item.transform.position);
+        }
+
+        if (Object.HasStateAuthority)
+            TryPickupItem(item.Object);
+        else
+        {
+            Debug.Log($"[PlayerInteraction] 호스트에 획득 요청: {item.Object.name}, ItemId={item.ItemId}");
+            RPC_RequestPickupItem(item.Object);
         }
     }
 
@@ -490,7 +586,8 @@ public class PlayerInteraction : NetworkBehaviour
     /// </summary>
     private bool TryFindInteractionHit(
         Ray ray,
-        out RaycastHit selectedHit)
+        out RaycastHit selectedHit,
+        bool verbose = true)
     {
         selectedHit = default;
 
@@ -502,34 +599,83 @@ public class PlayerInteraction : NetworkBehaviour
             QueryTriggerInteraction.Collide
         );
 
-        if (TrySelectClosestHit(rayHits, out selectedHit))
+        bool hasDirectHit = TrySelectClosestHit(rayHits, out RaycastHit directHit);
+        if (hasDirectHit && IsInteractionCollider(directHit.collider))
         {
-            Debug.Log(
-                "[PlayerInteraction] Raycast로 대상 감지"
-            );
+            selectedHit = directHit;
+
+            if (verbose)
+            {
+                Debug.Log(
+                    "[PlayerInteraction] Raycast로 대상 감지"
+                );
+            }
 
             return true;
         }
 
-        // 2차: 작은 SphereCast로 보조 탐색
+        // 바닥/벽을 맞혔어도 그 앞의 작은 아이템을 보조 탐색합니다.
+        // 단, 벽 너머까지 탐색 거리를 늘리지는 않습니다.
+        float searchDistance = hasDirectHit ? Mathf.Min(interactDistance, directHit.distance) : interactDistance;
         RaycastHit[] sphereHits = Physics.SphereCastAll(
             ray,
             interactRadius,
-            interactDistance,
+            searchDistance,
             interactLayerMask,
             QueryTriggerInteraction.Collide
         );
 
-        if (TrySelectClosestHit(sphereHits, out selectedHit))
+        System.Array.Sort(sphereHits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (RaycastHit candidate in sphereHits)
         {
-            Debug.Log(
-                "[PlayerInteraction] SphereCast로 대상 감지"
-            );
+            if (candidate.collider == null || IsMyCollider(candidate.collider) ||
+                !IsInteractionCollider(candidate.collider) || !HasClearInteractionPath(ray.origin, candidate.collider))
+                continue;
+
+            selectedHit = candidate;
+
+            if (verbose)
+            {
+                Debug.Log(
+                    "[PlayerInteraction] SphereCast로 대상 감지"
+                );
+            }
 
             return true;
         }
 
+        // 진단용으로 원래 맞힌 바닥/벽은 유지합니다.
+        if (hasDirectHit)
+        {
+            selectedHit = directHit;
+            return true;
+        }
         return false;
+    }
+
+    private static bool IsInteractionCollider(Collider collider)
+    {
+        return collider.GetComponentInParent<NetworkItem>() != null ||
+            collider.GetComponentInParent<ControlMachine>() != null ||
+            collider.GetComponentInParent<EscapeButtonInteraction>() != null ||
+            collider.GetComponentInParent<ControllableWall>() != null;
+    }
+
+    private bool HasClearInteractionPath(Vector3 origin, Collider target)
+    {
+        Vector3 delta = target.ClosestPoint(origin) - origin;
+        if (delta.sqrMagnitude < 0.0001f) return true;
+        NetworkItem item = target.GetComponentInParent<NetworkItem>();
+        RaycastHit[] hits = Physics.RaycastAll(origin, delta.normalized, delta.magnitude,
+            interactLayerMask, QueryTriggerInteraction.Ignore);
+        foreach (RaycastHit hit in hits)
+        {
+            if (IsMyCollider(hit.collider) || hit.collider == target) continue;
+            // 같은 아이템의 다른 콜라이더는 장애물로 취급하지 않습니다.
+            if (item != null && hit.collider.GetComponentInParent<NetworkItem>() == item) continue;
+            return false;
+        }
+        return true;
     }
 
     /// <summary>
@@ -636,13 +782,67 @@ public class PlayerInteraction : NetworkBehaviour
     /// 실제 제거는 StateAuthority가 수행
     /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_RequestDespawnItem(NetworkObject itemObject)
+    private void RPC_RequestPickupItem(NetworkObject itemObject)
     {
-        if (itemObject == null)
+        TryPickupItem(itemObject);
+    }
+
+    private void TryPickupItem(NetworkObject itemObject)
+    {
+        if (!Object.HasStateAuthority) return;
+        if (_playerData == null || inventoryManager == null)
         {
+            RPC_PickupFeedback("획득 거절: 플레이어의 PlayerData 또는 InventoryManager가 없습니다.");
+            return;
+        }
+        if (_playerData.IsDead)
+        {
+            RPC_PickupFeedback("획득 거절: 호스트에서 이 플레이어를 사망 상태로 판정했습니다.");
+            return;
+        }
+        if (itemObject == null || !itemObject.IsValid || itemObject.Runner != Runner)
+        {
+            RPC_PickupFeedback("획득 거절: 호스트에서 요청한 네트워크 아이템을 찾을 수 없습니다.");
             return;
         }
 
+        NetworkItem item = itemObject.GetComponent<NetworkItem>();
+        if (item == null || item.IsPickedUp || !itemObject.HasStateAuthority)
+        {
+            RPC_PickupFeedback($"획득 거절: {itemObject.name}, NetworkItem={item != null}, 호스트 권한={itemObject.HasStateAuthority}, 선점됨={item != null && item.IsPickedUp}");
+            return;
+        }
+
+        // 클라이언트가 보낸 좌표/아이템 ID를 믿지 않고 호스트의 월드 상태로 검사합니다.
+        Vector3 origin = playerCamera != null ? playerCamera.transform.position : transform.position;
+        Collider itemCollider = itemObject.GetComponentInChildren<Collider>();
+        Vector3 closest = itemCollider != null ? itemCollider.ClosestPoint(origin) : itemObject.transform.position;
+        Vector3 delta = closest - origin;
+        if (delta.sqrMagnitude > (interactDistance + interactRadius) * (interactDistance + interactRadius))
+        {
+            RPC_PickupFeedback($"획득 거절: 거리 초과 ({delta.magnitude:F2}m / 허용 {interactDistance + interactRadius:F2}m)");
+            return;
+        }
+        if (itemCollider != null && !HasClearInteractionPath(origin, itemCollider))
+        {
+            RPC_PickupFeedback($"획득 거절: {itemObject.name} 앞에 장애물이 있습니다.");
+            return;
+        }
+
+        // 사망/빈 슬롯/다른 사람의 선점 여부를 호스트에서 한 번에 확인합니다.
+        if (!inventoryManager.TryAddItem(item.ItemId))
+        {
+            RPC_PickupFeedback("획득 거절: 인벤토리에 추가하지 못했습니다. 빈 슬롯과 아이템 등록을 확인하세요.");
+            return;
+        }
+        RPC_PickupFeedback($"획득 성공: {itemObject.name}, ItemId={item.ItemId}");
+        item.IsPickedUp = true;
         Runner.Despawn(itemObject);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    private void RPC_PickupFeedback(string message)
+    {
+        Debug.Log($"[PlayerInteraction] {message}");
     }
 }

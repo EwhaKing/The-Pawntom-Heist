@@ -8,6 +8,49 @@ namespace Pawntom.Tutorial.Tests
     {
         private const TutorialSpeaker Hq = TutorialSpeaker.Command;
 
+        [Test]
+        public void RestartStage_ReplaysFirstLineAndPreservesEarlierStageCompletion()
+        {
+            var sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.None, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.CorridorAEndReached, L("b")),
+                TutorialBeat.Main("c", 2, TutorialSignal.Jumped, L("c")));
+            sequencer.RestartStage(2);
+            Assert.AreEqual("b", sequencer.CurrentLine.Id);
+            Assert.AreEqual(TutorialBeatState.Done, sequencer.GetMainState("a"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("c"));
+            sequencer.Raise(TutorialSignal.Jumped);
+            Pump(sequencer);
+            sequencer.RestartStage(2);
+            Assert.AreEqual("b", sequencer.CurrentLine.Id);
+        }
+
+        [Test]
+        public void RestartStage_DiscardsQueuedSignalsAndOldHints()
+        {
+            var sequencer = Make(
+                TutorialBeat.Main("a", 2, TutorialSignal.None,
+                    L("a").WithHint("Jump", TutorialSignal.Jumped)),
+                TutorialBeat.Main("b", 2, TutorialSignal.Jumped, L("b")));
+            Pump(sequencer);
+            Assert.AreEqual(1, sequencer.Hints.Count);
+            sequencer.Raise(TutorialSignal.Jumped);
+            sequencer.RestartStage(2);
+            Assert.AreEqual(0, sequencer.Hints.Count);
+            Pump(sequencer);
+            Assert.IsNull(sequencer.CurrentLine);
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("b"));
+        }
+
+        [Test]
+        public void RestartStage_InvalidStageDoesNotChangeCurrentLine()
+        {
+            var sequencer = Make(TutorialBeat.Main("a", 1, TutorialSignal.None, L("a")));
+            sequencer.Tick(0f);
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => sequencer.RestartStage(99));
+            Assert.AreEqual("a", sequencer.CurrentLine.Id);
+        }
+
         private static TutorialLine L(string id)
         {
             return new TutorialLine(id, Hq, "대사 " + id);
@@ -45,6 +88,29 @@ namespace Pawntom.Tutorial.Tests
         }
 
         // ── 메인 진행 ──
+
+        [Test]
+        public void SkipMainsBefore_UnblocksLaterBeat_WhenEarlierNonSkippableBeatIsPending()
+        {
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("c", 7, TutorialSignal.CatnipAcquired, L("c")).AsAnchor());
+            List<string> started = RecordLines(sequencer);
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+
+            // b(추격)가 아직 안 열렸는데 c(캣닢)의 신호가 먼저 온다 — b 는 건너뛸 수 없어 c 를 막는다.
+            Signal(sequencer, TutorialSignal.CatnipAcquired);
+            Assert.AreEqual(new[] { "a" }, started.ToArray(), "사전 조건: 앞 비트가 줄을 막고 있다");
+
+            int skipped = sequencer.SkipMainsBefore("c");
+            Signal(sequencer, TutorialSignal.CatnipAcquired);
+
+            Assert.AreEqual(1, skipped);
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("b"));
+            Assert.AreEqual(new[] { "a", "c" }, started.ToArray());
+        }
 
         [Test]
         public void Tick_BeforeTrigger_StartsNoLine()

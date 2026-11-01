@@ -152,6 +152,9 @@ namespace Pawntom.Tutorial.Core
 
         public event Action<TutorialBeat> BeatSkipped;
 
+        /// <summary>메인 비트의 마지막 대사까지 끝났을 때. 사망 후 되돌아갈 지점을 잡는 데 쓴다.</summary>
+        public event Action<TutorialBeat> MainBeatCompleted;
+
         public event Action<TutorialHint> HintAdded;
 
         public event Action<TutorialHint, TutorialHintRemoval> HintRemoved;
@@ -289,6 +292,37 @@ namespace Pawntom.Tutorial.Core
             Advance();
         }
 
+        /// <summary>사망 재시도: 이전 단계는 유지하고 해당 단계의 첫 대사부터 다시 시작한다.</summary>
+        public void RestartStage(int stage)
+        {
+            int first = -1;
+            for (int i = 0; i < _script.Mains.Count; i++)
+                if (_script.Mains[i].Stage == stage) { first = i; break; }
+            if (first < 0) throw new ArgumentOutOfRangeException(nameof(stage));
+
+            for (int i = _hints.Count - 1; i >= 0; i--)
+                RemoveHintAt(i, TutorialHintRemoval.StageChanged);
+            _queue.Clear();
+            _hasCurrent = false;
+            _armedHint = null;
+            _recallLine = null;
+            _recallStage = 0;
+            _delayArmed = false;
+            _delayRemaining = 0f;
+            _finished = false;
+            Array.Clear(_incoming, 0, _incoming.Length);
+            Array.Clear(_stamp, 0, _stamp.Length);
+            Array.Clear(_sideQueued, 0, _sideQueued.Length);
+            Array.Clear(_sidePlayCount, 0, _sidePlayCount.Length);
+            Array.Clear(_sideLastPlayTime, 0, _sideLastPlayTime.Length);
+            _stampCounter = _validFrom = _lastMainStart = 0;
+            for (int i = 0; i < _mainStates.Length; i++)
+                _mainStates[i] = i < first ? TutorialBeatState.Done : TutorialBeatState.Pending;
+            _cursor = first;
+            StartMain(first);
+            Advance();
+        }
+
         /// <summary>
         /// 연출 쪽이 현재 대사의 출력과 머무름을 끝냈다. 다음 대사가 바로 이어지면 이 호출 안에서 <see cref="LineStarted"/>가 온다.
         /// </summary>
@@ -321,6 +355,7 @@ namespace Pawntom.Tutorial.Core
                     if (_mainStates[index] == TutorialBeatState.Playing)
                     {
                         _mainStates[index] = TutorialBeatState.Done;
+                        MainBeatCompleted?.Invoke(done.Owner);
                     }
                 }
                 else
@@ -347,6 +382,35 @@ namespace Pawntom.Tutorial.Core
         /// <summary>
         /// 디버그용 강제 진행. 대사가 떠 있으면 끝내고, 대기 중이면 대기를 끊고, 아무것도 없으면 다음 메인 비트를 트리거 없이 시작한다.
         /// </summary>
+        /// <summary>
+        /// 메인 비트 <paramref name="beatId"/> 보다 앞에서 아직 안 열린 메인 비트를 모두 건너뜀으로 돌린다.
+        /// 플레이어가 앞 단계(예: 3-4 경비견 추격)를 건너뛰고 뒤 단계(금고)로 먼저 가 버렸을 때,
+        /// 건너뛸 수 없는 앞 비트가 줄을 막아 뒤 대사가 안 나오는 것을 풀어 준다. 이미 시작·완료된 비트는 건드리지 않는다.
+        /// </summary>
+        /// <returns>건너뛴 비트 수.</returns>
+        public int SkipMainsBefore(string beatId)
+        {
+            int index = _script.IndexOfMain(beatId);
+
+            if (index < 0)
+            {
+                throw new ArgumentException("메인 비트가 아니다: " + beatId, nameof(beatId));
+            }
+
+            int skipped = 0;
+
+            for (int i = _cursor; i < index; i++)
+            {
+                if (_mainStates[i] == TutorialBeatState.Pending)
+                {
+                    Skip(i);
+                    skipped++;
+                }
+            }
+
+            return skipped;
+        }
+
         public void ForceAdvance()
         {
             if (_hasCurrent)

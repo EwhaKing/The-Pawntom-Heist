@@ -74,11 +74,23 @@ public class LobbyUI : MonoBehaviour
 
     private void RefreshUI(GameState state)
     {
+        if (state == GameState.Lobby || state == GameState.Ready)
+            GameplayInputBlocker.ResetForLobby();
         loadingPanel.SetActive(state == GameState.Loading);
         readyPanel.SetActive(state == GameState.Ready);
 
         RefreshButtons();
         RefreshConnectionNotice(state);
+    }
+
+    private void LateUpdate()
+    {
+        // 게임 UI의 종료 콜백이 같은 프레임에 커서를 다시 잠가도 로비에서는 클릭 상태를 유지합니다.
+        if (GameManager.Instance == null) return;
+        GameState state = GameManager.Instance.CurrentState;
+        if ((state == GameState.Lobby || state == GameState.Ready) &&
+            (Cursor.lockState != CursorLockMode.None || !Cursor.visible))
+            GameplayInputBlocker.ResetForLobby();
     }
 
     public void RefreshButtons()

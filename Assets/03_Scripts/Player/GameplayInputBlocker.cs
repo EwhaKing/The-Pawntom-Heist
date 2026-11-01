@@ -15,6 +15,14 @@ public static class GameplayInputBlocker
 {
     public static bool IsBlocked { get; private set; }
 
+    /// <summary>로비 진입 시 이전 플레이의 차단 상태를 지우되 커서는 UI 모드로 둡니다.</summary>
+    public static void ResetForLobby()
+    {
+        IsBlocked = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
     public static void SetBlocked(bool isBlocked)
     {
         IsBlocked = isBlocked;

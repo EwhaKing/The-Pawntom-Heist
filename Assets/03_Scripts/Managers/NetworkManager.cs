@@ -143,6 +143,19 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     /// </summary>
     public void LoadGameScene()
     {
+        LoadNetworkScene(SceneNames.Map);
+    }
+
+    /// <summary>
+    /// 튜토리얼 씬으로 이동시킵니다. 혼자 Host로 접속한 상태에서 부릅니다.
+    /// </summary>
+    public void LoadTutorialScene()
+    {
+        LoadNetworkScene(SceneNames.DemoTutorialMap);
+    }
+
+    private void LoadNetworkScene(string sceneName)
+    {
         if (_isStopping || _runner == null || !_runner.IsRunning)
         {
             Debug.LogError("[NetworkManager] 실행 중인 NetworkRunner가 없습니다.");
@@ -155,19 +168,19 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
             return;
         }
 
-        int mapSceneBuildIndex = SceneUtilityHelper.GetBuildIndex(SceneNames.Map);
+        int sceneBuildIndex = SceneUtilityHelper.GetBuildIndex(sceneName);
 
-        if (mapSceneBuildIndex < 0)
+        if (sceneBuildIndex < 0)
         {
-            Debug.LogError($"[NetworkManager] {SceneNames.Map} 씬이 Build Settings에 없습니다.");
+            Debug.LogError($"[NetworkManager] {sceneName} 씬이 Build Settings에 없습니다.");
             return;
         }
 
         CacheSelectedCatTypes();
 
-        SceneRef gameScene = SceneRef.FromIndex(mapSceneBuildIndex);
+        SceneRef gameScene = SceneRef.FromIndex(sceneBuildIndex);
 
-        Debug.Log($"[NetworkManager] 게임 씬 로드를 요청합니다. " + $"BuildIndex: {mapSceneBuildIndex}");
+        Debug.Log($"[NetworkManager] 씬 로드를 요청합니다. Scene: {sceneName}, BuildIndex: {sceneBuildIndex}");
         _runner.LoadScene(gameScene, LoadSceneMode.Single);
     }
 
@@ -204,10 +217,10 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
     }
 
     /// <summary>정상적인 방 나가기에도 같은 정리 경로를 사용합니다.</summary>
-    public Task LeaveSessionAsync()
+    public Task LeaveSessionAsync(string message = "방에서 나왔습니다.")
     {
         if (_runner == null && !_isStopping) return Task.CompletedTask;
-        return EndSessionAsync(_runner, "방에서 나왔습니다.");
+        return EndSessionAsync(_runner, message);
     }
 
     private Task EndSessionAsync(NetworkRunner runner, string message)
@@ -319,7 +332,8 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
             return;
         }
 
-        if (SceneUtilityHelper.IsActiveScene(SceneNames.Map) && runner.IsServer)
+        if ((SceneUtilityHelper.IsActiveScene(SceneNames.Map) ||
+             SceneUtilityHelper.IsActiveScene(SceneNames.DemoTutorialMap)) && runner.IsServer)
         {
             SpawnManager.Instance.DespawnPlayer(runner, player);
         }
@@ -388,6 +402,7 @@ public class NetworkManager : PawntomSingleton<NetworkManager>, INetworkRunnerCa
             //     break;
 
             case SceneNames.Map:
+            case SceneNames.DemoTutorialMap:
                 OnMapSceneLoaded(runner);
                 break;
 

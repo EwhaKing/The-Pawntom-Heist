@@ -18,15 +18,26 @@ public class HandBob : MonoBehaviour
     private Vector3 startPos;
     private Quaternion startRot;
     private float timer;
+    private PlayerData _playerData;
 
     void Start()
     {
+        _playerData = controller != null
+            ? controller.GetComponentInParent<PlayerData>()
+            : GetComponentInParent<PlayerData>();
         startPos = transform.localPosition;
         startRot = transform.localRotation;
     }
 
     void Update()
     {
+        // 사망하면 현재 자세에서 멈춥니다. 원위치 복귀 보간도 실행하지 않습니다.
+        if (_playerData != null && _playerData.Object != null &&
+            _playerData.Object.IsValid && _playerData.IsDead)
+            return;
+
+        if (controller == null) return;
+
         // 평면상의 현재 이동 속도를 구합니다.
         float speed = new Vector3(controller.velocity.x, 0, controller.velocity.z).magnitude;
 
