@@ -193,7 +193,7 @@ public class PlayerData : NetworkBehaviour
 
         if (Pawntom.TutorialBridge.TutorialDirector.Active != null &&
             (!_tutorialRetryProtection.ExpiredOrNotRunning(Runner) ||
-             Pawntom.TutorialBridge.TutorialInputLock.IsLocked)) return;
+             GameWorldPause.IsPaused)) return; // 대사·연출로 월드가 멈춘 동안만 보호. 분전반 캐스팅(입력만 잠금) 중에는 맞는다.
 
         CurrentHealth = Mathf.Max(0f, CurrentHealth - amount);
 

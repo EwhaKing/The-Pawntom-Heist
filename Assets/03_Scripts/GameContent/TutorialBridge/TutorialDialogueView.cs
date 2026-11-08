@@ -69,6 +69,8 @@ namespace Pawntom.TutorialBridge
         private float _swapRemaining;
         private bool _doneNotified;
         private bool _waitForConfirm;
+        // 대사가 뜬 뒤 Space·클릭을 한 번 뗐는가. 미니게임·점프에 쓴 Space 가 같은 프레임(또는 누른 채)에 새 대사를 넘기지 않게 한다.
+        private bool _confirmArmed;
 
         private float _nextGlitchAt;
         private float _glitchUntil;
@@ -213,6 +215,7 @@ namespace Pawntom.TutorialBridge
             _line = line;
             _doneNotified = false;
             _waitForConfirm = waitForConfirm;
+            _confirmArmed = false;
             _nextArrow.gameObject.SetActive(false);
             _typewriter.CharactersPerSecond = isCommand ? _commandCharactersPerSecond : _catCharactersPerSecond;
             _typewriter.Begin(line.Text);
@@ -362,8 +365,13 @@ namespace Pawntom.TutorialBridge
             AnimateBars();
             UpdateClickBlocking();
 
+            if (!_confirmArmed && !IsConfirmHeld())
+            {
+                _confirmArmed = true;
+            }
+
             // 한 프레임에 한 단계만: 출력 중이면 다 찍기, 다 찍힌 뒤면 다음 대사.
-            if (_waitForConfirm && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding) &&
+            if (_waitForConfirm && _confirmArmed && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding) &&
                 ConfirmPressedThisFrame())
             {
                 SkipTyping();

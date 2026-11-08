@@ -261,7 +261,12 @@ namespace Pawntom.TutorialBridge
 
             if (!success)
             {
-                onFailed.Invoke();
+                // 사망으로 취소된 경우는 실패 처리(경보 등)를 하지 않는다.
+                if (!Hacking.HackingManager.IsCancellingForPlayerDeath)
+                {
+                    onFailed.Invoke();
+                }
+
                 return;
             }
 

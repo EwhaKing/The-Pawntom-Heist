@@ -1074,6 +1074,12 @@ namespace Pawntom.TutorialBridge
         {
             _hackActive = false;
 
+            // 사망으로 취소된 해킹은 실패가 아니다. 실패 대사(4-·7-5)가 사망 화면 뒤에 끼어들지 않게 신호를 내지 않는다.
+            if (HackingManager.IsCancellingForPlayerDeath)
+            {
+                return;
+            }
+
             if (_hackIsVault)
             {
                 Emit(success ? TutorialSignal.VaultHackSucceeded : TutorialSignal.VaultHackFailed);
