@@ -66,8 +66,9 @@ namespace Pawntom.Tutorial.Tests
         }
 
         [Test]
-        public void Choose_ObstacleNotInScene_LooksAheadToCorridorEnd()
+        public void Choose_ObstacleNotInScene_DoesNotLookPastRequiredStep()
         {
+            // 2-9 장애물은 필수 단계라 건너뛰어 복도 끝(2-10)을 가리키지 않는다. 씬에 지점이 없으면 안내하지 않는다.
             TutorialSequencer sequencer = StartedDefault();
             Signal(sequencer, TutorialSignal.FirstFootprint);
             Signal(sequencer, TutorialSignal.LookedBack);
@@ -75,7 +76,7 @@ namespace Pawntom.Tutorial.Tests
 
             TutorialSignal chosen = TutorialGuidePlanner.Choose(sequencer, signal => signal != TutorialSignal.ObstacleAhead);
 
-            Assert.AreEqual(TutorialSignal.CorridorAEndReached, chosen);
+            Assert.AreEqual(TutorialSignal.None, chosen);
         }
 
         [Test]
@@ -86,7 +87,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] path =
             {
                 TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
-                TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.EnemyChasing
             };
 

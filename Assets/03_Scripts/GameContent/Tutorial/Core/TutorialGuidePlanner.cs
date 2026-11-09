@@ -8,7 +8,7 @@ namespace Pawntom.Tutorial.Core
     /// <list type="number">
     /// <item>걸려 있는 키 안내 문구(최신 우선)의 완료 조건 중 위치 신호 — 예: 3-4 "본부로 돌아갑시다" → 본부.</item>
     /// <item>다음 메인 비트의 트리거 중 위치 신호. 건너뛸 수 있는 비트면 시퀀서와 같은 규칙으로 뒤 비트까지 내다본다
-    ///       (다음 단계까지, 닻 비트는 예외) — 상자 앞(2-9) 지점이 씬에 없으면 복도 A 끝(2-10)을 가리킨다.</item>
+    ///       (다음 단계까지, 닻 비트는 예외). 필수 비트에서는 멈추므로, 플레이어가 앞질러 가도 아직 안 한 가장 이른 필수 단계를 가리킨다.</item>
     /// </list>
     /// 씬에서 위치를 알 수 없는 신호(<paramref name="canResolve"/> false)는 건너뛴다. 할당하지 않는다.
     /// </summary>
@@ -76,6 +76,12 @@ namespace Pawntom.Tutorial.Core
                 TutorialBeat beat = mains[j];
                 bool reachable = j == start || beat.Stage <= startStage + 1 || beat.IsAnchor;
                 bool requirementMet = beat.RequiresPlayed == null || WasPlayed(sequencer, beat.RequiresPlayed);
+
+                // 대신 나온 비트가 이미 재생돼 곧 건너뛸 비트는 안내하지 않고 넘어간다.
+                if (beat.SkippedIfPlayed != null && WasPlayed(sequencer, beat.SkippedIfPlayed))
+                {
+                    continue;
+                }
 
                 if (reachable && requirementMet && sequencer.GetMainState(beat.Id) == TutorialBeatState.Pending)
                 {

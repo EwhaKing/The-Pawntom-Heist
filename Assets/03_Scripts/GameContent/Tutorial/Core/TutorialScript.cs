@@ -121,6 +121,17 @@ namespace Pawntom.Tutorial.Core
                     }
                 }
 
+                if (beat.SkippedIfPlayed != null)
+                {
+                    int replacing = IndexOfMain(beat.SkippedIfPlayed);
+
+                    if (replacing < 0 || replacing >= i)
+                    {
+                        throw new ArgumentException(
+                            beat.Id + " 의 SkippedIfPlayed(" + beat.SkippedIfPlayed + ")는 앞선 메인 비트여야 한다");
+                    }
+                }
+
                 if (beat.VariantWhenSidePlayed != null)
                 {
                     TutorialBeat side;

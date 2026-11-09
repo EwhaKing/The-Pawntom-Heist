@@ -89,7 +89,7 @@ namespace Pawntom.Tutorial.Core
         public TutorialBeatKind Kind { get; }
 
         /// <summary>이 중 하나가 오면 재생. 메인에서 비어 있으면 즉시.</summary>
-        public TutorialSignal[] Triggers { get; }
+        public TutorialSignal[] Triggers { get; private set; }
 
         public TutorialLine[] Lines { get; }
 
@@ -100,10 +100,22 @@ namespace Pawntom.Tutorial.Core
         public bool Skippable { get; private set; }
 
         /// <summary>
+        /// 메인 전용. 평소에는 건너뛸 수 없지만, 이 신호 중 하나가 오면 그때부터 <see cref="Skippable"/>처럼 건너뛸 수 있다.
+        /// 예: 5-3 전리품 대사는 필수지만, 열쇠를 먼저 챙기면(KeyAcquired) 전리품 없이도 금고 쪽으로 넘어간다.
+        /// </summary>
+        public TutorialSignal[] SkipSignals { get; private set; } = new TutorialSignal[0];
+
+        /// <summary>
         /// 메인 전용. 이 메인 비트가 실제로 <b>재생</b>돼야만 열린다. 건너뛰어졌으면 이 비트도 건너뛴다.
         /// 예: 3-6 "본부 안까지는 들어오지 못합니다"는 3-4 추격이 있었을 때만 말이 된다.
         /// </summary>
         public string RequiresPlayed { get; private set; }
+
+        /// <summary>
+        /// 메인 전용. 이 메인 비트가 <b>재생</b>됐으면 이 비트는 건너뛴다(<see cref="RequiresPlayed"/>의 반대).
+        /// 예: 분전반을 먼저 열어 3-0 "이미 여셨군요"가 나왔으면 3-1 접속 안내·3-3 연결 대사는 필요 없다.
+        /// </summary>
+        public string SkippedIfPlayed { get; private set; }
 
         /// <summary>
         /// 메인 전용. 건너뛰기 탐색은 보통 다음 단계까지만 내다보지만, 닻 비트는 단계와 무관하게 건너뛰어 도달할 수 있다.
@@ -158,10 +170,50 @@ namespace Pawntom.Tutorial.Core
             return this;
         }
 
+        /// <summary>
+        /// 메인 전용. 트리거를 하나 더 붙인다(둘 중 하나가 오면 재생).
+        /// 앞 단계가 끝나기 전에 플레이어가 이미 해 버려서 원래 트리거가 다시 나지 않는 경우에 쓴다.
+        /// </summary>
+        public TutorialBeat OrTriggeredBy(TutorialSignal signal)
+        {
+            EnsureKind(TutorialBeatKind.Main, nameof(OrTriggeredBy));
+
+            if (signal == TutorialSignal.None)
+            {
+                throw new ArgumentException("추가 트리거가 비어 있다: " + Id, nameof(signal));
+            }
+
+            TutorialSignal[] triggers = new TutorialSignal[Triggers.Length + 1];
+            Array.Copy(Triggers, triggers, Triggers.Length);
+            triggers[Triggers.Length] = signal;
+            Triggers = triggers;
+            return this;
+        }
+
         public TutorialBeat RequiringPlayed(string mainBeatId)
         {
             EnsureKind(TutorialBeatKind.Main, nameof(RequiringPlayed));
             RequiresPlayed = mainBeatId;
+            return this;
+        }
+
+        public TutorialBeat SkippableOn(params TutorialSignal[] signals)
+        {
+            EnsureKind(TutorialBeatKind.Main, nameof(SkippableOn));
+
+            if (signals == null || signals.Length == 0)
+            {
+                throw new ArgumentException("건너뛰기 신호가 비어 있다: " + Id, nameof(signals));
+            }
+
+            SkipSignals = signals;
+            return this;
+        }
+
+        public TutorialBeat SkippingIfPlayed(string mainBeatId)
+        {
+            EnsureKind(TutorialBeatKind.Main, nameof(SkippingIfPlayed));
+            SkippedIfPlayed = mainBeatId;
             return this;
         }
 

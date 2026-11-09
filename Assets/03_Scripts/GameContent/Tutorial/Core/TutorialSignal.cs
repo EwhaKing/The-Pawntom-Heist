@@ -36,6 +36,7 @@ namespace Pawntom.Tutorial.Core
         SecurityNodeCastStarted,
         /// <summary>캐스팅 도중 K-9 접근 연출 지점. 사건형.</summary>
         SecurityNodeThreatCue,
+        /// <summary>분전반이 연결돼 있다. 상태형(연결된 동안 계속 보낸다).</summary>
         SecurityNodeConnected,
         EnemyChasing,
         StaminaBelow30,
