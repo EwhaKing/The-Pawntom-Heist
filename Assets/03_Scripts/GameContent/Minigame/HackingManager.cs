@@ -111,6 +111,12 @@ namespace Hacking
         public static event System.Action<SecurityLevel, bool> HackingFinished;
 
         /// <summary>
+        /// 플레이어 사망으로 해킹을 강제 종료하는 중이면 true. 이때 오는 실패 결과는 "해킹 실패"가 아니라 취소다.
+        /// 결과 콜백·HackingFinished 안에서 확인해 실패 연출(대사·경보 등)을 건너뛴다.
+        /// </summary>
+        public static bool IsCancellingForPlayerDeath { get; private set; }
+
+        /// <summary>
         /// 설정되어 있고 후보에 해당 종류가 있으면 그 미니게임을 고릅니다. 없으면 기존처럼 무작위입니다.
         /// 튜토리얼이 단계별 안내(방향키 / Space 타이밍)와 미니게임을 맞추기 위해 사용합니다.
         /// </summary>
@@ -336,7 +342,15 @@ namespace Hacking
             GameObject popup = currentPopupObj;
             GameObject game = currentGameObj;
             // 먼저 결과를 실패로 확정해 파괴 콜백의 중복 성공 처리를 막습니다.
-            OnHackingFinished(false);
+            IsCancellingForPlayerDeath = true;
+            try
+            {
+                OnHackingFinished(false);
+            }
+            finally
+            {
+                IsCancellingForPlayerDeath = false;
+            }
             if (popup != null) Destroy(popup);
             if (game != null) Destroy(game);
         }

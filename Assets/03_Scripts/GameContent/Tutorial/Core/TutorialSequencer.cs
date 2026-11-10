@@ -663,6 +663,14 @@ namespace Pawntom.Tutorial.Core
                     continue;
                 }
 
+                // 대신 나온 비트가 이미 재생됐다면(예: 3-0 "분전반을 이미 여셨군요") 이 비트는 필요 없다.
+                if (IsReplacedByPlayed(beat))
+                {
+                    Skip(_cursor);
+                    _cursor++;
+                    continue;
+                }
+
                 return;
             }
         }
@@ -686,6 +694,12 @@ namespace Pawntom.Tutorial.Core
 
                 bool reachable = j == _cursor || beat.Stage <= startStage + 1 || beat.IsAnchor;
 
+                // 곧 건너뛸 비트(대신 나온 비트가 이미 재생됨)는 시작하지 않고 막지도 않는다.
+                if (IsReplacedByPlayed(beat))
+                {
+                    continue;
+                }
+
                 if (_mainStates[j] == TutorialBeatState.Pending &&
                     reachable &&
                     (beat.RequiresPlayed == null || WasPlayed(beat.RequiresPlayed)) &&
@@ -695,9 +709,25 @@ namespace Pawntom.Tutorial.Core
                     return true;
                 }
 
-                if (!beat.Skippable)
+                if (!beat.Skippable && !IsSkipSignalRaised(beat))
                 {
                     return false;
+                }
+            }
+
+            return false;
+        }
+
+        // 평소엔 필수지만 건너뛰기 신호(SkippableOn)가 들어왔으면 이번에는 건너뛸 수 있다.
+        private bool IsSkipSignalRaised(TutorialBeat beat)
+        {
+            TutorialSignal[] signals = beat.SkipSignals;
+
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (_stamp[(int)signals[i]] > _validFrom)
+                {
+                    return true;
                 }
             }
 
@@ -836,6 +866,11 @@ namespace Pawntom.Tutorial.Core
         {
             TutorialBeatState state = _mainStates[_script.IndexOfMain(mainBeatId)];
             return state == TutorialBeatState.Playing || state == TutorialBeatState.Done;
+        }
+
+        private bool IsReplacedByPlayed(TutorialBeat beat)
+        {
+            return beat.SkippedIfPlayed != null && WasPlayed(beat.SkippedIfPlayed);
         }
 
         private void AddHint(TutorialHint hint)

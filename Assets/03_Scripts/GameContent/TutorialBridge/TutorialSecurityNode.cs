@@ -99,8 +99,15 @@ namespace Pawntom.TutorialBridge
             TutorialDirector director = TutorialDirector.Active;
             Transform player = director != null ? director.LocalPlayerTransform : null;
 
-            if (IsConnected || player == null)
+            if (player == null)
             {
+                return;
+            }
+
+            if (IsConnected)
+            {
+                // 연결된 동안 계속 알린다(상태형). 2단계를 마치기 전에 먼저 열어도, 순서가 3단계에 오면 3-0 이 열린다.
+                director.Raise(TutorialSignal.SecurityNodeConnected);
                 return;
             }
 

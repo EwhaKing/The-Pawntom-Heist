@@ -70,29 +70,35 @@ namespace Pawntom.Tutorial.Core
             beats.Add(TutorialBeat.Main("2-9", 2, TutorialSignal.ObstacleAhead,
                 // 안내는 상자 반대편(ObstacleCleared 영역)에 도착해야 사라진다 — 제자리 점프로는 지워지지 않는다.
                 L("2-9", Hq, "앞의 상자를 뛰어넘어 보십시오")
-                    .WithHint("[Space]키로 점프해봅시다", TutorialSignal.ObstacleCleared))
-                .AsSkippable());
+                    .WithHint("[Space]키로 점프해봅시다", TutorialSignal.ObstacleCleared)));
 
             beats.Add(TutorialBeat.Main("2-10", 2, TutorialSignal.CorridorAEndReached,
                 L("2-10", Hq, "신호가 잡혔습니다. 이 문은 이제 본부 단말기에서 열 수 있습니다"),
                 L("2-11", Cat, "지금은 닫혀 있는데요"),
-                L("2-12", Hq, "나중에 열겠습니다. 먼저 복도 B의 분전반부터 찾으십시오"))
-                .AsSkippable());
+                L("2-12", Hq, "나중에 열겠습니다. 먼저 복도 B의 분전반부터 찾으십시오")));
 
             // ───────────── 3단계 분전반 해금 및 첫 마주침 (복도 B, 본부) ─────────────
             // 3-1·3-3 은 건너뛸 수 없다 — 분전반 접속 없이 단말기(4단계)로 넘어가지 않는다.
             // (분전반이 씬에 없으면 여기서 멈춘다. 디버그 F10 으로 강제 진행할 수 있다.)
+            // 3-0: 2단계를 마치기 전에 분전반부터 열어 버린 경우. 3-1 접속 안내·3-3 연결 대사 대신 나온다.
+            // 평소에는 3-1(분전반 근처) 신호가 먼저 와서 건너뛰어진다.
+            beats.Add(TutorialBeat.Main("3-0", 3, TutorialSignal.SecurityNodeConnected,
+                L("3-0", Hq, "...분전반을 이미 여셨군요. 금고 쪽 구역도 벌써 잡혀 있습니다. 그렇다면 바로 본부로 돌아와 단말기 앞으로 가십시오"))
+                .AsSkippable());
+
             beats.Add(TutorialBeat.Main("3-1", 3, TutorialSignal.NearSecurityNode,
                 L("3-1", Hq, "저 상자가 분전반입니다. 연결하면 금고 쪽 구역이 이쪽에 잡힙니다. 하는 동안은 움직일 수 없으니 주변부터 살피십시오")
                     .WithHint("[{Interact}]키를 길게 눌러 분전반에 접속합시다",
-                        TutorialSignal.SecurityNodeCastStarted, TutorialSignal.SecurityNodeConnected)));
+                        TutorialSignal.SecurityNodeCastStarted, TutorialSignal.SecurityNodeConnected))
+                .SkippingIfPlayed("3-0"));
 
             beats.Add(TutorialBeat.Main("3-2", 3, TutorialSignal.SecurityNodeThreatCue,
                 L("3-2", Cat, "...뭔가 오는 소리가 나요"))
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("3-3", 3, TutorialSignal.SecurityNodeConnected,
-                L("3-3", Hq, "연결됐습니다. 금고 쪽 구역이 잡혔습니다. 그런데...")));
+                L("3-3", Hq, "연결됐습니다. 금고 쪽 구역이 잡혔습니다. 그런데..."))
+                .SkippingIfPlayed("3-0"));
 
             beats.Add(TutorialBeat.Main("3-4", 3, TutorialSignal.EnemyChasing,
                 L("3-4", Cat, "으앗, 진짜 쫓아와요!"),
@@ -123,12 +129,10 @@ namespace Pawntom.Tutorial.Core
                 L("4-4", Hq, "지금 보이는 것이 CCTV 화면입니다. 파란 점이 현재 위치, 붉은 점이 경비견입니다"),
                 L("4-5", Cat, "아직 입구 근처에 있네요"),
                 L("4-6", Hq, "경비견들이 돌아가기 전에 문을 하나 열어 두겠습니다. 격벽 탭에서 복도 A 끝의 붉은 문을 고르십시오. 제가 말씀드리기 전에는 다른 문을 건드리지 마십시오")
-                    .WithHint("[격벽] 탭에서 붉은 격벽을 클릭합시다", TutorialSignal.DoorHackStarted))
-                .AsSkippable());
+                    .WithHint("[격벽] 탭에서 붉은 격벽을 클릭합시다", TutorialSignal.DoorHackStarted)));
 
             beats.Add(TutorialBeat.Main("4-7", 4, TutorialSignal.DoorHackStarted,
-                L("4-7", Hq, "해킹 미니게임은 세 가지입니다. 방향키 순서 입력, 두 키 번갈아 누르기, 타이밍 맞추기. 그중 하나가 무작위로 걸리고 제한 시간이 있으니, 화면의 지시를 정확히 따르십시오"))
-                .AsSkippable());
+                L("4-7", Hq, "해킹 미니게임은 세 가지입니다. 방향키 순서 입력, 두 키 번갈아 누르기, 타이밍 맞추기. 그중 하나가 무작위로 걸리고 제한 시간이 있으니, 화면의 지시를 정확히 따르십시오")));
 
             // 4-8~4-10 [택1]: 해킹 시작 직후 수집기가 걸린 종류의 신호를 한 번 보낸다. 시도마다 걸린 종류에 맞는 안내가 나온다.
             beats.Add(TutorialBeat.Side("4-8", 4, TutorialSignal.DoorGameCommand, "4-7", "4-11",
@@ -170,8 +174,7 @@ namespace Pawntom.Tutorial.Core
             // 5-1 은 문이 열려 있을 때만 나온다(수집기가 열린 문 앞 = BlueDoorAhead, 닫힌 해금 문 앞 = BlueDoorClosedAhead 로 나눈다).
             beats.Add(TutorialBeat.Main("5-1", 5, TutorialSignal.BlueDoorAhead,
                 L("5-1", Hq, "열어 둔 푸른 문입니다. 경비견이 따라붙기 전에 바로 들어가십시오")
-                    .WithHint("[Shift]키로 달려 열린 문 안으로 들어갑시다", TutorialSignal.LootRoomEntered))
-                .AsSkippable());
+                    .WithHint("[Shift]키로 달려 열린 문 안으로 들어갑시다", TutorialSignal.LootRoomEntered)));
 
             beats.Add(TutorialBeat.Side("5-1b", 5, TutorialSignal.BlueDoorClosedAhead, "4-11", "5-2",
                     L("5-1b", Hq, "문이 닫혀 있습니다. 문 앞에서는 열 수 없으니, 본부 단말기로 돌아가 푸른 격벽을 더블클릭해서 여십시오")
@@ -180,14 +183,14 @@ namespace Pawntom.Tutorial.Core
 
             beats.Add(TutorialBeat.Main("5-2", 5, TutorialSignal.LootRoomEntered,
                 L("5-2", Hq, "전리품 창고입니다. 눈에 띄는 대로 주워 담으십시오")
-                    .WithHint("[{Interact}]키로 전리품을 주워봅시다", TutorialSignal.ItemLooted))
-                .AsSkippable());
+                    // 열쇠를 먼저 챙기면 전리품 없이 금고 쪽으로 넘어가므로 이 안내도 같이 내린다.
+                    .WithHint("[{Interact}]키로 전리품을 주워봅시다", TutorialSignal.ItemLooted, TutorialSignal.KeyAcquired)));
 
             beats.Add(TutorialBeat.Main("5-3", 5, TutorialSignal.ItemLooted,
                 L("5-3", Hq, "걸음이 느려진 게 느껴지십니까? 무게를 알려 주는 표시는 따로 없습니다. 몸이 느끼는 속도로 가방 상태를 판단하셔야 합니다"),
                 L("5-4", Cat, "몸이 바로 무거워지는 게 확 느껴지네요..."))
-                // 열쇠는 전리품으로 세지 않으므로, 전리품을 하나도 안 줍고 열쇠부터 챙겨도 이후 단계가 막히지 않게 한다.
-                .AsSkippable());
+                // 열쇠는 전리품으로 세지 않는다. 전리품을 하나도 안 줍고 열쇠부터 챙기면 5-3 은 건너뛰고 금고 쪽(5-7~)으로 간다.
+                .SkippableOn(TutorialSignal.KeyAcquired));
 
             beats.Add(TutorialBeat.Main("5-5", 5, TutorialSignal.InventoryThreeFilled,
                 L("5-5", Hq, "무거워진 만큼 이동 속도가 떨어집니다. 가방은 네 칸이 전부이고, 곧 챙기실 중요한 물건이 있으니 한 칸은 비워 두십시오. 필요 없는 물건은 즉시 버리십시오")
@@ -203,15 +206,14 @@ namespace Pawntom.Tutorial.Core
                 L("5-7", Cat, "방 한가운데 반짝이는 열쇠가 있어요!"),
                 L("5-8", Hq, "그게 바로 금고를 열 마스터 열쇠입니다. 반드시 챙기십시오")
                     .WithHint("[{Interact}]키로 열쇠를 획득합시다", TutorialSignal.KeyAcquired))
-                .AsSkippable());
+                // 열쇠를 먼저 주워 버리면 NearKey(줍기 전 근처)는 다시 안 나므로, 가진 상태로도 열리게 한다.
+                .OrTriggeredBy(TutorialSignal.KeyAcquired));
 
             beats.Add(TutorialBeat.Main("5-9", 5, TutorialSignal.KeyAcquired,
-                L("5-9", Hq, "열쇠는 금고 앞에서 한 번 쓰면 사라집니다. 버리거나 잃어버리면 금고를 열 수 없으니 가방에서 꼭 지키십시오"))
-                .AsSkippable());
+                L("5-9", Hq, "열쇠는 금고 앞에서 한 번 쓰면 사라집니다. 버리거나 잃어버리면 금고를 열 수 없으니 가방에서 꼭 지키십시오")));
 
             beats.Add(TutorialBeat.Main("5-10", 5, TutorialSignal.LootRoomExiting,
                 L("5-10", Hq, "열쇠를 챙겼으니 이제 금고 복도로 이동하십시오. 욕심 부려 짐을 많이 들수록 경비견을 피하기 어렵습니다"))
-                .AsSkippable()
                 .RequiringPlayed("5-9"));
 
             // ───────────── 6단계 적 NPC 순찰 안내 (금고 복도) ─────────────
@@ -220,8 +222,7 @@ namespace Pawntom.Tutorial.Core
                 L("6-2", Cat, "벽 뒤로 경비견들이 돌아다니는 게 보여요"),
                 L("6-3", Hq, "순찰 동선을 잘 살피십시오. 경비견들의 시선과 발자국 추적을 피해 타이밍을 맞춰 가야 합니다")
                     .WithPreDelay(3f),
-                L("6-4", Hq, "한 번 눈에 띄면 끝까지 쫓아옵니다. 틈이 보일 때 한 번에 지나가십시오. 쫓기면 본부로 피하십시오. 본부 안까지는 들어오지 못합니다"))
-                .AsSkippable());
+                L("6-4", Hq, "한 번 눈에 띄면 끝까지 쫓아옵니다. 틈이 보일 때 한 번에 지나가십시오. 쫓기면 본부로 피하십시오. 본부 안까지는 들어오지 못합니다")));
 
             beats.Add(TutorialBeat.Side("6-5", 6, TutorialSignal.EnemyChasing, "6-1", "7-8",
                 L("6-5", Hq, "들켰습니다! 짐이 무거워도 달리십시오!")
@@ -231,21 +232,18 @@ namespace Pawntom.Tutorial.Core
             // 금고 미니게임은 Space 타이밍(DigitalSync)으로 고정이다.
             beats.Add(TutorialBeat.Main("7-1", 7, TutorialSignal.VaultFront,
                 L("7-1", Hq, "금고 앞입니다. 금고를 바라본 채, 가방에서 아까 얻은 열쇠 칸을 골라 손에 들고 사용하십시오")
-                    .WithHint("[1~4]키로 열쇠 슬롯을 선택하고 금고를 본 채 [{Interact}]키로 사용", TutorialSignal.VaultUnlocked))
-                .AsSkippable());
+                    .WithHint("[1~4]키로 열쇠 슬롯을 선택하고 금고를 본 채 [{Interact}]키로 사용", TutorialSignal.VaultUnlocked)));
 
             // 열쇠는 잠금만 푼다. 해킹은 같은 키를 한 번 더 눌러야 시작하므로 그 안내를 7-2 에 붙인다.
             beats.Add(TutorialBeat.Main("7-2", 7, TutorialSignal.VaultUnlocked,
                 L("7-2", Hq, "열쇠가 맞았습니다. 이제 한 번 더 상호작용해서 금고 해킹을 시작하십시오. 놓치면 소리가 나서 순찰견이 눈치챌 수 있으니 주의하십시오")
                     .WithHint("[{Interact}]키로 금고 해킹을 시작합시다", TutorialSignal.VaultHackStarted),
-                L("7-3", Cat, "...숨 한 번 고르고 시작할게요"))
-                .AsSkippable());
+                L("7-3", Cat, "...숨 한 번 고르고 시작할게요")));
 
             beats.Add(TutorialBeat.Main("7-4", 7, TutorialSignal.VaultHackStarted,
                 L("7-4", Hq, "집중하십시오. 바늘이 색칠된 구간에 들어오는 순간에 눌러야 하고, 기회는 세 번뿐입니다")
                     .WithHint("[Space]키로 타이밍을 맞춰봅시다",
                         TutorialSignal.VaultHackSucceeded, TutorialSignal.VaultHackFailed))
-                .AsSkippable()
                 .AsAnchor());
 
             beats.Add(TutorialBeat.Side("7-5", 7, TutorialSignal.VaultHackFailed, "7-4", "7-8",
@@ -255,8 +253,7 @@ namespace Pawntom.Tutorial.Core
             // 금고가 부서지고 캣닢이 바닥에 생성되며 사이렌이 시작된다. 캣닢은 직접 주워야 한다.
             beats.Add(TutorialBeat.Main("7-6", 7, TutorialSignal.VaultHackSucceeded,
                 L("7-6", Hq, "금고가 열렸습니다! 안에서 캣닢이 나왔습니다. 어서 집으십시오")
-                    .WithHint("[{Interact}]키로 캣닢을 주워봅시다", TutorialSignal.CatnipAcquired))
-                .AsSkippable());
+                    .WithHint("[{Interact}]키로 캣닢을 주워봅시다", TutorialSignal.CatnipAcquired)));
 
             beats.Add(TutorialBeat.Side("7-7", 7, TutorialSignal.InventoryFullRejected, "7-6", "7-8",
                     L("7-7", Hq, "가방이 가득입니다! 필요 없는 것을 버려서 캣닢 자리를 만드십시오")

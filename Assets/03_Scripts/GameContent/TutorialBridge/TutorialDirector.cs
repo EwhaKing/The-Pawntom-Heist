@@ -121,8 +121,6 @@ namespace Pawntom.TutorialBridge
         private bool _stageResumedSent = true;
         private bool _deathShowingLastFrame;
 
-        private const string CatnipBeatId = "7-4";
-
         public TutorialSequencer Sequencer
         {
             get { return _sequencer; }
@@ -310,8 +308,6 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
-            // 금고 앞 신호(VaultFront)는 금고가 직접 보낸다. 앞 단계를 건너뛰고 온 경우를 여기서도 풀어 준다.
-            CatchUpToVaultBeat(signal);
             _sequencer.Raise(signal);
         }
 
@@ -495,49 +491,14 @@ namespace Pawntom.TutorialBridge
             }
         }
 
-        // 플레이어가 앞 단계를 건너뛰고 금고 단계로 먼저 와 버렸을 때, 건너뛸 수 없는 앞 비트가 줄을 막아
-        // 금고 대사(7-1·7-2·7-4)가 경비견이 올 때까지 안 나오는 것을 풀어 준다. 앞 비트는 건너뜀 처리한다.
-        private void CatchUpToVaultBeat(TutorialSignal signal)
-        {
-            string target;
-
-            switch (signal)
-            {
-                case TutorialSignal.VaultFront:
-                    target = "7-1";
-                    break;
-                case TutorialSignal.VaultHackStarted:
-                    target = "7-2";
-                    break;
-                case TutorialSignal.CatnipAcquired:
-                    target = CatnipBeatId;
-                    break;
-                default:
-                    return;
-            }
-
-            if (_sequencer.GetMainState(target) != TutorialBeatState.Pending)
-            {
-                return;
-            }
-
-            int skipped = _sequencer.SkipMainsBefore(target);
-
-            if (skipped > 0)
-            {
-                Debug.Log("[TutorialDirector] 금고 단계로 먼저 와서 앞 비트 " + skipped + "개를 건너뜁니다 (" + target + ")");
-            }
-        }
-
+        // 앞 단계를 건너뛰고 금고로 먼저 와도 앞 비트를 건너뜀 처리하지 않는다. 필수 비트는 순서대로 다 재생하고,
+        // 안내 상자(TutorialGuidePlanner)가 아직 안 한 가장 이른 단계로 데려간다.
         private void HandleProbeSignal(TutorialSignal signal)
         {
             if (signal == TutorialSignal.PlayerDied)
             {
                 LocalPlayerDied?.Invoke();
-                return;
             }
-
-            CatchUpToVaultBeat(signal);
         }
 
         // ───────────── 정산 ─────────────

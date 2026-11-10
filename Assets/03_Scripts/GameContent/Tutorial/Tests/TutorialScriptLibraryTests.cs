@@ -11,7 +11,7 @@ namespace Pawntom.Tutorial.Tests
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
             "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10", "2-11", "2-12",
-            "3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-8", "3-9",
+            "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-8", "3-9",
             "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-12", "4-13", "4-14",
             "5-1", "5-1b", "5-2", "5-3", "5-4", "5-5", "5-6", "5-6b", "5-7", "5-8", "5-9", "5-10",
             "6-1", "6-2", "6-3", "6-4", "6-5",
@@ -180,7 +180,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] untilHack =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackFailed, TutorialSignal.DoorHackSucceeded
             };
@@ -204,7 +204,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted
             };
@@ -300,7 +300,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] signals =
             {
                 TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead,
-                TutorialSignal.LootRoomEntered, TutorialSignal.NearKey
+                TutorialSignal.LootRoomEntered, TutorialSignal.ItemLooted, TutorialSignal.NearKey
             };
 
             foreach (TutorialSignal signal in signals)
@@ -335,10 +335,10 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened,
-                TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered, TutorialSignal.NearKey,
+                TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered, TutorialSignal.ItemLooted, TutorialSignal.NearKey,
                 TutorialSignal.KeyAcquired, TutorialSignal.LootRoomExiting, TutorialSignal.VaultCorridorEntered,
                 TutorialSignal.VaultFront
             };
@@ -425,7 +425,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal
             };
 
@@ -555,7 +555,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal[] signals =
             {
                 TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.CorridorAEndReached, TutorialSignal.NearTerminal
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearTerminal
             };
 
             foreach (TutorialSignal signal in signals)
@@ -565,6 +565,153 @@ namespace Pawntom.Tutorial.Tests
             }
 
             Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("4-1"));
+        }
+
+        [Test]
+        public void CreateDefault_RunAheadToSecurityNode_KeepsStageTwoAndGuidesBack()
+        {
+            // 2단계 장애물(2-9)·복도 끝(2-10)을 지나치지 않고 바로 분전반으로 뛰어도, 2-9·2-10 은 건너뛰지 않는다.
+            // 3-1 은 기다리고, 안내 상자는 아직 안 한 가장 이른 단계(2-9 장애물)를 가리킨다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
+                TutorialSignal.SprintStarted, TutorialSignal.NearSecurityNode
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("2-9"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("2-10"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("3-1"));
+            Assert.AreEqual(TutorialSignal.ObstacleAhead, TutorialGuidePlanner.Choose(sequencer, signal => true));
+
+            // 되돌아가서 순서대로 하면 2-9 → 2-10 → 3-1 이 모두 재생된다.
+            foreach (TutorialSignal signal in new[]
+                     { TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode })
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            int obstacle = started.IndexOf("2-9");
+            int corridor = started.IndexOf("2-10");
+            int node = started.IndexOf("3-1");
+            Assert.IsTrue(obstacle >= 0 && obstacle < corridor && corridor < node, string.Join(",", started));
+        }
+
+        [Test]
+        public void CreateDefault_NodeOpenedBeforeStageTwoDone_PlaysAlreadyOpenLineInstead()
+        {
+            // 2단계를 마치기 전에 분전반부터 열면, 2단계를 마친 뒤 3-0 "이미 여셨군요"가 나오고
+            // 3-1 접속 안내·3-3 연결 대사는 건너뛴 채 단말기(4-1)로 이어진다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
+                TutorialSignal.SprintStarted, TutorialSignal.NearSecurityNode, TutorialSignal.SecurityNodeConnected,
+                TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached,
+                TutorialSignal.SecurityNodeConnected, // 분전반은 연결된 동안 계속 알린다
+                TutorialSignal.NearTerminal
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            CollectionAssert.Contains(started, "3-0");
+            CollectionAssert.DoesNotContain(started, "3-1");
+            CollectionAssert.DoesNotContain(started, "3-3");
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("3-1"));
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("3-3"));
+            Assert.IsTrue(started.IndexOf("2-10") < started.IndexOf("3-0"), string.Join(",", started));
+            Assert.AreEqual(TutorialBeatState.Done, sequencer.GetMainState("4-1"));
+        }
+
+        [Test]
+        public void CreateDefault_KeyPickedBeforeKeyLine_StillPlaysKeyLines()
+        {
+            // 전리품 대사(5-3)가 나오기 전에 열쇠부터 주우면 5-3 은 건너뛰고, 열쇠 안내(5-7)와 설명(5-9)이 순서대로 나온다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+            TutorialSignal[] signals =
+            {
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
+                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached,
+                TutorialSignal.NearSecurityNode, TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal,
+                TutorialSignal.TerminalOpened, TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackSucceeded,
+                TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered,
+                TutorialSignal.KeyAcquired, TutorialSignal.ItemLooted, TutorialSignal.KeyAcquired
+            };
+
+            foreach (TutorialSignal signal in signals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+                Pump(sequencer, 3.5f);
+            }
+
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("5-3"));
+            int keyGuide = started.IndexOf("5-7");
+            int keyInfo = started.IndexOf("5-9");
+            Assert.IsTrue(keyGuide >= 0 && keyGuide < keyInfo, string.Join(",", started));
+        }
+
+        [Test]
+        public void CreateDefault_KeyOnlyWithoutLoot_SkipsLootLineAndGoesToVault()
+        {
+            // 전리품을 하나도 안 줍고 열쇠만 챙기면 5-3(전리품)은 건너뛰고 열쇠·금고 쪽(5-7~)으로 이어진다.
+            // 열쇠 근처에 가기만 해서는(NearKey) 5-3 을 건너뛰지 않는다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            foreach (TutorialSignal signal in new[]
+                     {
+                         TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead,
+                         TutorialSignal.LootRoomEntered, TutorialSignal.NearKey
+                     })
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("5-3"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("5-7"));
+
+            foreach (TutorialSignal signal in new[]
+                     {
+                         TutorialSignal.KeyAcquired, TutorialSignal.KeyAcquired, TutorialSignal.LootRoomExiting,
+                         TutorialSignal.VaultCorridorEntered, TutorialSignal.VaultFront
+                     })
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+                Pump(sequencer, 3.5f);
+            }
+
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("5-3"));
+            CollectionAssert.DoesNotContain(started, "5-3");
+
+            foreach (string id in new[] { "5-7", "5-9", "5-10", "6-1", "7-1" })
+            {
+                Assert.AreEqual(TutorialBeatState.Done, sequencer.GetMainState(id), id);
+            }
+
+            for (int i = 0; i < sequencer.Hints.Count; i++)
+            {
+                Assert.AreNotEqual("5-2", sequencer.Hints[i].Line.Id, "전리품 안내가 남아 있으면 안 된다");
+            }
         }
     }
 }
