@@ -163,6 +163,19 @@ namespace Pawntom.Tutorial.Core
 
         public TutorialLine[] VariantLines { get; private set; }
 
+        /// <summary>
+        /// 곁가지도 메인 대사처럼 Space·클릭으로 넘기고, 떠 있는 동안 플레이어와 해킹 미니게임을 멈춘다.
+        /// 곁가지는 보통 플레이 도중 저절로 넘어가지만, 해킹 종류별 설명은 다 읽은 뒤에 조작을 시작해야 한다.
+        /// </summary>
+        public bool WaitsForConfirm { get; private set; }
+
+        public TutorialBeat WithConfirm()
+        {
+            EnsureKind(TutorialBeatKind.Side, nameof(WithConfirm));
+            WaitsForConfirm = true;
+            return this;
+        }
+
         public TutorialBeat AsSkippable()
         {
             EnsureKind(TutorialBeatKind.Main, nameof(AsSkippable));

@@ -56,6 +56,20 @@ public class MainbaseZone : MonoBehaviour
         }
     }
 
+    /// <summary>월드 좌표가 본부 박스 안인지(회전·스케일 반영).</summary>
+    public bool ContainsPoint(Vector3 worldPoint)
+    {
+        if (zoneCollider == null)
+        {
+            return false;
+        }
+
+        Vector3 local = zoneCollider.transform.InverseTransformPoint(worldPoint) - zoneCollider.center;
+        Vector3 half = zoneCollider.size * 0.5f;
+
+        return Mathf.Abs(local.x) <= half.x && Mathf.Abs(local.y) <= half.y && Mathf.Abs(local.z) <= half.z;
+    }
+
     /// <summary>
     /// 본부 안에 살아있는 플레이어가 최소 1명 이상 있는지 확인
     /// 

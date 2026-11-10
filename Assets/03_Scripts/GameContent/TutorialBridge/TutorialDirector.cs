@@ -403,7 +403,7 @@ namespace Pawntom.TutorialBridge
             // 메인 대사는 Space·클릭으로 넘기고, 떠 있는 동안 이동·시점을 막는다.
             // 상황 대사(추격 경고·재촉 등)는 플레이 도중에 끼어들므로 막지 않고 저절로 넘긴다 — 쫓기는 중에 멈춰 세우면 그대로 잡힌다.
             TutorialBeat beat = _sequencer.CurrentBeat;
-            bool waitForConfirm = beat != null && beat.Kind == TutorialBeatKind.Main;
+            bool waitForConfirm = beat != null && (beat.Kind == TutorialBeatKind.Main || beat.WaitsForConfirm);
             _dialogue.Show(line, waitForConfirm);
             UpdateDialogueHold();
             _radio.SetMode(line.Speaker == TutorialSpeaker.Command
@@ -479,6 +479,14 @@ namespace Pawntom.TutorialBridge
             // 출발 버튼으로 정식 결과 상태가 되면 그 시점에 정산을 띄운다(7-10 경로보다 먼저 올 수 있다).
             if (next == GameState.Result)
             {
+                // 출발 버튼을 누른 순간 사이렌과 붉은 화면을 끈다(서서히 잦아든다).
+                TutorialCatnipAlarm alarm = FindFirstObjectByType<TutorialCatnipAlarm>();
+
+                if (alarm != null && alarm.IsRunning)
+                {
+                    alarm.Stop();
+                }
+
                 StartCoroutine(OpenSettlement(0.3f));
             }
         }
@@ -534,30 +542,92 @@ namespace Pawntom.TutorialBridge
 
         private List<TutorialSettlementView.Entry> BuildSettlementEntries()
         {
-            List<TutorialSettlementView.Entry> entries = new List<TutorialSettlementView.Entry>(InventoryManager.MaxSlotCount);
+            // 가방에 든 것 + 본부 안 바닥에 내려둔 것. 같은 아이템은 "이름 ×N" 한 줄로 묶는다(정산 창은 4줄까지).
+            List<int> itemIds = new List<int>(8);
             InventoryManager inventory = _probe.LocalInventory;
 
-            if (inventory == null || inventory.Object == null || !inventory.Object.IsValid)
+            if (inventory != null && inventory.Object != null && inventory.Object.IsValid)
             {
-                return entries;
+                for (int i = 0; i < InventoryManager.MaxSlotCount; i++)
+                {
+                    int itemId = inventory.Slots[i];
+
+                    if (itemId != InventoryManager.EmptySlot)
+                    {
+                        itemIds.Add(itemId);
+                    }
+                }
             }
 
-            for (int i = 0; i < InventoryManager.MaxSlotCount; i++)
-            {
-                int itemId = inventory.Slots[i];
+            MainbaseZone[] bases = FindObjectsByType<MainbaseZone>(FindObjectsSortMode.None);
 
-                if (itemId == InventoryManager.EmptySlot)
+            if (bases.Length > 0)
+            {
+                foreach (NetworkItem item in FindObjectsByType<NetworkItem>(FindObjectsSortMode.None))
                 {
+                    if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp)
+                    {
+                        continue;
+                    }
+
+                    for (int b = 0; b < bases.Length; b++)
+                    {
+                        if (bases[b].ContainsPoint(item.transform.position))
+                        {
+                            itemIds.Add(item.ItemId);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const int MaxRows = 4;
+            List<int> order = new List<int>(8);
+            Dictionary<int, int> counts = new Dictionary<int, int>(8);
+
+            foreach (int itemId in itemIds)
+            {
+                if (counts.ContainsKey(itemId))
+                {
+                    counts[itemId]++;
+                }
+                else
+                {
+                    counts[itemId] = 1;
+                    order.Add(itemId);
+                }
+            }
+
+            List<TutorialSettlementView.Entry> entries = new List<TutorialSettlementView.Entry>(MaxRows);
+            int restCount = 0;
+            int restValue = 0;
+
+            for (int i = 0; i < order.Count; i++)
+            {
+                int itemId = order[i];
+                int count = counts[itemId];
+                ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
+                string itemName = data != null && !string.IsNullOrEmpty(data.itemName) ? data.itemName : "아이템 #" + itemId;
+                int value = (data != null ? data.sellPrice : 0) * count;
+
+                // 마지막 줄은 남은 종류를 합쳐 "그 외"로 보여 합계가 빠지지 않게 한다.
+                if (i >= MaxRows - 1 && order.Count > MaxRows)
+                {
+                    restCount += count;
+                    restValue += value;
                     continue;
                 }
 
-                ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
-
                 entries.Add(new TutorialSettlementView.Entry
                 {
-                    Name = data != null && !string.IsNullOrEmpty(data.itemName) ? data.itemName : "아이템 #" + itemId,
-                    Value = data != null ? data.sellPrice : 0
+                    Name = count > 1 ? itemName + " ×" + count : itemName,
+                    Value = value
                 });
+            }
+
+            if (restCount > 0)
+            {
+                entries.Add(new TutorialSettlementView.Entry { Name = "그 외 " + restCount + "개", Value = restValue });
             }
 
             return entries;

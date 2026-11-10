@@ -503,8 +503,8 @@ MonoBehaviour:
   lookSensitivity: 0.2
   minPitch: -20
   maxPitch: 20
-  walkSpeed: 1
-  sprintSpeed: 2.5
+  walkSpeed: 1.3
+  sprintSpeed: 3.2
   jumpHeight: 0.9
   jumpRiseSeconds: 0.6
   deriveGravityFromJump: 1

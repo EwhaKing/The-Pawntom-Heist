@@ -63811,9 +63811,9 @@ MonoBehaviour:
   gatherPoint: {fileID: 1039955970}
   roomFloor: {fileID: 2079977639}
   doorArriveRadius: 9
-  gatherDelaySeconds: 2
+  gatherDelaySeconds: 6
   resendSeconds: 3
-  gatherSpeedMultiplier: 1.8
+  gatherSpeedMultiplier: 1.2
   gatherWanderRadius: 2.5
   spreadAroundPoint: 2.5
   searchSeconds: 5
