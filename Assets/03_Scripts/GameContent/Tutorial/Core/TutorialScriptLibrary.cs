@@ -48,23 +48,24 @@ namespace Pawntom.Tutorial.Core
                 L("2-1", Hq, "먼저 걸어 보십시오. 고양이시니 어렵지 않으실 겁니다")
                     .WithHint("[WASD]로 이동하고 [마우스]로 둘러봅시다", TutorialSignal.MovedAndLooked)));
 
+            // 순서: 달리기(2-2) → 뒤를 돌아보기(2-3) → 발자국 설명(2-4~2-7). 달린 뒤에 돌아봐야 커진 발자국이 보인다.
             beats.Add(TutorialBeat.Main("2-2", 2, TutorialSignal.FirstFootprint,
-                L("2-2", Hq, "뒤를 돌아보십시오. 지나온 자리에 무엇이 남았습니까?")
+                L("2-2", Hq, "이번에는 달려 보십시오")
+                    .WithHint("[Shift]키를 누르고 달려봅시다", TutorialSignal.SprintStarted)));
+
+            beats.Add(TutorialBeat.Main("2-3", 2, TutorialSignal.SprintStarted,
+                L("2-3", Hq, "뒤를 돌아보십시오. 지나온 자리에 무엇이 남았습니까?")
                     .WithHint("[마우스]로 뒤를 돌아봅시다", TutorialSignal.LookedBack)));
 
-            beats.Add(TutorialBeat.Main("2-3", 2, TutorialSignal.LookedBack,
-                L("2-3", Cat, "발자국이네요"),
-                L("2-4", Hq, "경비견은 저것을 따라옵니다. 저도 저것 때문에 한 번 크게 당했습니다"),
-                L("2-5", Cat, "...지휘부도 현장에 계셨던 거예요?"),
-                L("2-6", Hq, "그건 나중에 말씀드리지요. 지금은 달리는 법을 배우실 차례입니다")
-                    .WithHint("[Shift]키를 누르고 달려봅시다", TutorialSignal.SprintStarted))
+            beats.Add(TutorialBeat.Main("2-4", 2, TutorialSignal.LookedBack,
+                L("2-4", Cat, "발자국이네요. 걸을 때보다 커졌어요"),
+                L("2-5", Hq, "달릴수록 더 눈에 띕니다. 경비견은 저것을 따라옵니다. 저도 저것 때문에 한 번 크게 당했습니다"),
+                L("2-6", Cat, "...지휘부도 현장에 계셨던 거예요?"),
+                L("2-7", Hq, "그건 나중에 말씀드리지요. 달리면 숨이 차오르니 스태미나 바도 살피십시오")
+                    .WithTimedHint("[스태미나 바]를 확인합시다", 5f, TutorialSignal.StaminaBelowHalf))
                 .WithFreshTrigger());
 
-            beats.Add(TutorialBeat.Main("2-7", 2, TutorialSignal.SprintStarted,
-                L("2-7", Hq, "발자국이 커졌지요. 달릴수록 더 눈에 띕니다. 숨도 차오르고요")
-                    .WithTimedHint("[스태미나 바]를 확인합시다", 5f, TutorialSignal.StaminaBelowHalf)));
-
-            beats.Add(TutorialBeat.Side("2-8", 2, TutorialSignal.StaminaBelowHalf, "2-7", "3-1",
+            beats.Add(TutorialBeat.Side("2-8", 2, TutorialSignal.StaminaBelowHalf, "2-4", "3-1",
                 L("2-8", Hq, "숨이 차면 쉬십시오. 바닥나면 한동안 달리지도, 뛰지도 못합니다")));
 
             beats.Add(TutorialBeat.Main("2-9", 2, TutorialSignal.ObstacleAhead,
@@ -73,11 +74,11 @@ namespace Pawntom.Tutorial.Core
                     .WithHint("[Space]키로 점프해봅시다", TutorialSignal.ObstacleCleared)));
 
             beats.Add(TutorialBeat.Main("2-10", 2, TutorialSignal.CorridorAEndReached,
-                L("2-10", Hq, "신호가 잡혔습니다. 이 문은 이제 본부 단말기에서 열 수 있습니다"),
+                L("2-10", Hq, "복도 끝의 이 격벽이 열쇠가 있는 창고로 통하는 문입니다. 본부 단말기로 열 수 있지만, 지금은 보안망이 끊겨 있습니다"),
                 L("2-11", Cat, "지금은 닫혀 있는데요"),
-                L("2-12", Hq, "나중에 열겠습니다. 먼저 복도 B의 분전반부터 찾으십시오")));
+                L("2-12", Hq, "맞습니다. 그래서 먼저 보안망을 이어야 합니다. 이 벽에 붙은 분전반부터 찾으십시오")));
 
-            // ───────────── 3단계 분전반 해금 및 첫 마주침 (복도 B, 본부) ─────────────
+            // ───────────── 3단계 분전반 해금 및 첫 마주침 (복도 A 끝 열쇠방 격벽 옆, 본부) ─────────────
             // 3-1·3-3 은 건너뛸 수 없다 — 분전반 접속 없이 단말기(4단계)로 넘어가지 않는다.
             // (분전반이 씬에 없으면 여기서 멈춘다. 디버그 F10 으로 강제 진행할 수 있다.)
             // 3-0: 2단계를 마치기 전에 분전반부터 열어 버린 경우. 3-1 접속 안내·3-3 연결 대사 대신 나온다.
@@ -87,7 +88,7 @@ namespace Pawntom.Tutorial.Core
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("3-1", 3, TutorialSignal.NearSecurityNode,
-                L("3-1", Hq, "저 상자가 분전반입니다. 연결하면 금고 쪽 구역이 이쪽에 잡힙니다. 하는 동안은 움직일 수 없으니 주변부터 살피십시오")
+                L("3-1", Hq, "저 상자가 분전반입니다. 연결하면 보안망이 이어져 금고 쪽 구역도 잡힙니다. 하는 동안은 움직일 수 없으니 주변부터 살피십시오")
                     .WithHint("[{Interact}]키를 길게 눌러 분전반에 접속합시다",
                         TutorialSignal.SecurityNodeCastStarted, TutorialSignal.SecurityNodeConnected))
                 .SkippingIfPlayed("3-0"));
@@ -97,29 +98,25 @@ namespace Pawntom.Tutorial.Core
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("3-3", 3, TutorialSignal.SecurityNodeConnected,
-                L("3-3", Hq, "연결됐습니다. 금고 쪽 구역이 잡혔습니다. 그런데..."))
+                L("3-3", Hq, "연결됐습니다. 보안망이 이어졌습니다"),
+                L("3-9", Hq, "이제 본부로 돌아와 단말기 앞으로 가십시오"))
                 .SkippingIfPlayed("3-0"));
 
-            beats.Add(TutorialBeat.Main("3-4", 3, TutorialSignal.EnemyChasing,
-                L("3-4", Cat, "으앗, 진짜 쫓아와요!"),
-                L("3-5", Hq, "경비견입니다! 발자국을 따라왔습니다. 한 마리가 짖으면 나머지도 몰려옵니다. 본부로 돌아오십시오, 지금 당장")
-                    .WithHint("[Shift]키로 달려 본부로 돌아갑시다", TutorialSignal.PlayerInMainbase))
-                .AsSkippable());
+            // 첫 추격 대사(3-4~3-8)는 진행 순서에 묶지 않는다. 어느 장소에서든 처음 쫓겼다가 따돌렸을 때(ChaseEscaped) 한 번만 나온다.
+            // 금고 캣닢 경보(7-8) 이후의 긴급 탈출은 이 대사의 대상이 아니라 그 전에 닫는다.
+            beats.Add(TutorialBeat.Side("3-4", 3, TutorialSignal.ChaseEscaped, "2-1", "7-8",
+                L("3-4", Cat, "으아... 겨우 따돌렸어요. 진짜 발자국만 보고 쫓아오네요"),
+                L("3-5", Hq, "경비견입니다. 발자국을 따라오고, 한 마리가 짖으면 나머지도 몰려옵니다"),
+                L("3-7", Hq, "본부 안까지는 들어오지 못하니, 쫓기면 그리로 피하십시오"),
+                L("3-8", Cat, "생각보다 위험하네요. 조심할게요")));
 
-            beats.Add(TutorialBeat.Side("3-6", 3, TutorialSignal.StaminaBelow30, "3-4", "4-1",
+            beats.Add(TutorialBeat.Side("3-6", 3, TutorialSignal.StaminaBelow30, "2-1", "4-1",
                 L("3-6", Hq, "숨 관리하십시오! 바닥나면 끝입니다")
                     .WithTimedHint("[스태미나 바]를 확인합시다", 4f)));
 
-            beats.Add(TutorialBeat.Main("3-7", 3, TutorialSignal.SafeInMainbase,
-                L("3-7", Hq, "본부 안까지는 들어오지 못합니다. 숨을 돌리십시오"),
-                L("3-8", Cat, "와, 진짜 발자국만 보고 쫓아오네. 생각보다 위험한데요"),
-                L("3-9", Hq, "이제 아셨지요? 다음은 본부입니다. 단말기 앞으로 가십시오"))
-                .AsSkippable()
-                .RequiringPlayed("3-4"));
-
             // ───────────── 4단계 본부 터미널 접속, 격벽 조작, 미니게임 3종 안내 (본부 단말기) ─────────────
             beats.Add(TutorialBeat.Main("4-1", 4, TutorialSignal.NearTerminal,
-                L("4-1", Hq, "그 단말기가 보안망의 입구입니다. 보안망은 현장에서만 열립니다. 제가 직접 갈 수 있었다면 벌써 갔겠지요")
+                L("4-1", Hq, "그 단말기가 보안망의 입구입니다. 보안망은 현장에서 분전반을 이어야 열립니다. 제가 직접 갈 수 있었다면 벌써 갔겠지요")
                     .WithHint("[{Interact}]키를 눌러 단말기에 접속합시다", TutorialSignal.TerminalOpened),
                 L("4-2", Cat, "본부 일도 제가 하라는 거네요"),
                 L("4-3", Hq, "지금은 그렇습니다. 둘 다 익혀 두십시오. 나중에 쓸모가 있을 겁니다")));
@@ -128,7 +125,7 @@ namespace Pawntom.Tutorial.Core
             beats.Add(TutorialBeat.Main("4-4", 4, TutorialSignal.TerminalOpened,
                 L("4-4", Hq, "지금 보이는 것이 CCTV 화면입니다. 파란 점이 현재 위치, 붉은 점이 경비견입니다"),
                 L("4-5", Cat, "아직 입구 근처에 있네요"),
-                L("4-6", Hq, "경비견들이 돌아가기 전에 문을 하나 열어 두겠습니다. 격벽 탭에서 복도 A 끝의 붉은 문을 고르십시오. 제가 말씀드리기 전에는 다른 문을 건드리지 마십시오")
+                L("4-6", Hq, "경비견들이 이쪽으로 오기 전에 문을 하나 열어 두겠습니다. 격벽 탭에서 복도 A 끝의 붉은 문을 고르십시오. 제가 말씀드리기 전에는 다른 문을 건드리지 마십시오")
                     .WithHint("[격벽] 탭에서 붉은 격벽을 클릭합시다", TutorialSignal.DoorHackStarted)));
 
             beats.Add(TutorialBeat.Main("4-7", 4, TutorialSignal.DoorHackStarted,
@@ -218,11 +215,11 @@ namespace Pawntom.Tutorial.Core
 
             // ───────────── 6단계 적 NPC 순찰 안내 (금고 복도) ─────────────
             beats.Add(TutorialBeat.Main("6-1", 6, TutorialSignal.VaultCorridorEntered,
-                L("6-1", Hq, "금고방 주변 복도입니다. 경비견 NPC들이 정해진 경로를 따라 순찰하고 있습니다"),
+                L("6-1", Hq, "금고방 주변 복도입니다. 경비견들이 정해진 경로를 따라 순찰하고 있습니다"),
                 L("6-2", Cat, "벽 뒤로 경비견들이 돌아다니는 게 보여요"),
                 L("6-3", Hq, "순찰 동선을 잘 살피십시오. 경비견들의 시선과 발자국 추적을 피해 타이밍을 맞춰 가야 합니다")
                     .WithPreDelay(3f),
-                L("6-4", Hq, "한 번 눈에 띄면 끝까지 쫓아옵니다. 틈이 보일 때 한 번에 지나가십시오. 쫓기면 본부로 피하십시오. 본부 안까지는 들어오지 못합니다")));
+                L("6-4", Hq, "한 번 눈에 띄면 한동안 쫓아옵니다. 틈이 보일 때 한 번에 지나가십시오. 쫓기면 본부로 피하십시오. 본부 안까지는 들어오지 못합니다")));
 
             beats.Add(TutorialBeat.Side("6-5", 6, TutorialSignal.EnemyChasing, "6-1", "7-8",
                 L("6-5", Hq, "들켰습니다! 짐이 무거워도 달리십시오!")
@@ -263,7 +260,7 @@ namespace Pawntom.Tutorial.Core
 
             beats.Add(TutorialBeat.Main("7-8", 7, TutorialSignal.CatnipAcquired,
                 L("7-8", Cat, "...이게 전설의 캣닢!"),
-                L("7-9", Hq, "...드디어 잡았군요! 하지만 방심하지 마십시오. 캣닢 냄새로 인해 긴급 탈출 상황이 발동되었습니다!"),
+                L("7-9", Hq, "...드디어 잡았군요! 하지만 방심하지 마십시오. 캣닢 냄새가 퍼져 경비견들이 깨어났습니다!"),
                 L("7-10", Hq, "경비견들이 금고방으로 몰려들고 있습니다. 발자국이 계속 생기고 가방도 더욱 무거워질 테니 앞만 보고 달리십시오!")
                     .WithTimedHint("[긴급 탈출] 본부로 탈출합시다", 5f),
                 L("7-11", Hq, "캣닢을 들고 본부로 돌아오십시오. 지금 당장입니다!")
@@ -338,6 +335,7 @@ namespace Pawntom.Tutorial.Core
             // 추격 종료: Chase 에서 Investigate 로 복귀 시
             beats.Add(TutorialBeat.Side("R-chase-end", 0, TutorialSignal.ChaseEnded, "2-1", "8-1",
                     L("R-chase-end-1", Hq, "따돌린 것 같습니다. 하지만 방심하지 마십시오, 발자국을 따라올 겁니다"))
+                .AfterSidePlayed("3-4") // 첫 추격은 3-4 가 같은 말을 한다
                 .AsRotating()
                 .AsRepeatable(10f)
                 .WithHintRecall());

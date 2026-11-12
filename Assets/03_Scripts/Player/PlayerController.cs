@@ -187,12 +187,14 @@ public class PlayerController : NetworkBehaviour
         }
 
         EnemyAgent enemy = other.GetComponentInParent<EnemyAgent>();
-        if (enemy == null || !enemy.isActiveAndEnabled)
+        // 스턴 중인 적은 닿아도 물지 못한다.
+        if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned)
         {
             return;
         }
 
         _playerData.ApplyDamage(_enemyContactDamage);
+        enemy.Stun(enemy.Settings.Attack.StunSecondsAfterAttack);
         ContactDamageCooldown = TickTimer.CreateFromSeconds(
             Runner, Mathf.Max(0.01f, _contactDamageInterval));
     }

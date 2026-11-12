@@ -135,6 +135,12 @@ namespace Pawntom.Tutorial.Core
         KeyAcquired,
 
         /// <summary>7-2 열쇠를 금고에 써서 잠금이 풀렸다. 상태형.</summary>
-        VaultUnlocked
+        VaultUnlocked,
+
+        /// <summary>
+        /// 쫓기던 중 추격이 모두 끝났다(따돌렸다). 어느 장소에서든, 플레이어가 살아 있을 때만. 사건형.
+        /// 첫 추격 대사(3-4~3-8)의 트리거다.
+        /// </summary>
+        ChaseEscaped
     }
 }

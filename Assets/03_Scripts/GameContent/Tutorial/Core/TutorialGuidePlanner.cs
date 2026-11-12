@@ -39,6 +39,38 @@ namespace Pawntom.Tutorial.Core
             }
         }
 
+        /// <summary>
+        /// "그 일을 이미 해냈다"는 증거가 되는 신호인가. 위치 신호와 달리 그 자리에 있지 않아도 사실이 남는다.
+        /// 시퀀서는 이 신호가 한 번이라도 들어왔으면, 앞 비트가 아직 안 끝났더라도 그 뒤 비트로 건너뛴다.
+        /// <para>
+        /// 위치 신호(단말기 근처 등)는 일부러 뺐다 — 시작 지점 근처에서 처음부터 참일 수 있어 단계를 잘못 건너뛰게 한다.
+        /// </para>
+        /// </summary>
+        public static bool IsMilestoneSignal(TutorialSignal signal)
+        {
+            switch (signal)
+            {
+                case TutorialSignal.SecurityNodeThreatCue:
+                case TutorialSignal.SecurityNodeConnected:
+                case TutorialSignal.TerminalOpened:
+                case TutorialSignal.DoorHackStarted:
+                case TutorialSignal.DoorHackSucceeded:
+                case TutorialSignal.DoorOpened:
+                case TutorialSignal.ItemLooted:
+                case TutorialSignal.InventoryThreeFilled:
+                case TutorialSignal.KeyAcquired:
+                case TutorialSignal.VaultUnlocked:
+                case TutorialSignal.VaultHackStarted:
+                case TutorialSignal.VaultHackSucceeded:
+                case TutorialSignal.CatnipAcquired:
+                case TutorialSignal.SettlementShown:
+                case TutorialSignal.SettlementRevealed:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public static TutorialSignal Choose(TutorialSequencer sequencer, Func<TutorialSignal, bool> canResolve)
         {
             if (sequencer == null || canResolve == null)

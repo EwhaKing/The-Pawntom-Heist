@@ -169,6 +169,19 @@ namespace Pawntom.Tutorial.Core
         /// </summary>
         public bool WaitsForConfirm { get; private set; }
 
+        /// <summary>
+        /// 곁가지 전용. 이 곁가지가 <b>한 번 재생된 뒤</b>에만 반응한다.
+        /// 예: "따돌린 것 같습니다"(R-chase-end)는 첫 추격 대사(3-4)가 이미 나온 뒤의 추격부터 나온다 — 첫 추격에서는 3-4 가 같은 말을 한다.
+        /// </summary>
+        public string OnlyAfterSidePlayed { get; private set; }
+
+        public TutorialBeat AfterSidePlayed(string sideBeatId)
+        {
+            EnsureKind(TutorialBeatKind.Side, nameof(AfterSidePlayed));
+            OnlyAfterSidePlayed = sideBeatId;
+            return this;
+        }
+
         public TutorialBeat WithConfirm()
         {
             EnsureKind(TutorialBeatKind.Side, nameof(WithConfirm));

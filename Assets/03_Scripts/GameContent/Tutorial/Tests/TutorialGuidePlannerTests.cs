@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using Pawntom.Tutorial.Core;
 
@@ -46,8 +46,8 @@ namespace Pawntom.Tutorial.Tests
         {
             TutorialSequencer sequencer = StartedDefault();
             Signal(sequencer, TutorialSignal.FirstFootprint);
-            Signal(sequencer, TutorialSignal.LookedBack);
             Signal(sequencer, TutorialSignal.SprintStarted);
+            Signal(sequencer, TutorialSignal.LookedBack);
 
             Assert.AreEqual(TutorialSignal.ObstacleAhead, TutorialGuidePlanner.Choose(sequencer, Everything));
         }
@@ -58,8 +58,8 @@ namespace Pawntom.Tutorial.Tests
             // 2-9 "[Space]키로 점프해봅시다"가 걸려 있으면 상자 반대편(zoneEnd)을 가리킨다.
             TutorialSequencer sequencer = StartedDefault();
             Signal(sequencer, TutorialSignal.FirstFootprint);
-            Signal(sequencer, TutorialSignal.LookedBack);
             Signal(sequencer, TutorialSignal.SprintStarted);
+            Signal(sequencer, TutorialSignal.LookedBack);
             Signal(sequencer, TutorialSignal.ObstacleAhead);
 
             Assert.AreEqual(TutorialSignal.ObstacleCleared, TutorialGuidePlanner.Choose(sequencer, Everything));
@@ -71,8 +71,8 @@ namespace Pawntom.Tutorial.Tests
             // 2-9 장애물은 필수 단계라 건너뛰어 복도 끝(2-10)을 가리키지 않는다. 씬에 지점이 없으면 안내하지 않는다.
             TutorialSequencer sequencer = StartedDefault();
             Signal(sequencer, TutorialSignal.FirstFootprint);
-            Signal(sequencer, TutorialSignal.LookedBack);
             Signal(sequencer, TutorialSignal.SprintStarted);
+            Signal(sequencer, TutorialSignal.LookedBack);
 
             TutorialSignal chosen = TutorialGuidePlanner.Choose(sequencer, signal => signal != TutorialSignal.ObstacleAhead);
 
@@ -80,15 +80,15 @@ namespace Pawntom.Tutorial.Tests
         }
 
         [Test]
-        public void Choose_ReturnHomeHintActive_PointsToMainbase()
+        public void Choose_AfterNodeConnected_PointsToTerminal()
         {
-            // 3-4 "Shift키로 달려 본부로 돌아갑시다" 가 걸려 있으면 본부를 가리킨다.
+            // 3-3·3-9 "본부로 돌아와 단말기 앞으로" 뒤에는 다음 메인 비트(4-1)의 위치인 단말기를 가리킨다.
             TutorialSequencer sequencer = StartedDefault();
             TutorialSignal[] path =
             {
-                TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
+                TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted, TutorialSignal.LookedBack,
                 TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
-                TutorialSignal.SecurityNodeConnected, TutorialSignal.EnemyChasing
+                TutorialSignal.SecurityNodeConnected
             };
 
             foreach (TutorialSignal signal in path)
@@ -96,7 +96,7 @@ namespace Pawntom.Tutorial.Tests
                 Signal(sequencer, signal);
             }
 
-            Assert.AreEqual(TutorialSignal.PlayerInMainbase, TutorialGuidePlanner.Choose(sequencer, Everything));
+            Assert.AreEqual(TutorialSignal.NearTerminal, TutorialGuidePlanner.Choose(sequencer, Everything));
         }
 
         [Test]
@@ -104,8 +104,8 @@ namespace Pawntom.Tutorial.Tests
         {
             TutorialSequencer sequencer = StartedDefault();
             Signal(sequencer, TutorialSignal.FirstFootprint);
-            Signal(sequencer, TutorialSignal.LookedBack);
             Signal(sequencer, TutorialSignal.SprintStarted);
+            Signal(sequencer, TutorialSignal.LookedBack);
 
             Assert.AreEqual(TutorialSignal.None, TutorialGuidePlanner.Choose(sequencer, signal => false));
         }

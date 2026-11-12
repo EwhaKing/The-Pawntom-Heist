@@ -61,6 +61,13 @@ namespace Pawntom.Enemy.Adapters
                 }
 
                 Vector3 targetPosition = target.position;
+
+                // 환풍구 엿보기 자리 같은 시야 차단 영역 안의 대상은 보지 못한다.
+                if (EnemyBlindZone.IsHidden(targetPosition))
+                {
+                    continue;
+                }
+
                 Vector3 toTarget = targetPosition - eyePosition;
                 float sqrDistance = toTarget.sqrMagnitude;
 

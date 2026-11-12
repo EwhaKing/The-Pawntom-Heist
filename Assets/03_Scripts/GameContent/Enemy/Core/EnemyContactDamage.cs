@@ -31,6 +31,7 @@ namespace Pawntom.Enemy.Core
     {
         private readonly float _verticalTolerance;
         private float _cooldownRemaining;
+        private int _lastAttackerIndex = -1;
 
         /// <param name="verticalTolerance">위아래로 이만큼 떨어져 있으면 닿지 않은 것으로 본다(상자 위로 피했을 때).</param>
         public EnemyContactDamage(float verticalTolerance)
@@ -41,6 +42,12 @@ namespace Pawntom.Enemy.Core
         public float CooldownRemaining
         {
             get { return _cooldownRemaining; }
+        }
+
+        /// <summary>가장 최근에 문 적이 <c>attackers</c> 목록에서 몇 번째였는지. 아직 문 적이 없으면 -1.</summary>
+        public int LastAttackerIndex
+        {
+            get { return _lastAttackerIndex; }
         }
 
         /// <returns>이번 틱에 깎을 체력. 물지 않았으면 0.</returns>
@@ -90,6 +97,7 @@ namespace Pawntom.Enemy.Core
             }
 
             _cooldownRemaining = attackers[nearest].CooldownSeconds;
+            _lastAttackerIndex = nearest;
             return attackers[nearest].Damage;
         }
     }

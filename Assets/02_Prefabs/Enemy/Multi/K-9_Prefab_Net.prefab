@@ -219,7 +219,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 2.5
+  m_Speed: 2
   m_Acceleration: 30
   avoidancePriority: 50
   m_AngularSpeed: 540
@@ -293,6 +293,7 @@ MonoBehaviour:
       _damage: 20
       _range: 1.5
       _cooldownSeconds: 1
+      _stunSecondsAfterAttack: 2
   _patrolRoute: {fileID: 0}
   _targetProvider: {fileID: 0}
 --- !u!114 &4071431520428287656
@@ -382,6 +383,8 @@ MonoBehaviour:
   animator: {fileID: 3318459129532901880}
   modelRoot: {fileID: 8713801361105892226}
   speedSmoothing: 8
+  walkClipSpeed: 1.31
+  runClipSpeed: 1.75
   groundSearchDistance: 0.4
 --- !u!1001 &9180338624560190569
 PrefabInstance:

@@ -97,7 +97,64 @@ namespace Pawntom.Enemy.Authoring
                 return;
             }
 
+            // 스턴 중에는 두뇌를 돌리지 않는다. 두뇌가 멈춰 있는 동안 상태(추격 등)와 타이머도 그대로 얼어 있다가,
+            // 풀리면 하던 상태에서 이어진다.
+            if (_stun.IsStunned)
+            {
+                if (!_stun.Tick(deltaTime))
+                {
+                    SetMotionHeld(false);
+                }
+
+                return;
+            }
+
             _brain.Tick(deltaTime);
+        }
+
+        private readonly EnemyStun _stun = new EnemyStun();
+
+        /// <summary>스턴 중인가. 스턴 중인 적은 이동도 공격도 하지 않는다.</summary>
+        public bool IsStunned
+        {
+            get { return _stun.IsStunned; }
+        }
+
+        /// <summary>
+        /// 지금 그 자리에서 <paramref name="seconds"/> 초 동안 멈춰 세운다. 상태 권한이 있는 쪽(Host)에서만 부른다.
+        /// 이미 스턴 중이면 더 긴 쪽을 따른다. 0 이하면 아무 일도 없다.
+        /// </summary>
+        public void Stun(float seconds)
+        {
+            if (_brain == null)
+            {
+                return;
+            }
+
+            _stun.Begin(seconds);
+
+            if (_stun.IsStunned)
+            {
+                SetMotionHeld(true);
+            }
+        }
+
+        /// <summary>
+        /// 내비 에이전트를 세웠다 풀어 준다. 경로와 목적지는 그대로 둔다 — 풀리면 두뇌가 다음 틱에 다시 명령을 낸다.
+        /// </summary>
+        private void SetMotionHeld(bool held)
+        {
+            if (_navMeshAgent == null || !_navMeshAgent.isActiveAndEnabled || !_navMeshAgent.isOnNavMesh)
+            {
+                return;
+            }
+
+            _navMeshAgent.isStopped = held;
+
+            if (held)
+            {
+                _navMeshAgent.velocity = Vector3.zero;
+            }
         }
 
         /// <summary>
@@ -129,6 +186,8 @@ namespace Pawntom.Enemy.Authoring
                 }
             }
 
+            _stun.Clear();
+            SetMotionHeld(false);
             _brain.ResetToPatrolStart();
         }
 
@@ -203,6 +262,8 @@ namespace Pawntom.Enemy.Authoring
             }
             else transform.position = position;
             transform.rotation = rotation;
+            _stun.Clear();
+            SetMotionHeld(false);
             BuildBrain();
             ApplyPatrolRoute();
         }

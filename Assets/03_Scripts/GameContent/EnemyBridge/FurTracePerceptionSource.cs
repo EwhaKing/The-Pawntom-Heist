@@ -58,6 +58,12 @@ namespace Pawntom.EnemyBridge
                     continue;
                 }
 
+                // 시야 차단 영역(금고 위 환풍구 엿보기 자리)에 남은 흔적은 단서로 쓰지 않는다.
+                if (EnemyBlindZone.IsHidden(trace.transform.position))
+                {
+                    continue;
+                }
+
                 NetworkObject networkObject = trace.Object;
 
                 // Id 가 유효하지 않으면(Raw == 0) 개체를 식별할 수 없으므로 후보로 쓰지 않는다.

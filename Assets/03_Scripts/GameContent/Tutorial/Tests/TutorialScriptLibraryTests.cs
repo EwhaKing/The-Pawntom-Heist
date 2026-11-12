@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using Pawntom.Tutorial.Core;
 
@@ -29,7 +29,7 @@ namespace Pawntom.Tutorial.Tests
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
             "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-9", "2-10", "2-11", "2-12",
-            "3-1", "3-2", "3-3", "3-4", "3-5", "3-7", "3-8", "3-9",
+            "3-1", "3-2", "3-3", "3-9", "3-4", "3-5", "3-7", "3-8",
             "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-11", "4-12", "4-13",
             "5-1", "5-2", "5-3", "5-4", "5-5", "5-7", "5-8", "5-9", "5-10",
             "6-1", "6-2", "6-3", "6-4",
@@ -41,15 +41,14 @@ namespace Pawntom.Tutorial.Tests
         {
             TutorialSignal.EyesOpened,
             TutorialSignal.FirstFootprint,
-            TutorialSignal.LookedBack,
             TutorialSignal.SprintStarted,
+            TutorialSignal.LookedBack,
             TutorialSignal.ObstacleAhead,
             TutorialSignal.CorridorAEndReached,
             TutorialSignal.NearSecurityNode,
             TutorialSignal.SecurityNodeThreatCue,
             TutorialSignal.SecurityNodeConnected,
-            TutorialSignal.EnemyChasing,
-            TutorialSignal.SafeInMainbase,
+            TutorialSignal.ChaseEscaped,
             TutorialSignal.NearTerminal,
             TutorialSignal.TerminalOpened,
             TutorialSignal.DoorHackStarted,
@@ -179,8 +178,8 @@ namespace Pawntom.Tutorial.Tests
 
             TutorialSignal[] untilHack =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackFailed, TutorialSignal.DoorHackSucceeded
             };
@@ -203,8 +202,8 @@ namespace Pawntom.Tutorial.Tests
 
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted
             };
@@ -334,8 +333,8 @@ namespace Pawntom.Tutorial.Tests
 
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal, TutorialSignal.TerminalOpened,
                 TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened,
                 TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered, TutorialSignal.ItemLooted, TutorialSignal.NearKey,
@@ -424,8 +423,8 @@ namespace Pawntom.Tutorial.Tests
             TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearSecurityNode,
                 TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal
             };
 
@@ -508,7 +507,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSequencer sequencer = StartedAtStageTwo(new List<string>());
             TutorialSignal[] signals =
             {
-                TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
+                TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted, TutorialSignal.LookedBack,
                 TutorialSignal.ObstacleAhead, TutorialSignal.Jumped
             };
 
@@ -527,7 +526,7 @@ namespace Pawntom.Tutorial.Tests
             TutorialSequencer sequencer = StartedAtStageTwo(new List<string>());
             TutorialSignal[] signals =
             {
-                TutorialSignal.FirstFootprint, TutorialSignal.LookedBack, TutorialSignal.SprintStarted,
+                TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted, TutorialSignal.LookedBack,
                 TutorialSignal.ObstacleAhead, TutorialSignal.ObstacleCleared
             };
 
@@ -554,8 +553,8 @@ namespace Pawntom.Tutorial.Tests
             TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearTerminal
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached, TutorialSignal.NearTerminal
             };
 
             foreach (TutorialSignal signal in signals)
@@ -577,8 +576,8 @@ namespace Pawntom.Tutorial.Tests
             sequencer.LineStarted += line => started.Add(line.Id);
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.NearSecurityNode
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.NearSecurityNode
             };
 
             foreach (TutorialSignal signal in signals)
@@ -616,8 +615,8 @@ namespace Pawntom.Tutorial.Tests
             sequencer.LineStarted += line => started.Add(line.Id);
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.NearSecurityNode, TutorialSignal.SecurityNodeConnected,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.NearSecurityNode, TutorialSignal.SecurityNodeConnected,
                 TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached,
                 TutorialSignal.SecurityNodeConnected, // 분전반은 연결된 동안 계속 알린다
                 TutorialSignal.NearTerminal
@@ -647,8 +646,8 @@ namespace Pawntom.Tutorial.Tests
             sequencer.LineStarted += line => started.Add(line.Id);
             TutorialSignal[] signals =
             {
-                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.LookedBack,
-                TutorialSignal.SprintStarted, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached,
+                TutorialSignal.EyesOpened, TutorialSignal.FirstFootprint, TutorialSignal.SprintStarted,
+                TutorialSignal.LookedBack, TutorialSignal.ObstacleAhead, TutorialSignal.CorridorAEndReached,
                 TutorialSignal.NearSecurityNode, TutorialSignal.SecurityNodeConnected, TutorialSignal.NearTerminal,
                 TutorialSignal.TerminalOpened, TutorialSignal.DoorHackStarted, TutorialSignal.DoorHackSucceeded,
                 TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead, TutorialSignal.LootRoomEntered,

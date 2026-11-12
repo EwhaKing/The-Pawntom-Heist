@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Fusion;
 using Hacking;
+using Pawntom.EnemyBridge;
 using Pawntom.Tutorial.Core;
 using TMPro;
 using UnityEngine;
@@ -61,6 +62,10 @@ namespace Pawntom.TutorialBridge
         [Tooltip("'교신 종료' 카드를 보여 준 뒤 메인(로비) 화면으로 돌아가기까지의 시간")]
         [SerializeField, Min(0f)] private float endCardHoldSeconds = 2.5f;
 
+        [Header("경비견 투시 (6단계)")]
+        [Tooltip("6-1 순찰 안내 대사가 끝난 뒤 경비견의 붉은 실루엣이 사라지기까지의 시간(초)")]
+        [SerializeField, Min(0f)] private float enemyGlowLingerSeconds = 5f;
+
         [Header("정산")]
         [Tooltip("출발 버튼을 누른 뒤 정산 창을 띄우기까지의 시간(출발 버튼 경로는 0.3초로 부른다)")]
         [SerializeField, Min(0f)] private float settlementDelay = 1.2f;
@@ -93,6 +98,13 @@ namespace Pawntom.TutorialBridge
         private Func<TutorialSignal, bool> _canResolveGuide;
         private bool _controlEverEnabled;
         private float _nextGuideUpdate;
+
+        // 6-1 순찰 안내 대사 동안 경비견을 벽 너머 붉은 실루엣으로 비춘다. 대사가 끝난 뒤에도 잠깐 남긴다.
+        private const string EnemyGlowBeatId = "6-1";
+        private const float EnemyGlowRefreshSeconds = 0.5f;
+        private Coroutine _enemyGlowRoutine;
+        private float _enemyGlowEndTime;
+        private bool _enemyGlowDialogueDone;
 
         private bool _directorLock;
         private bool _dialogueHold;
@@ -214,6 +226,7 @@ namespace Pawntom.TutorialBridge
             _sequencer.ActionRequested += HandleActionRequested;
             _sequencer.BeatStarted += HandleBeatStarted;
             _sequencer.BeatSkipped += HandleBeatSkipped;
+            _sequencer.MainBeatCompleted += HandleMainBeatCompleted;
             _sequencer.HintAdded += _hints.OnHintAdded;
             _sequencer.HintRemoved += _hints.OnHintRemoved;
             _sequencer.HintRecalled += _hints.OnHintRecalled;
@@ -240,6 +253,7 @@ namespace Pawntom.TutorialBridge
             }
 
             Active = null;
+            StopEnemyGlow();
 
             if (_probe != null && _sequencer != null)
             {
@@ -435,11 +449,59 @@ namespace Pawntom.TutorialBridge
             _probe.ResetLookReference();
             _deathFlow?.CaptureCheckpoint(beat.Stage);
 
+            if (beat.Id == EnemyGlowBeatId)
+            {
+                StartEnemyGlow();
+            }
+
             // 단계별 미니게임을 맞춘다: 격벽 해킹(4단계)은 세 종류 중 무작위(4-7~4-10 이 걸린 종류를 안내한다),
             // 6단계 이후 금고는 Space 타이밍(DigitalSync)으로 고정한다.
             HackingManager.PreferredGameType = beat.Stage >= 6 ? HackingGameType.DigitalSync : (HackingGameType?)null;
 
             Debug.Log("[TutorialDirector] 비트 시작 " + beat.Id + " (" + beat.Stage + "단계)");
+        }
+
+        private void HandleMainBeatCompleted(TutorialBeat beat)
+        {
+            if (beat.Id == EnemyGlowBeatId && _enemyGlowRoutine != null)
+            {
+                // 대사 이벤트가 끝났다 — 지금부터 잠깐 더 비추고 끈다.
+                _enemyGlowDialogueDone = true;
+                _enemyGlowEndTime = Time.time + enemyGlowLingerSeconds;
+            }
+        }
+
+        private void StartEnemyGlow()
+        {
+            StopEnemyGlow();
+            _enemyGlowDialogueDone = false;
+            _enemyGlowRoutine = StartCoroutine(EnemyGlowRoutine());
+        }
+
+        private void StopEnemyGlow()
+        {
+            if (_enemyGlowRoutine != null)
+            {
+                StopCoroutine(_enemyGlowRoutine);
+                _enemyGlowRoutine = null;
+            }
+
+            EnemyXRayGlow.ApplyToAll(false);
+        }
+
+        // 경비견은 네트워크로 나중에 스폰될 수 있으므로 켜진 동안 주기적으로 새 개체에도 적용한다.
+        private IEnumerator EnemyGlowRoutine()
+        {
+            WaitForSeconds wait = new WaitForSeconds(EnemyGlowRefreshSeconds);
+
+            while (!_enemyGlowDialogueDone || Time.time < _enemyGlowEndTime)
+            {
+                EnemyXRayGlow.ApplyToAll(true);
+                yield return wait;
+            }
+
+            _enemyGlowRoutine = null;
+            EnemyXRayGlow.ApplyToAll(false);
         }
 
         private void HandleBeatSkipped(TutorialBeat beat)
@@ -497,6 +559,7 @@ namespace Pawntom.TutorialBridge
         {
             if (signal == TutorialSignal.PlayerDied)
             {
+                StopEnemyGlow();
                 LocalPlayerDied?.Invoke();
             }
         }

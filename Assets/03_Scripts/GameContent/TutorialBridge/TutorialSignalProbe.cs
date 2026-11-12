@@ -130,6 +130,9 @@ namespace Pawntom.TutorialBridge
         private bool _lowHealthFired;
         private bool _isDead;
         private bool _awaitingRespawn;
+
+        // 직전 폴링에서 어느 적이든 추격 중이었는가. 추격이 끝난 순간 ChaseEscaped 를 보내는 데 쓴다.
+        private bool _wasChasing;
         private readonly System.Collections.Generic.Dictionary<EnemyAgent, EnemyState> _enemyStates =
             new System.Collections.Generic.Dictionary<EnemyAgent, EnemyState>();
 
@@ -238,6 +241,7 @@ namespace Pawntom.TutorialBridge
             _lastInventoryCount = -1;
             _lootRoomEntered = _lootedAny = _keyAcquired = false;
             _enemyStates.Clear();
+            _wasChasing = false;
             _nextSceneCache = _nextPoll = 0f;
             ResetIdleTimers();
             MarkControlEnabled();
@@ -917,6 +921,13 @@ namespace Pawntom.TutorialBridge
             {
                 Emit(TutorialSignal.EnemyChasing);
             }
+            else if (_wasChasing && _player != null && !_player.IsDead)
+            {
+                // 쫓기다가 죽지 않고 추격이 모두 끝났다 — 따돌렸다. 장소와 무관하다(본부 안이든 밖이든).
+                Emit(TutorialSignal.ChaseEscaped);
+            }
+
+            _wasChasing = chasing;
         }
 
         // ───────────── 본부 ─────────────
