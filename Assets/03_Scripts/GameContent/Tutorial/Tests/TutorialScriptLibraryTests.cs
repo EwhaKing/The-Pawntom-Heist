@@ -10,13 +10,13 @@ namespace Pawntom.Tutorial.Tests
         private static readonly string[] ScriptIds =
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
-            "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10", "2-11", "2-12",
-            "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-8", "3-9",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-12", "4-13", "4-14",
-            "5-1", "5-1b", "5-2", "5-3", "5-4", "5-5", "5-6", "5-6b", "5-7", "5-8", "5-9", "5-10",
-            "6-1", "6-2", "6-3", "6-4", "6-5",
-            "7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-7", "7-8", "7-9", "7-10", "7-11", "7-12", "7-13",
-            "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7",
+            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-8", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12",
+            "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-5b", "3-5c", "3-6", "3-7", "3-8",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-6a", "4-7a", "4-7b", "4-8", "4-9", "4-10", "4-10b", "4-11", "4-12", "4-13", "4-14", "4-15",
+            "5-1", "5-1b", "5-2", "5-3", "5-4", "5-5", "5-6", "5-6b", "5-7", "5-8", "5-9", "5-10", "5-11",
+            "6-1", "6-2", "6-3", "6-4", "6-5", "6-6",
+            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-5", "7-6", "7-7", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13", "7-14",
+            "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7", "8-7b",
 
             // 상황별 반복 대사(후보 포함)
             "R-move-1", "R-move-2", "R-door-1", "R-door-2", "R-gate-1", "R-gate-2", "R-vault-1", "R-vault-2",
@@ -28,13 +28,13 @@ namespace Pawntom.Tutorial.Tests
         private static readonly string[] HappyPathOrder =
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
-            "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-9", "2-10", "2-11", "2-12",
-            "3-1", "3-2", "3-3", "3-9", "3-4", "3-5", "3-7", "3-8",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-11", "4-12", "4-13",
-            "5-1", "5-2", "5-3", "5-4", "5-5", "5-7", "5-8", "5-9", "5-10",
-            "6-1", "6-2", "6-3", "6-4",
-            "7-1", "7-2", "7-3", "7-4", "7-6", "7-8", "7-9", "7-10", "7-11", "7-12", "7-13",
-            "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7"
+            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12",
+            "3-1", "3-2", "3-3", "3-4", "3-5", "3-5b", "3-5c", "3-7", "3-8",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7a", "4-7b", "4-8", "4-11", "4-12", "4-13",
+            "5-1", "5-2", "5-3", "5-4", "5-5", "5-7", "5-8", "5-9", "5-10", "5-11",
+            "6-1", "6-2", "6-3", "6-4", "6-5",
+            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-6", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13",
+            "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7", "8-7b"
         };
 
         private static readonly TutorialSignal[] HappyPathSignals =
@@ -44,9 +44,10 @@ namespace Pawntom.Tutorial.Tests
             TutorialSignal.SprintStarted,
             TutorialSignal.LookedBack,
             TutorialSignal.ObstacleAhead,
+            TutorialSignal.ObstacleCleared,
             TutorialSignal.CorridorAEndReached,
             TutorialSignal.NearSecurityNode,
-            TutorialSignal.SecurityNodeThreatCue,
+            TutorialSignal.SecurityNodeCastStarted,
             TutorialSignal.SecurityNodeConnected,
             TutorialSignal.ChaseEscaped,
             TutorialSignal.NearTerminal,
@@ -191,7 +192,7 @@ namespace Pawntom.Tutorial.Tests
             }
 
             // 4-14(실패) → 4-11·4-12(재시도 성공, 푸른 격벽 열기 안내)
-            CollectionAssert.AreEqual(new[] { "4-14", "4-11", "4-12" }, started.GetRange(started.Count - 3, 3));
+            CollectionAssert.AreEqual(new[] { "4-10b", "4-11", "4-12" }, started.GetRange(started.Count - 3, 3));
         }
 
         // 격벽 해킹 시작(4-7)까지 마친 상태.
@@ -261,7 +262,7 @@ namespace Pawntom.Tutorial.Tests
             sequencer.Raise(TutorialSignal.DoorGameSignal);
             Pump(sequencer, 0f);
 
-            CollectionAssert.AreEqual(new[] { "4-8", "4-14", "4-9" }, started.GetRange(started.Count - 3, 3));
+            CollectionAssert.AreEqual(new[] { "4-8", "4-10b", "4-9" }, started.GetRange(started.Count - 3, 3));
         }
 
         [Test]
@@ -363,7 +364,7 @@ namespace Pawntom.Tutorial.Tests
             sequencer.Raise(TutorialSignal.VaultUnlocked);
             Pump(sequencer, 0f);
 
-            CollectionAssert.AreEqual(new[] { "7-2", "7-3" }, started.GetRange(started.Count - 2, 2));
+            CollectionAssert.AreEqual(new[] { "7-2", "7-3", "7-3b" }, started.GetRange(started.Count - 3, 3));
         }
 
         [Test]
@@ -600,7 +601,7 @@ namespace Pawntom.Tutorial.Tests
             }
 
             int obstacle = started.IndexOf("2-9");
-            int corridor = started.IndexOf("2-10");
+            int corridor = started.IndexOf("2-10a");
             int node = started.IndexOf("3-1");
             Assert.IsTrue(obstacle >= 0 && obstacle < corridor && corridor < node, string.Join(",", started));
         }
@@ -633,7 +634,7 @@ namespace Pawntom.Tutorial.Tests
             CollectionAssert.DoesNotContain(started, "3-3");
             Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("3-1"));
             Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("3-3"));
-            Assert.IsTrue(started.IndexOf("2-10") < started.IndexOf("3-0"), string.Join(",", started));
+            Assert.IsTrue(started.IndexOf("2-10a") < started.IndexOf("3-0"), string.Join(",", started));
             Assert.AreEqual(TutorialBeatState.Done, sequencer.GetMainState("4-1"));
         }
 
@@ -711,6 +712,89 @@ namespace Pawntom.Tutorial.Tests
             {
                 Assert.AreNotEqual("5-2", sequencer.Hints[i].Line.Id, "전리품 안내가 남아 있으면 안 된다");
             }
+        }
+
+        [Test]
+        public void CreateDefault_WrongDoorHack_PlaysWrongDoorLineOnce()
+        {
+            // 4-6a: 위쪽 복도의 문이 아닌 격벽을 먼저 골라도 해킹은 진행되고, 안내 한 줄만 끼어든다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            sequencer.Raise(TutorialSignal.WrongDoorHackStarted);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("4-6a", started[started.Count - 1]);
+
+            sequencer.Raise(TutorialSignal.WrongDoorHackStarted);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual(1, started.FindAll(id => id == "4-6a").Count);
+        }
+
+        [Test]
+        public void CreateDefault_SecondDoorUnlocked_PlaysExitLineAfterOpenLine()
+        {
+            // 4-13(나머지 철문도 해제) → 두 문이 모두 해금되면 4-14(나와서 이동). 첫 해킹 성공만으로는 4-14 가 열리지 않는다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            sequencer.Raise(TutorialSignal.DoorHackSucceeded);
+            Pump(sequencer, 0f);
+            sequencer.Raise(TutorialSignal.DoorOpened);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("4-13", started[started.Count - 1]);
+            CollectionAssert.DoesNotContain(started, "4-14");
+
+            sequencer.Raise(TutorialSignal.AllDoorsUnlocked);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("4-14", started[started.Count - 1]);
+        }
+
+        [Test]
+        public void CreateDefault_SecondDoorSkipped_StillReachesBlueDoorLine()
+        {
+            // 나머지 문을 해금하지 않고 나가도 막히지 않는다(4-14 는 건너뛴다).
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            foreach (TutorialSignal signal in new[]
+                     { TutorialSignal.DoorHackSucceeded, TutorialSignal.DoorOpened, TutorialSignal.BlueDoorAhead })
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+            }
+
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("4-14"));
+            Assert.AreEqual("5-1", started[started.Count - 1]);
+        }
+
+        [Test]
+        public void CreateDefault_DepartWithoutCatnip_PlaysRejectLine()
+        {
+            // 7-14: 본부에서 출발 버튼을 눌렀는데 캣닢이 없을 때.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+            sequencer.LineStarted += line => started.Add(line.Id);
+
+            foreach (TutorialSignal signal in HappyPathSignals)
+            {
+                sequencer.Raise(signal);
+                Pump(sequencer, 0f);
+                Pump(sequencer, 3.5f);
+
+                if (signal == TutorialSignal.VaultFront)
+                {
+                    break;
+                }
+            }
+
+            sequencer.Raise(TutorialSignal.DepartRejectedNoCatnip);
+            Pump(sequencer, 0f);
+
+            Assert.AreEqual("7-14", started[started.Count - 1]);
         }
     }
 }

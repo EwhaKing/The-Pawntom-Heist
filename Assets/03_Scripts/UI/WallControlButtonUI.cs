@@ -43,11 +43,11 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Color unlockedColor = new Color(0.180f, 0.490f, 0.878f, 1f);
 
     [Header("Shape")]
-    [Tooltip("열림일 때 버튼 바탕에 얹는 얇은 막대의 두께(버튼 짧은 변 대비 비율)")]
-    [SerializeField, Range(0.1f, 1f)] private float openBarThickness = 0.3f;
+    [Tooltip("열림일 때 양 끝에 남기는 문틀 조각의 길이(버튼 긴 변 대비 비율). 가운데는 뚫려 보인다")]
+    [SerializeField, Range(0.1f, 0.45f)] private float openEndFraction = 0.25f;
 
-    [Tooltip("열림일 때 바탕을 이 투명도로 흐리게 한다. 클릭 영역은 그대로 남는다")]
-    [SerializeField, Range(0.05f, 1f)] private float openBackdropAlpha = 0.25f;
+    [Tooltip("열림일 때 가운데 빈 자리의 바탕 투명도. 클릭 영역은 그대로 남는다")]
+    [SerializeField, Range(0f, 0.5f)] private float openGapAlpha = 0.08f;
 
     [Tooltip("잠김일 때 버튼 위에 띄울 자물쇠 아이콘. 비우면 표시하지 않는다")]
     [SerializeField] private Sprite lockIcon;
@@ -55,7 +55,11 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     [Tooltip("자물쇠 아이콘 크기(UI 단위). 격벽 버튼이 가로로 긴 20 높이라 작게 잡는다")]
     [SerializeField, Min(8f)] private float lockIconSize = 24f;
 
-    private Image _openBar;
+    /// <summary>미해금 격벽 버튼을 눌러 해킹을 시작하려 할 때(튜토리얼 안내가 어느 문인지 알아야 한다).</summary>
+    public static event System.Action<ControllableWall> HackRequested;
+
+    private Image _openBar;   // 열림: 한쪽 끝 문틀 조각
+    private Image _openBar2;  // 열림: 반대쪽 끝 문틀 조각
     private Image _lockImage;
 
     private float lastClickTime;
@@ -154,6 +158,8 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
         Debug.Log("[WallControlButtonUI] 미해금 격벽입니다. 해킹 미니게임 시작");
 
+        HackRequested?.Invoke(targetWall);
+
         hackingManager.OpenHackingPopup(hackingLevel, OnHackingFinished);
     }
 
@@ -211,14 +217,16 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
         if (targetWall.IsOpen)
         {
-            // 열림 = 초록. 바탕은 흐리게 두고(클릭 영역은 유지) 얇은 막대를 얹어 통로가 뚫린 모양으로 보이게 한다.
+            // 열림 = 초록. 가운데를 비워(바탕은 거의 투명, 클릭 영역은 유지) 양 끝 문틀 조각만 남겨
+            // 닫힌 파란 꽉 찬 막대와 한눈에 구분되게 한다.
             Color backdrop = openColor;
-            backdrop.a = openBackdropAlpha;
+            backdrop.a = openGapAlpha;
             wallImage.color = backdrop;
 
             if (_openBar != null || EnsureOpenBar())
             {
                 _openBar.color = openColor;
+                _openBar2.color = openColor;
             }
 
             SetOverlays(true, false);
@@ -235,6 +243,7 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         if (_openBar != null)
         {
             _openBar.gameObject.SetActive(showOpenBar);
+            _openBar2.gameObject.SetActive(showOpenBar);
         }
 
         if (showLock && lockIcon != null)
@@ -248,7 +257,7 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    // 버튼 가운데에 길이 방향으로 뻗은 얇은 막대. 버튼 모양(가로/세로)에 따라 짧은 변 쪽을 얇게 한다.
+    // 열린 문 모양: 긴 변의 양 끝에만 조각을 남기고 가운데는 비운다. 버튼 모양(가로/세로)에 맞춰 긴 변 방향으로 놓는다.
     private bool EnsureOpenBar()
     {
         RectTransform parent = wallImage.rectTransform;
@@ -259,23 +268,30 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
             size = parent.sizeDelta;
         }
 
-        float half = openBarThickness * 0.5f;
         bool vertical = size.x <= size.y;
+        float f = openEndFraction;
 
-        GameObject bar = new GameObject("OpenBar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        bar.layer = wallImage.gameObject.layer;
+        _openBar = CreateEndPiece("OpenEndA", parent, vertical, 0f, f);
+        _openBar2 = CreateEndPiece("OpenEndB", parent, vertical, 1f - f, 1f);
 
-        RectTransform rect = (RectTransform)bar.transform;
+        return true;
+    }
+
+    private Image CreateEndPiece(string pieceName, RectTransform parent, bool vertical, float from, float to)
+    {
+        GameObject piece = new GameObject(pieceName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        piece.layer = wallImage.gameObject.layer;
+
+        RectTransform rect = (RectTransform)piece.transform;
         rect.SetParent(parent, false);
-        rect.anchorMin = vertical ? new Vector2(0.5f - half, 0f) : new Vector2(0f, 0.5f - half);
-        rect.anchorMax = vertical ? new Vector2(0.5f + half, 1f) : new Vector2(1f, 0.5f + half);
+        rect.anchorMin = vertical ? new Vector2(0f, from) : new Vector2(from, 0f);
+        rect.anchorMax = vertical ? new Vector2(1f, to) : new Vector2(to, 1f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
-        _openBar = bar.GetComponent<Image>();
-        _openBar.raycastTarget = false; // 더블클릭은 버튼 본체가 받는다
-
-        return true;
+        Image image = piece.GetComponent<Image>();
+        image.raycastTarget = false; // 더블클릭은 버튼 본체가 받는다
+        return image;
     }
 
     private void EnsureLockImage()

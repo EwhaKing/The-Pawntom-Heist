@@ -24,6 +24,9 @@ public class RuleManager : NetworkBehaviour
     /// </summary>
     public static RuleManager Instance { get; private set; }
 
+    /// <summary>출발 버튼을 눌렀지만 캣닢이 없어 출발하지 못했을 때. 튜토리얼 안내 등 외부 관찰용.</summary>
+    public static event System.Action DepartureRejectedNoExit;
+
     [Header("Required")]
     [SerializeField] private MainbaseZone headquartersZone;
 
@@ -133,6 +136,7 @@ public class RuleManager : NetworkBehaviour
         if (!hasExit)
         {
             Debug.Log("[RuleManager] 전설의 캣닢이 없어 출발할 수 없습니다.");
+            DepartureRejectedNoExit?.Invoke();
             return;
         }
 

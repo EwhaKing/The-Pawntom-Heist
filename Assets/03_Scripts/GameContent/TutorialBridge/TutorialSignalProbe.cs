@@ -43,6 +43,8 @@ namespace Pawntom.TutorialBridge
         [SerializeField, Min(0f)] private float lookAngleForHint = 45f;
         [Tooltip("2-3 '뒤를 돌아본 후'로 볼 각도(기준 방향 대비)")]
         [SerializeField, Range(90f, 180f)] private float lookBackAngle = 135f;
+        [Tooltip("2-2 '달려봅시다' 완료로 볼 누적 달리기 시간(초). 잠깐 눌렀다 떼는 것으로는 완료되지 않는다")]
+        [SerializeField, Min(0f)] private float sprintSecondsForHint = 2f;
 
         [Header("4단계 CCTV")]
         [Tooltip("CCTV(위치) 탭을 이만큼 보고 있으면 4-5 '경비견 위치 확인'으로 본다")]
@@ -96,6 +98,7 @@ namespace Pawntom.TutorialBridge
         private Vector3 _lastPosition;
         private float _lastYaw;
         private float _movedDistance;
+        private float _sprintSeconds;
         private float _turnedDegrees;
         private Vector3 _lookReference = Vector3.forward;
 
@@ -180,6 +183,8 @@ namespace Pawntom.TutorialBridge
             MainbaseControlUI.Closed += HandleTerminalClosed;
             MainbaseControlUI.TabShown += HandleTerminalTab;
             InventoryManager.AddRejectedFull += HandleInventoryFull;
+            WallControlButtonUI.HackRequested += HandleWallHackRequested;
+            RuleManager.DepartureRejectedNoExit += HandleDepartureRejected;
         }
 
         private void OnDisable()
@@ -192,6 +197,8 @@ namespace Pawntom.TutorialBridge
             MainbaseControlUI.Closed -= HandleTerminalClosed;
             MainbaseControlUI.TabShown -= HandleTerminalTab;
             InventoryManager.AddRejectedFull -= HandleInventoryFull;
+            WallControlButtonUI.HackRequested -= HandleWallHackRequested;
+            RuleManager.DepartureRejectedNoExit -= HandleDepartureRejected;
         }
 
         private void OnDestroy()
@@ -206,6 +213,7 @@ namespace Pawntom.TutorialBridge
             _controlEnabled = true;
             _movedDistance = 0f;
             _turnedDegrees = 0f;
+            _sprintSeconds = 0f;
 
             if (_playerTransform != null)
             {
@@ -238,6 +246,7 @@ namespace Pawntom.TutorialBridge
             _pendingKindSignal = TutorialSignal.None;
             _pendingKindDelay = 0f;
             _cctvSeconds = _movedDistance = _turnedDegrees = 0f;
+            _sprintSeconds = 0f;
             _lastInventoryCount = -1;
             _lootRoomEntered = _lootedAny = _keyAcquired = false;
             _enemyStates.Clear();
@@ -279,6 +288,7 @@ namespace Pawntom.TutorialBridge
             }
 
             TrackMovement();
+            TrackSprint(Time.unscaledDeltaTime);
             TrackCctv(Time.unscaledDeltaTime);
             TrackHackKindSignal(Time.unscaledDeltaTime);
             DetectJump();
@@ -308,6 +318,15 @@ namespace Pawntom.TutorialBridge
         }
 
         // ───────────── 2단계 ─────────────
+
+        // 달리는 시간을 누적한다. 2-2 완료(SprintStarted)는 이 시간이 기준을 넘어야 난다.
+        private void TrackSprint(float deltaTime)
+        {
+            if (_controlEnabled && _player != null && _player.IsSprinting)
+            {
+                _sprintSeconds += deltaTime;
+            }
+        }
 
         private void TrackMovement()
         {
@@ -367,7 +386,7 @@ namespace Pawntom.TutorialBridge
                 Emit(TutorialSignal.LookedBack);
             }
 
-            if (_player.IsSprinting)
+            if (_sprintSeconds >= sprintSecondsForHint)
             {
                 Emit(TutorialSignal.SprintStarted);
             }
@@ -1026,6 +1045,66 @@ namespace Pawntom.TutorialBridge
             _cctvTabVisible = tab == MainbaseControlUI.Tab.Position;
         }
 
+        private void HandleDepartureRejected()
+        {
+            Emit(TutorialSignal.DepartRejectedNoCatnip);
+        }
+
+        /// <summary>
+        /// 4-6a: 복도 A 끝(첫 문)이 아닌 격벽을 골랐다. 첫 문은 CorridorAEndReached 영역에서 가장 가까운 격벽이다.
+        /// 영역이 없거나 격벽이 하나뿐이면 판단하지 않는다.
+        /// </summary>
+        private void HandleWallHackRequested(ControllableWall wall)
+        {
+            if (wall == null || _walls.Length < 2)
+            {
+                return;
+            }
+
+            var zones = TutorialZone.All;
+            Vector3 anchor = default;
+            bool found = false;
+
+            for (int i = 0; i < zones.Count; i++)
+            {
+                if (zones[i] != null && zones[i].Signal == TutorialSignal.CorridorAEndReached)
+                {
+                    anchor = zones[i].transform.position;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                return;
+            }
+
+            ControllableWall first = null;
+            float best = float.MaxValue;
+
+            for (int i = 0; i < _walls.Length; i++)
+            {
+                if (_walls[i] == null)
+                {
+                    continue;
+                }
+
+                float sqr = _wallBounds[i].SqrDistance(anchor);
+
+                if (sqr < best)
+                {
+                    best = sqr;
+                    first = _walls[i];
+                }
+            }
+
+            if (first != null && first != wall)
+            {
+                Emit(TutorialSignal.WrongDoorHackStarted);
+            }
+        }
+
         private void HandleHackingStarted(SecurityLevel level, HackingGameType type)
         {
             _hackIsVault = level == SecurityLevel.VaultFinal || TutorialVault.IsVaultHackPending;
@@ -1105,6 +1184,12 @@ namespace Pawntom.TutorialBridge
 
         private void PollDoors(Vector3 position)
         {
+            // 격벽이 둘 이상이고 전부 해금됐으면(첫 문 + 나머지 문) 4-14 안내를 연다.
+            if (_walls.Length >= 2 && CountWalls(false) == 0 && CountWalls(true) >= 2)
+            {
+                Emit(TutorialSignal.AllDoorsUnlocked);
+            }
+
             bool zoneForLocked = TutorialZone.HasZoneFor(TutorialSignal.CorridorAEndReached);
             bool zoneForBlue = TutorialZone.HasZoneFor(TutorialSignal.BlueDoorAhead);
             float radiusSq = doorRadius * doorRadius;

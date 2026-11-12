@@ -67,7 +67,8 @@ public class MarketUI : MonoBehaviour
     private void Update()
     {
         if (PlayerData.IsLocalPlayerDead) return;
-        if (Input.GetKeyDown(KeyCode.B))
+        // 튜토리얼 중에는 테스트용 B키로 암시장을 열 수 없다.
+        if (Input.GetKeyDown(KeyCode.B) && Pawntom.TutorialBridge.TutorialDirector.Active == null)
         {
             if (root != null && root.activeSelf)
             {

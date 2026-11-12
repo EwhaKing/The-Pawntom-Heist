@@ -141,6 +141,15 @@ namespace Pawntom.Tutorial.Core
         /// 쫓기던 중 추격이 모두 끝났다(따돌렸다). 어느 장소에서든, 플레이어가 살아 있을 때만. 사건형.
         /// 첫 추격 대사(3-4~3-8)의 트리거다.
         /// </summary>
-        ChaseEscaped
+        ChaseEscaped,
+
+        /// <summary>4-6a 첫 문(복도 A 끝)이 아닌 다른 격벽을 먼저 해킹하려 했다. 사건형.</summary>
+        WrongDoorHackStarted,
+
+        /// <summary>7-14 출발 버튼을 눌렀지만 캣닢이 없어 출발하지 못했다. 사건형.</summary>
+        DepartRejectedNoCatnip,
+
+        /// <summary>4-14 격벽이 둘 이상 해금돼 있다(첫 문 + 나머지 문). 상태형. 이정표로 세지 않는다 — 첫 해킹 성공과 구분하기 위해.</summary>
+        AllDoorsUnlocked
     }
 }
