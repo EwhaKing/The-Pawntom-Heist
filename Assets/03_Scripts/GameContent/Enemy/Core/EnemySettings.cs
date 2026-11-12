@@ -200,7 +200,12 @@ namespace Pawntom.Enemy.Core
         [Tooltip("공격 뒤 같은 플레이어를 다시 물기까지의 시간(초)")]
         [SerializeField, Min(0.05f)] private float _cooldownSeconds = 1.0f;
 
+        [Tooltip("플레이어를 한 번 문 뒤 이 시간(초) 동안 스턴 — 그 자리에 멈춰 서서 아무것도 하지 않는다. 0 이면 스턴 없음")]
+        [SerializeField, Min(0f)] private float _stunSecondsAfterAttack = 2f;
+
         public float Damage { get { return _damage; } }
+
+        public float StunSecondsAfterAttack { get { return _stunSecondsAfterAttack; } }
 
         public float Range { get { return _range; } }
 

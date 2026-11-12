@@ -20,5 +20,5 @@ MonoBehaviour:
   canDrop: 1
   canBuy: 0
   buyPrice: 30
-  sellPrice: 0
+  sellPrice: 80
   modelPrefab: {fileID: 3880204369791595464, guid: a6c9acfa660a21f49b7e308238303980, type: 3}

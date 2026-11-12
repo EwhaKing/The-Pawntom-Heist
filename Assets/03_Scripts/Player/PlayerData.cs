@@ -155,9 +155,14 @@ public class PlayerData : NetworkBehaviour
     private readonly System.Collections.Generic.List<Pawntom.Enemy.Core.EnemyAttacker> _attackers =
         new System.Collections.Generic.List<Pawntom.Enemy.Core.EnemyAttacker>(8);
 
+    // _attackers 와 같은 순서로 쌓는다. 문 적을 되찾아 스턴을 걸 때 쓴다.
+    private readonly System.Collections.Generic.List<Pawntom.Enemy.Authoring.EnemyAgent> _attackerAgents =
+        new System.Collections.Generic.List<Pawntom.Enemy.Authoring.EnemyAgent>(8);
+
     private void TickEnemyContactDamage()
     {
         _attackers.Clear();
+        _attackerAgents.Clear();
         System.Collections.Generic.IReadOnlyList<Pawntom.Enemy.Authoring.EnemyAgent> enemies =
             Pawntom.Enemy.Authoring.EnemyAgent.Active;
 
@@ -166,7 +171,9 @@ public class PlayerData : NetworkBehaviour
             Pawntom.Enemy.Authoring.EnemyAgent enemy = enemies[i];
 
             // 쫓아와서 닿았을 때만 문다. 순찰 중 스친 접촉은 감지(경계→추격)로 이어지고, 추격이 되면 그때 문다.
-            if (enemy == null || !enemy.isActiveAndEnabled || enemy.State != Pawntom.Enemy.Core.EnemyState.Chase)
+            // 스턴 중인 적은 물지 못한다.
+            if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned ||
+                enemy.State != Pawntom.Enemy.Core.EnemyState.Chase)
             {
                 continue;
             }
@@ -174,6 +181,7 @@ public class PlayerData : NetworkBehaviour
             Pawntom.Enemy.Core.EnemyAttackSettings attack = enemy.Settings.Attack;
             _attackers.Add(new Pawntom.Enemy.Core.EnemyAttacker(
                 enemy.transform.position, attack.Range, attack.Damage, attack.CooldownSeconds));
+            _attackerAgents.Add(enemy);
         }
 
         float damage = _enemyContact.Tick(Runner.DeltaTime, transform.position, _attackers);
@@ -181,6 +189,14 @@ public class PlayerData : NetworkBehaviour
         if (damage > 0f)
         {
             ApplyDamage(damage);
+
+            // 한 번 문 적은 설정된 시간(기본 2초) 동안 스턴.
+            int bitIndex = _enemyContact.LastAttackerIndex;
+            if (bitIndex >= 0 && bitIndex < _attackerAgents.Count)
+            {
+                Pawntom.Enemy.Authoring.EnemyAgent biter = _attackerAgents[bitIndex];
+                biter.Stun(biter.Settings.Attack.StunSecondsAfterAttack);
+            }
         }
     }
 

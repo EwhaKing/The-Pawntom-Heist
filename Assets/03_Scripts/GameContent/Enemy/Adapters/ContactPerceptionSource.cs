@@ -51,6 +51,12 @@ namespace Pawntom.Enemy.Adapters
                 }
 
                 Vector3 targetPosition = target.position;
+
+                if (EnemyBlindZone.IsHidden(targetPosition))
+                {
+                    continue;
+                }
+
                 float sqrDistance = (targetPosition - origin).sqrMagnitude;
 
                 if (sqrDistance > sqrContact || sqrDistance >= bestSqr)

@@ -71,5 +71,26 @@ namespace Pawntom.Enemy.Tests
 
             Assert.AreEqual(20f, damage.Tick(0.016f, Vector3.zero, attackers), 0.0001f);
         }
+
+        [Test]
+        public void LastAttackerIndex_BeforeAnyBite_IsMinusOne()
+        {
+            Assert.AreEqual(-1, new EnemyContactDamage(1f).LastAttackerIndex);
+        }
+
+        [Test]
+        public void LastAttackerIndex_IsTheNearestAttackerThatBit()
+        {
+            var damage = new EnemyContactDamage(1f);
+            var attackers = new List<EnemyAttacker>
+            {
+                new EnemyAttacker(new Vector3(1.4f, 0f, 0f), 1.5f, 20f, 1f),
+                new EnemyAttacker(new Vector3(0.5f, 0f, 0f), 1.5f, 20f, 1f)
+            };
+
+            damage.Tick(0.016f, Vector3.zero, attackers);
+
+            Assert.AreEqual(1, damage.LastAttackerIndex);
+        }
     }
 }

@@ -51,12 +51,26 @@ public class MainbaseControlUI : MonoBehaviour
     [SerializeField] private Hacking.HackingManager hackingManager;
     [SerializeField] private Hacking.SecurityLevel hackingLevel = Hacking.SecurityLevel.Normal;
 
+    [Header("Tab Buttons (비워두면 onClick 연결을 보고 자동 탐색)")]
+    [SerializeField] private UnityEngine.UI.Button positionTabButton;
+    [SerializeField] private UnityEngine.UI.Button wallTabButton;
+    [SerializeField] private UnityEngine.UI.Button sprinklerTabButton;
+    [SerializeField] private UnityEngine.UI.Button lightTabButton;
+
+    [Tooltip("현재 탭이 아닌 탭 버튼에 입히는 색 (원래 색에 곱해짐)")]
+    [SerializeField] private Color inactiveTabTint = new Color(0.45f, 0.45f, 0.45f, 1f);
+
+    private readonly System.Collections.Generic.Dictionary<UnityEngine.UI.Graphic, Color> tabOriginalColors =
+        new System.Collections.Generic.Dictionary<UnityEngine.UI.Graphic, Color>();
+
     private void Awake()
     {
         if (root == null)
         {
             root = gameObject;
         }
+
+        FindTabButtons();
 
         if (hackingManager == null)
         {
@@ -202,7 +216,67 @@ public class MainbaseControlUI : MonoBehaviour
     private void NotifyTab(Tab tab)
     {
         CurrentTab = tab;
+        RefreshTabButtons();
         TabShown?.Invoke(tab);
+    }
+
+    /// <summary>탭 버튼이 비어 있으면 자식 Button 의 onClick 대상 메서드 이름으로 찾는다.</summary>
+    private void FindTabButtons()
+    {
+        if (positionTabButton != null && wallTabButton != null
+            && sprinklerTabButton != null && lightTabButton != null)
+        {
+            return;
+        }
+
+        foreach (var button in GetComponentsInChildren<UnityEngine.UI.Button>(true))
+        {
+            var onClick = button.onClick;
+            for (int i = 0; i < onClick.GetPersistentEventCount(); i++)
+            {
+                if (onClick.GetPersistentTarget(i) != this) continue;
+
+                switch (onClick.GetPersistentMethodName(i))
+                {
+                    case nameof(ShowPositionTab):
+                        if (positionTabButton == null) positionTabButton = button;
+                        break;
+                    case nameof(ShowWallTab):
+                        if (wallTabButton == null) wallTabButton = button;
+                        break;
+                    case nameof(ShowSprinklerTab):
+                        if (sprinklerTabButton == null) sprinklerTabButton = button;
+                        break;
+                    case nameof(ShowLightTab):
+                        if (lightTabButton == null) lightTabButton = button;
+                        break;
+                }
+            }
+        }
+    }
+
+    private void RefreshTabButtons()
+    {
+        ApplyTabTint(positionTabButton, CurrentTab == Tab.Position);
+        ApplyTabTint(wallTabButton, CurrentTab == Tab.Wall);
+        ApplyTabTint(sprinklerTabButton, CurrentTab == Tab.Sprinkler);
+        ApplyTabTint(lightTabButton, CurrentTab == Tab.Light);
+    }
+
+    private void ApplyTabTint(UnityEngine.UI.Button button, bool isCurrent)
+    {
+        if (button == null) return;
+
+        foreach (var graphic in button.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+        {
+            if (!tabOriginalColors.TryGetValue(graphic, out var original))
+            {
+                original = graphic.color;
+                tabOriginalColors[graphic] = original;
+            }
+
+            graphic.color = isCurrent ? original : original * inactiveTabTint;
+        }
     }
 
     private void SetLayer(GameObject targetLayer)

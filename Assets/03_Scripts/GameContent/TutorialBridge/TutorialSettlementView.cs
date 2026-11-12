@@ -23,6 +23,11 @@ namespace Pawntom.TutorialBridge
         private const float FadeSeconds = 0.35f;
         private const float CountSeconds = 1.6f;
 
+        // 전리품 줄이 하나씩 "뿅" 하고 튀어나오는 연출. 창이 뜬 직후 저절로 시작하므로 대사를 넘겨도 영향이 없다.
+        private const float PopFirstDelay = 0.5f;
+        private const float PopInterval = 0.45f;
+        private const float PopSeconds = 0.28f;
+
         private RectTransform _root;
         private CanvasGroup _group;
         private TextMeshProUGUI[] _rowNames;
@@ -40,6 +45,12 @@ namespace Pawntom.TutorialBridge
         private int _totalValue;
         private int _lastShown = -1;
         private Action _onRevealed;
+
+        private int _rowCount;
+        private int _popShown;
+        private float _popTime;
+        private readonly float[] _popStart = new float[MaxRows];
+        private bool _revealRequested;
 
         public bool IsOpen
         {
@@ -115,12 +126,20 @@ namespace Pawntom.TutorialBridge
         {
             _totalValue = 0;
             int count = entries == null ? 0 : Mathf.Min(entries.Count, MaxRows);
+            _rowCount = count;
+            _popShown = 0;
+            _popTime = 0f;
+            _revealRequested = false;
 
             for (int i = 0; i < MaxRows; i++)
             {
                 bool used = i < count;
-                _rowNames[i].gameObject.SetActive(used);
-                _rowValues[i].gameObject.SetActive(used);
+
+                // 줄은 처음엔 모두 숨겨 두고, Update 에서 하나씩 튀어나오게 한다.
+                _rowNames[i].gameObject.SetActive(false);
+                _rowValues[i].gameObject.SetActive(false);
+                _rowNames[i].rectTransform.localScale = Vector3.zero;
+                _rowValues[i].rectTransform.localScale = Vector3.zero;
 
                 if (!used)
                 {
@@ -150,15 +169,56 @@ namespace Pawntom.TutorialBridge
         /// <summary>합계를 0부터 세어 올린 뒤 onRevealed 를 부른다.</summary>
         public void Reveal(Action onRevealed)
         {
+            // 줄이 다 나오기 전에 불려도(대사를 빨리 넘긴 경우) 줄이 먼저 다 나온 뒤에 합계를 센다.
             _onRevealed = onRevealed;
-            _counting = true;
-            _countTime = 0f;
+            _revealRequested = true;
         }
 
         public void Close()
         {
             _targetAlpha = 0f;
             _counting = false;
+            _revealRequested = false;
+        }
+
+        private void UpdatePop(float deltaTime)
+        {
+            if (_rowCount == 0 || _targetAlpha <= 0f)
+            {
+                return;
+            }
+
+            _popTime += deltaTime;
+
+            while (_popShown < _rowCount && _popTime >= PopFirstDelay + _popShown * PopInterval)
+            {
+                _rowNames[_popShown].gameObject.SetActive(true);
+                _rowValues[_popShown].gameObject.SetActive(true);
+                _popStart[_popShown] = _popTime;
+                _popShown++;
+                _audio?.PlayBlip(Pawntom.Tutorial.Core.TutorialSpeaker.Command);
+            }
+
+            for (int i = 0; i < _popShown; i++)
+            {
+                float t = Mathf.Clamp01((_popTime - _popStart[i]) / PopSeconds);
+                // easeOutBack: 살짝 커졌다가 제 크기로 돌아온다.
+                const float c1 = 2.2f;
+                const float c3 = c1 + 1f;
+                float eased = 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
+                Vector3 scale = Vector3.one * eased;
+                _rowNames[i].rectTransform.localScale = scale;
+                _rowValues[i].rectTransform.localScale = scale;
+            }
+
+            // 마지막 줄까지 다 나왔고 정산 대사가 끝났으면 합계를 센다.
+            if (_revealRequested && !_counting && _popShown >= _rowCount &&
+                _popTime >= PopFirstDelay + (_rowCount - 1) * PopInterval + PopSeconds)
+            {
+                _revealRequested = false;
+                _counting = true;
+                _countTime = 0f;
+            }
         }
 
         private void Update()
@@ -182,6 +242,16 @@ namespace Pawntom.TutorialBridge
             if (_targetAlpha <= 0f && _group.alpha <= 0f && _root.gameObject.activeSelf)
             {
                 _root.gameObject.SetActive(false);
+            }
+
+            UpdatePop(deltaTime);
+
+            // 줄이 없으면(가방이 빔) 뜸 들일 것 없이 바로 센다.
+            if (_rowCount == 0 && _revealRequested && !_counting)
+            {
+                _revealRequested = false;
+                _counting = true;
+                _countTime = 0f;
             }
 
             if (!_counting)

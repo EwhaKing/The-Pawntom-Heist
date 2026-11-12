@@ -95,21 +95,93 @@ namespace Pawntom.Tutorial.Tests
             TutorialSequencer sequencer = Make(
                 TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
                 TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
-                TutorialBeat.Main("c", 7, TutorialSignal.CatnipAcquired, L("c")).AsAnchor());
+                TutorialBeat.Main("c", 7, TutorialSignal.VaultFront, L("c")).AsAnchor());
             List<string> started = RecordLines(sequencer);
 
             Signal(sequencer, TutorialSignal.EyesOpened);
 
-            // b(추격)가 아직 안 열렸는데 c(캣닢)의 신호가 먼저 온다 — b 는 건너뛸 수 없어 c 를 막는다.
-            Signal(sequencer, TutorialSignal.CatnipAcquired);
+            // b(추격)가 아직 안 열렸는데 c(금고 앞)의 신호가 먼저 온다 — 위치 신호는 이정표가 아니라 b 가 c 를 막는다.
+            Signal(sequencer, TutorialSignal.VaultFront);
             Assert.AreEqual(new[] { "a" }, started.ToArray(), "사전 조건: 앞 비트가 줄을 막고 있다");
 
             int skipped = sequencer.SkipMainsBefore("c");
-            Signal(sequencer, TutorialSignal.CatnipAcquired);
+            Signal(sequencer, TutorialSignal.VaultFront);
 
             Assert.AreEqual(1, skipped);
             Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("b"));
             Assert.AreEqual(new[] { "a", "c" }, started.ToArray());
+        }
+
+        [Test]
+        public void Milestone_RaisedWhileEarlierRequiredBeatPending_JumpsAheadAndSkipsTheRest()
+        {
+            // 분전반·단말기를 먼저 만져 단계를 앞질렀다 — 앞 필수 비트(b)를 건너뛰고 이미 도달한 이정표(d)로 간다.
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("c", 3, TutorialSignal.SecurityNodeConnected, L("c")),
+                TutorialBeat.Main("d", 4, TutorialSignal.TerminalOpened, L("d")),
+                TutorialBeat.Main("e", 4, TutorialSignal.DoorHackSucceeded, L("e")));
+            List<string> started = RecordLines(sequencer);
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+            Signal(sequencer, TutorialSignal.TerminalOpened);
+
+            Assert.AreEqual(new[] { "a", "d" }, started.ToArray());
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("b"));
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("c"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("e"));
+        }
+
+        [Test]
+        public void Milestone_JumpsToTheFurthestOneReached()
+        {
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("c", 4, TutorialSignal.TerminalOpened, L("c")),
+                TutorialBeat.Main("d", 8, TutorialSignal.SettlementShown, L("d")));
+            List<string> started = RecordLines(sequencer);
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+            sequencer.Raise(TutorialSignal.TerminalOpened);
+            sequencer.Raise(TutorialSignal.SettlementShown);
+            Pump(sequencer);
+
+            Assert.AreEqual(new[] { "a", "d" }, started.ToArray());
+            Assert.AreEqual(TutorialBeatState.Skipped, sequencer.GetMainState("c"));
+        }
+
+        [Test]
+        public void Milestone_LocationSignalDoesNotJumpAhead()
+        {
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("c", 4, TutorialSignal.NearTerminal, L("c")));
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+            Signal(sequencer, TutorialSignal.NearTerminal);
+
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("b"));
+            Assert.AreEqual(TutorialBeatState.Pending, sequencer.GetMainState("c"));
+        }
+
+        [Test]
+        public void Milestone_ReplacementBeatComesBeforeTheBeatItReplaces()
+        {
+            // 분전반을 먼저 열었다: 3-1/3-3(접속 안내·연결 대사) 대신 3-0("이미 여셨군요")이 나온다.
+            TutorialSequencer sequencer = Make(
+                TutorialBeat.Main("a", 1, TutorialSignal.EyesOpened, L("a")),
+                TutorialBeat.Main("b", 2, TutorialSignal.EnemyChasing, L("b")),
+                TutorialBeat.Main("already", 3, TutorialSignal.SecurityNodeConnected, L("already")).AsSkippable(),
+                TutorialBeat.Main("connected", 3, TutorialSignal.SecurityNodeConnected, L("connected")).SkippingIfPlayed("already"));
+            List<string> started = RecordLines(sequencer);
+
+            Signal(sequencer, TutorialSignal.EyesOpened);
+            Signal(sequencer, TutorialSignal.SecurityNodeConnected);
+
+            Assert.AreEqual(new[] { "a", "already" }, started.ToArray());
         }
 
         [Test]

@@ -494,6 +494,15 @@ namespace Pawntom.Tutorial.Core
                     continue;
                 }
 
+                int required;
+
+                if (side.OnlyAfterSidePlayed != null &&
+                    _sideIndex.TryGetValue(side.OnlyAfterSidePlayed, out required) &&
+                    _sidePlayCount[required] == 0)
+                {
+                    continue;
+                }
+
                 if (_sidePlayCount[i] > 0)
                 {
                     if (!side.Repeatable || _time - _sideLastPlayTime[i] < side.RepeatCooldownSeconds)
@@ -676,6 +685,77 @@ namespace Pawntom.Tutorial.Core
         }
 
         private bool TryStartMain()
+        {
+            if (TryStartMainInOrder())
+            {
+                return true;
+            }
+
+            return TryStartMilestoneAhead();
+        }
+
+        /// <summary>
+        /// 순서대로 열릴 비트가 없을 때, 플레이어가 이미 앞서 나간 흔적(이정표 신호)이 있으면 그 비트로 건너뛴다.
+        /// <para>
+        /// 분전반을 먼저 열거나 본부에서 미리 조작하는 식으로 단계를 앞지르면, 필수 비트가 줄을 막아 뒤 대사가 영영 안 나온다.
+        /// 그래서 가장 멀리 간 이정표의 비트를 골라 그 사이의 안 한 비트를 모두 건너뛴다. 사이 비트의 안내 문구도 함께 내려간다.
+        /// </para>
+        /// <para>
+        /// 이정표 신호가 아닌 위치 신호는 보지 않는다(<see cref="TutorialGuidePlanner.IsMilestoneSignal"/>).
+        /// </para>
+        /// </summary>
+        private bool TryStartMilestoneAhead()
+        {
+            IReadOnlyList<TutorialBeat> mains = _script.Mains;
+
+            for (int j = mains.Count - 1; j > _cursor; j--)
+            {
+                TutorialBeat beat = mains[j];
+
+                if (_mainStates[j] != TutorialBeatState.Pending || IsReplacedByPlayed(beat))
+                {
+                    continue;
+                }
+
+                if (beat.RequiresPlayed != null && !WasPlayed(beat.RequiresPlayed))
+                {
+                    continue;
+                }
+
+                // "대신 나올 비트"가 아직 안 나왔고 그쪽도 후보면 그쪽이 먼저다(예: 3-0 이 3-3 보다 앞).
+                if (beat.SkippedIfPlayed != null &&
+                    _mainStates[_script.IndexOfMain(beat.SkippedIfPlayed)] == TutorialBeatState.Pending)
+                {
+                    continue;
+                }
+
+                if (HasRaisedMilestone(beat))
+                {
+                    StartMain(j);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 한 번이라도 들어온 이정표인가. 사망 재시도(RestartStage)에서 기록이 지워지므로 그 단계부터 다시 센다.
+        private bool HasRaisedMilestone(TutorialBeat beat)
+        {
+            TutorialSignal[] triggers = beat.Triggers;
+
+            for (int i = 0; i < triggers.Length; i++)
+            {
+                if (TutorialGuidePlanner.IsMilestoneSignal(triggers[i]) && _stamp[(int)triggers[i]] > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryStartMainInOrder()
         {
             NormalizeCursor();
 
