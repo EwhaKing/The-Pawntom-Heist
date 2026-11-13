@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7141881669872107655}
   - component: {fileID: 3497554381665731987}
   - component: {fileID: 4310889126728185238}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: Necklace
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -193,7 +193,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3033273108864270443, guid: 1e2193ab3a7eb184499ab33466e8f6f9, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 6562398283566368959, guid: 1e2193ab3a7eb184499ab33466e8f6f9, type: 3}
