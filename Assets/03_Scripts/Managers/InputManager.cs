@@ -34,6 +34,10 @@ public class InputManager : PawntomSingleton<InputManager>
     private int _pendingScroll;
     private bool _pendingDrop;
 
+    // 마우스 시점 이동량도 같은 이유로 프레임마다 더해 둔다. 수집 순간의 한 프레임 값만 읽으면, 프레임이 틱(64Hz)보다
+    // 빠를 때 사이 프레임의 마우스 이동이 버려지고 틱마다 들쭉날쭉하게 돌아 화면이 지직거린다.
+    private Vector2 _pendingLook;
+
     /// <summary>
     /// 켜져 있으면 Q 를 바로 보내지 않고 <see cref="DropPressed"/> 로 알린다. 1인칭 팔이 손을 뻗어 바닥에 닿는 순간
     /// <see cref="RequestDrop"/> 로 실제 버리기를 보낸다 — 손에서 놓는 순간과 월드에 아이템이 생기는 순간을 맞춘다.
@@ -63,6 +67,8 @@ public class InputManager : PawntomSingleton<InputManager>
             ClearPending();
             return;
         }
+
+        _pendingLook += _inputActions.Player.Look.ReadValue<Vector2>();
 
         Keyboard keyboard = Keyboard.current;
 
@@ -111,6 +117,7 @@ public class InputManager : PawntomSingleton<InputManager>
         _pendingSlot = -1;
         _pendingScroll = 0;
         _pendingDrop = false;
+        _pendingLook = Vector2.zero;
     }
 
     /// <summary>
@@ -169,7 +176,8 @@ public class InputManager : PawntomSingleton<InputManager>
         }
 
         data.Move = _inputActions.Player.Move.ReadValue<Vector2>();
-        data.Look = _inputActions.Player.Look.ReadValue<Vector2>();
+        // 틱 사이에 모은 이동량을 한 번에 내보낸다(ClearPending 이 비운다).
+        data.Look = _pendingLook;
         
         data.Buttons.Set((int)InputButton.Jump, _inputActions.Player.Jump.IsPressed());
         data.Buttons.Set((int)InputButton.Sprint, _inputActions.Player.Sprint.IsPressed());

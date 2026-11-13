@@ -139,6 +139,36 @@ namespace Pawntom.Enemy.Core
             _engagement = engagement ?? new HowlingEngagementPolicy();
         }
 
+        // 털 흔적(발자국)을 새로 알아챈 횟수. 화면 연출(느낌표·깡충)이 이 숫자가 늘었는지로 알아챈 순간을 안다.
+        // 같은 자취를 따라가는 동안 매 틱 늘지 않도록 짧은 쿨다운을 둔다.
+        private const float TraceNoticeCooldownSeconds = 3f;
+        private float _traceNoticeCooldown;
+
+        /// <summary>발자국을 알아챈 누적 횟수(연출용). 상태 판단에는 쓰지 않는다.</summary>
+        public int TraceNoticeCount { get; private set; }
+
+        /// <summary>플레이어를 직접 발견(순찰·조사 중에 경계·추격으로 넘어감)한 누적 횟수(연출용).</summary>
+        public int SpotNoticeCount { get; private set; }
+
+        private void NoteSpottedFrom(EnemyState previous)
+        {
+            if (previous == EnemyState.Patrol || previous == EnemyState.Investigate)
+            {
+                SpotNoticeCount++;
+            }
+        }
+
+        private void NoteTraceNoticed()
+        {
+            if (_traceNoticeCooldown > 0f)
+            {
+                return;
+            }
+
+            TraceNoticeCount++;
+            _traceNoticeCooldown = TraceNoticeCooldownSeconds;
+        }
+
         /// <summary>현재 상태.</summary>
         public EnemyState State
         {
@@ -255,6 +285,11 @@ namespace Pawntom.Enemy.Core
                 return false;
             }
 
+            if (_traceNoticeCooldown > 0f)
+            {
+                _traceNoticeCooldown -= deltaTime;
+            }
+
             Perceive(deltaTime);
 
             // 하울링 이후의 경과 시간은 상태와 무관하게 흐른다. 상태 분기보다 먼저 누적한다.
@@ -345,6 +380,7 @@ namespace Pawntom.Enemy.Core
             // 전환 1: 간접 단서 → Investigate
             if (_snapshot.HasTrace && !_ignoreTraces)
             {
+                NoteTraceNoticed();
                 return EnterInvestigate(_snapshot.TracePosition);
             }
 
@@ -422,6 +458,7 @@ namespace Pawntom.Enemy.Core
             if (_snapshot.HasTrace && !_ignoreTraces)
             {
                 Vector3 next = _snapshot.TracePosition;
+                NoteTraceNoticed();
                 _noDetectionTimer = 0f;
                 SetInvestigateTarget(next);
                 return false;
@@ -673,6 +710,7 @@ namespace Pawntom.Enemy.Core
 
         private bool EnterAlert(Vector3 contactPoint)
         {
+            NoteSpottedFrom(_state);
             _state = EnemyState.Alert;
             _lastContactPoint = contactPoint;
             _alertTimer = 0f;
@@ -697,6 +735,7 @@ namespace Pawntom.Enemy.Core
 
         private bool EnterChase(Vector3 target)
         {
+            NoteSpottedFrom(_state);
             _state = EnemyState.Chase;
 
             // 추격의 목적지는 대상 본인이라 늘 목적지 근처다. 제동을 켜면 내내 브레이크가 걸린다(TASK-008 2.3).

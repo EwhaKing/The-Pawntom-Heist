@@ -33,14 +33,14 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     // 세 상태를 색(빨강·파랑·초록)과 모양(자물쇠 / 꽉 찬 바탕 / 얇은 막대)으로 이중 구분한다.
     // 해금 안 된 격벽은 열 수 없으므로 상태는 잠김·해금(닫힘)·열림 세 가지뿐이다(UI_SPEC 3.2).
     [Header("Colors")]
-    [Tooltip("열림 = 초록 #2ED47A")]
-    [SerializeField] private Color openColor = new Color(0.180f, 0.831f, 0.478f, 1f);
+    [Tooltip("열림 = 민트 #10FFB8")]
+    [SerializeField] private Color openColor = new Color(0.063f, 1f, 0.722f, 1f);
 
-    [Tooltip("잠김(해금 안 됨) = 빨강 #E5342B")]
-    [SerializeField] private Color hackingLockedColor = new Color(0.898f, 0.204f, 0.169f, 1f);
+    [Tooltip("잠김(해금 안 됨) = 코랄 #FF4E56")]
+    [SerializeField] private Color hackingLockedColor = new Color(1f, 0.306f, 0.337f, 1f);
 
-    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2E7DE0 (대본의 \"푸른색이 됐습니다\")")]
-    [SerializeField] private Color unlockedColor = new Color(0.180f, 0.490f, 0.878f, 1f);
+    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2F8CFF (대본의 \"푸른색이 됐습니다\")")]
+    [SerializeField] private Color unlockedColor = new Color(0.184f, 0.549f, 1f, 1f);
 
     [Header("Shape")]
     [Tooltip("열림일 때 양 끝에 남기는 문틀 조각의 길이(버튼 긴 변 대비 비율). 가운데는 뚫려 보인다")]
@@ -48,6 +48,9 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
     [Tooltip("열림일 때 가운데 빈 자리의 바탕 투명도. 클릭 영역은 그대로 남는다")]
     [SerializeField, Range(0f, 0.5f)] private float openGapAlpha = 0.08f;
+
+    [Tooltip("버튼을 모서리 둥근 알약 모양 + 윗면 광택으로 그린다. 끄면 예전 각진 사각형")]
+    [SerializeField] private bool roundedStyle = true;
 
     [Tooltip("잠김일 때 버튼 위에 띄울 자물쇠 아이콘. 비우면 표시하지 않는다")]
     [SerializeField] private Sprite lockIcon;
@@ -61,6 +64,7 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
     private Image _openBar;   // 열림: 한쪽 끝 문틀 조각
     private Image _openBar2;  // 열림: 반대쪽 끝 문틀 조각
     private Image _lockImage;
+    private Image _sheen;
 
     private float lastClickTime;
     private bool isHacking;
@@ -77,12 +81,66 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
             hackingManager = FindFirstObjectByType<Hacking.HackingManager>();
         }
 
+        ApplyRoundedStyle();
         RefreshUI();
     }
+
+    // 단색 사각형 대신 둥근 알약 + 윗면 광택. 열림 상태의 양 끝 조각도 같은 둥근 스프라이트를 쓴다.
+    private void ApplyRoundedStyle()
+    {
+        if (!roundedStyle || wallImage == null)
+        {
+            return;
+        }
+
+        wallImage.sprite = RoundedShapes.RoundedSprite;
+        wallImage.type = Image.Type.Sliced;
+
+        if (_sheen != null)
+        {
+            return;
+        }
+
+        GameObject sheen = new GameObject("Sheen", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        sheen.layer = wallImage.gameObject.layer;
+
+        RectTransform rect = (RectTransform)sheen.transform;
+        rect.SetParent(wallImage.rectTransform, false);
+        rect.anchorMin = new Vector2(0f, 0.5f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.offsetMin = new Vector2(4f, 0f);
+        rect.offsetMax = new Vector2(-4f, -2f);
+
+        _sheen = sheen.GetComponent<Image>();
+        _sheen.sprite = RoundedShapes.RoundedSprite;
+        _sheen.type = Image.Type.Sliced;
+        _sheen.color = new Color(1f, 1f, 1f, 0.28f);
+        _sheen.raycastTarget = false;
+    }
+
+    private static readonly System.Collections.Generic.List<WallControlButtonUI> ActiveButtons =
+        new System.Collections.Generic.List<WallControlButtonUI>(8);
+
+    /// <summary>지금 켜져 있는(보이는 탭의) 격벽 버튼들. 튜토리얼 안내 틀이 어느 버튼을 가리킬지 고를 때 읽는다.</summary>
+    public static System.Collections.Generic.IReadOnlyList<WallControlButtonUI> Active => ActiveButtons;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetActive()
+    {
+        ActiveButtons.Clear();
+    }
+
+    /// <summary>이 버튼이 조작하는 실제 격벽.</summary>
+    public ControllableWall TargetWall => targetWall;
 
     private void OnEnable()
     {
         RefreshUI();
+
+        if (!ActiveButtons.Contains(this))
+        {
+            ActiveButtons.Add(this);
+        }
 
         if (targetWall != null)
         {
@@ -92,6 +150,8 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
     private void OnDisable()
     {
+        ActiveButtons.Remove(this);
+
         if (targetWall != null)
         {
             targetWall.OnStateChanged -= RefreshUI;
@@ -240,6 +300,12 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
     private void SetOverlays(bool showOpenBar, bool showLock)
     {
+        // 열림은 가운데가 뚫린 모양이라 광택 줄이 어울리지 않는다.
+        if (_sheen != null)
+        {
+            _sheen.gameObject.SetActive(!showOpenBar);
+        }
+
         if (_openBar != null)
         {
             _openBar.gameObject.SetActive(showOpenBar);
@@ -290,6 +356,13 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         rect.offsetMax = Vector2.zero;
 
         Image image = piece.GetComponent<Image>();
+
+        if (roundedStyle)
+        {
+            image.sprite = RoundedShapes.RoundedSprite;
+            image.type = Image.Type.Sliced;
+        }
+
         image.raycastTarget = false; // 더블클릭은 버튼 본체가 받는다
         return image;
     }

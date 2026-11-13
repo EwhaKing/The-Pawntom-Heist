@@ -12,6 +12,26 @@ using UnityEngine;
 /// </summary>
 public static class InteractRange
 {
+    /// <summary>
+    /// 모든 E 상호작용의 표준 거리. 본부 단말기와 같다 — 대상 경계에서 사방(수평)으로 이만큼 안에 서야 한다.
+    /// 대상마다 다르던 거리를 한 값으로 모았다(가까이 다가가야 선택된다).
+    /// </summary>
+    public const float StandardMargin = 1.2f;
+
+    /// <summary>격벽처럼 큰 대상을 카메라에서 겨눌 때 닿는 거리(m). 조준선이 맞은 지점까지.</summary>
+    public const float WallDistance = 2f;
+
+    /// <summary>줍기 아이템: 카메라에서 아이템 경계까지의 최대 거리(m).</summary>
+    public const float ItemDistance = 1.5f;
+
+    /// <summary>대상 둘레의 상호작용 상자(수평으로 margin 만큼 넓힌 경계). 튜토리얼 안내 상자가 같은 크기를 쓴다.</summary>
+    public static Bounds RangeBounds(Component target, float margin)
+    {
+        Bounds box = GetBounds(target);
+        box.Expand(new Vector3(margin * 2f, 0f, margin * 2f));
+        return box;
+    }
+
     // 매 호출마다 목록을 새로 만들지 않는다(안내 판정이 0.1초마다 돈다).
     private static readonly List<Collider> ColliderBuffer = new List<Collider>(8);
     private static readonly List<Renderer> RendererBuffer = new List<Renderer>(8);

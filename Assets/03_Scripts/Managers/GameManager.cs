@@ -96,10 +96,17 @@ public class GameManager : PawntomSingleton<GameManager>
         ChangeState(GameState.Result);
     }
 
+    /// <summary>프레임 상한. 모니터 주사율이 높아도 이 이상은 그리지 않는다.</summary>
+    private const int TargetFrameRate = 120;
+
     protected override void Awake()
     {
         base.Awake();
         if (Instance != this) return;
+
+        // vSync 가 꺼져 있어 프레임 제한이 없으면 GPU 가 한계까지 돌아 발열·프레임 흔들림이 커진다.
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = TargetFrameRate;
 
         NetworkManager.ConnectionStarted += HandleConnectionStarted;
         NetworkManager.ConnectionSucceeded += HandleConnectionSucceeded;

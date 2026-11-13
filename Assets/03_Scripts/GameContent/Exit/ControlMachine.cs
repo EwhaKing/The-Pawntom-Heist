@@ -24,8 +24,11 @@ public class ControlMachine : MonoBehaviour
         get { return interactName; }
     }
 
-    [Tooltip("단말기 둘레로 이만큼(m) 넓힌 상자 안에서만 상호작용할 수 있다. 튜토리얼의 연초록 안내 상자와 같은 크기(기본 1.2 = 안내 상자의 넓힘 2.4 의 절반)")]
-    [SerializeField, Min(0f)] private float interactMargin = 1.2f;
+    // 거리는 InteractRange.StandardMargin 한 값으로 통일했다(모든 E 상호작용 대상 공통).
+    private static float interactMargin
+    {
+        get { return InteractRange.StandardMargin; }
+    }
 
     /// <summary>
     /// 플레이어(수평 위치)가 단말기 앞 상호작용 상자 안에 있는가. 상자 = 단말기 경계를 사방(수평)으로 <c>interactMargin</c> 만큼 넓힌 것.

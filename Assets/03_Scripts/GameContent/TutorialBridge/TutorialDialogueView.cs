@@ -324,7 +324,29 @@ namespace Pawntom.TutorialBridge
                 return false;
             }
 
-            if (Cursor.lockState == CursorLockMode.Locked)
+            // 1인칭 조작 중이면 화면 어디를 눌러도 된다. 커서가 잠겨 있지 않아도(에디터·창 모드) UI 가 열려 있지 않으면 마찬가지다.
+            // 단말기·해킹 팝업 같은 UI 가 열려 있으면 대화창 위를 눌러야 한다(다른 곳 클릭은 그 UI 조작이다).
+            if (Cursor.lockState == CursorLockMode.Locked || !GameplayInputBlocker.IsBlocked)
+            {
+                return true;
+            }
+
+            return RectTransformUtility.RectangleContainsScreenPoint(_panel, mouse.position.ReadValue(), null);
+        }
+
+        /// <summary>좌클릭이 이번 프레임에 눌렸는가(일반 대사 넘기기용). 커서가 잠겨 있으면 어디든, 풀려 있으면 대화창 위에서만.</summary>
+        private bool ClickPressedThisFrame()
+        {
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            {
+                return false;
+            }
+
+            // 1인칭 조작 중이면 화면 어디를 눌러도 된다. 커서가 잠겨 있지 않아도(에디터·창 모드) UI 가 열려 있지 않으면 마찬가지다.
+            // 단말기·해킹 팝업 같은 UI 가 열려 있으면 대화창 위를 눌러야 한다(다른 곳 클릭은 그 UI 조작이다).
+            if (Cursor.lockState == CursorLockMode.Locked || !GameplayInputBlocker.IsBlocked)
             {
                 return true;
             }
@@ -335,7 +357,9 @@ namespace Pawntom.TutorialBridge
         /// <summary>넘기기를 기다리는 동안 커서가 풀려 있으면 대화창이 클릭을 받게 한다(아래 UI 로 새지 않게).</summary>
         private void UpdateClickBlocking()
         {
-            bool clickable = IsHoldingPlayer && Cursor.lockState != CursorLockMode.Locked;
+            // 메인 대사는 넘기기를 기다리는 동안, 일반 대사는 떠 있는 동안 클릭으로 넘길 수 있어야 하므로 대화창이 클릭을 받는다.
+            bool clickSkippable = !_waitForConfirm && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding);
+            bool clickable = (IsHoldingPlayer || clickSkippable) && Cursor.lockState != CursorLockMode.Locked;
 
             if (_group.blocksRaycasts != clickable)
             {
@@ -371,8 +395,9 @@ namespace Pawntom.TutorialBridge
             }
 
             // 한 프레임에 한 단계만: 출력 중이면 다 찍기, 다 찍힌 뒤면 다음 대사.
-            if (_waitForConfirm && _confirmArmed && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding) &&
-                ConfirmPressedThisFrame())
+            // 메인 대사: Space·클릭. 일반(상황) 대사: 클릭만(Space 는 점프라 쓰지 않는다). 일반 대사는 이걸로 넘겨도 월드가 멈추지 않는다.
+            if (_confirmArmed && (_phase == Phase.Opening || _phase == Phase.Typing || _phase == Phase.Holding) &&
+                (_waitForConfirm ? ConfirmPressedThisFrame() : ClickPressedThisFrame()))
             {
                 SkipTyping();
                 return;
@@ -589,6 +614,41 @@ namespace Pawntom.TutorialBridge
             RadioNoiseText.Compose(text, _buffer, visible, decodeTail, glitchChance, _random);
             _body.SetCharArray(_buffer, 0, text.Length);
             _body.maxVisibleCharacters = visible;
+
+            // 강조 구간은 다른 색으로 칠한다(꼭지점 색만 바꾼다 — 잡음 글자 치환과 상관없이 같은 자리에 적용된다).
+            if (_line != null && _line.Emphasis.Length > 0)
+            {
+                _body.ForceMeshUpdate();
+                ApplyEmphasisColors(_body.textInfo);
+                _body.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            }
+        }
+
+        private static readonly Color32 EmphasisColor = new Color32(255, 214, 90, 255);
+
+        private void ApplyEmphasisColors(TMP_TextInfo info)
+        {
+            int[] ranges = _line.Emphasis;
+
+            for (int r = 0; r + 1 < ranges.Length; r += 2)
+            {
+                for (int i = ranges[r]; i < ranges[r + 1] && i < info.characterCount; i++)
+                {
+                    TMP_CharacterInfo character = info.characterInfo[i];
+
+                    if (!character.isVisible)
+                    {
+                        continue;
+                    }
+
+                    Color32[] colors = info.meshInfo[character.materialReferenceIndex].colors32;
+                    int index = character.vertexIndex;
+                    colors[index] = EmphasisColor;
+                    colors[index + 1] = EmphasisColor;
+                    colors[index + 2] = EmphasisColor;
+                    colors[index + 3] = EmphasisColor;
+                }
+            }
         }
 
         /// <summary>보이는 글자 일부를 몇 픽셀씩 흔든다(전파 간섭).</summary>
@@ -614,6 +674,13 @@ namespace Pawntom.TutorialBridge
                 vertices[index + 1] += offset;
                 vertices[index + 2] += offset;
                 vertices[index + 3] += offset;
+            }
+
+            if (_line != null && _line.Emphasis.Length > 0)
+            {
+                ApplyEmphasisColors(info); // ForceMeshUpdate 가 색을 되돌렸으므로 다시 칠한다
+                _body.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
+                return;
             }
 
             _body.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);

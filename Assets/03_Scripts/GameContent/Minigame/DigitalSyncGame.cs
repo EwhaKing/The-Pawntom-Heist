@@ -180,7 +180,7 @@ namespace Hacking
         /// </summary>
         public void TrySync()
         {
-            if (!IsActive || hasFinished)
+            if (!IsActive || hasFinished || InputBlocked)
             {
                 return;
             }

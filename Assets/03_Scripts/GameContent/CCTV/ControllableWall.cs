@@ -40,18 +40,21 @@ public class ControllableWall : NetworkBehaviour
     // 세 상태를 색(빨강·파랑·초록)과 모양(꽉 찬 막대 / 얇은 막대 / 자물쇠)으로 이중 구분한다.
     // 해금 안 된 격벽은 열 수 없으므로 실제 상태는 이 셋뿐이다(UI_SPEC 3.2 참고).
     [Header("Minimap Colors")]
-    [Tooltip("잠김(해금 안 됨, 닫힘) = 빨강 #E5342B")]
-    [SerializeField] private Color minimapClosedColor = new Color(0.898f, 0.204f, 0.169f, 1f);
+    [Tooltip("잠김(해금 안 됨, 닫힘) = 코랄 #FF4E56")]
+    [SerializeField] private Color minimapClosedColor = new Color(1f, 0.306f, 0.337f, 1f);
 
-    [Tooltip("열림 = 초록 #2ED47A. 막대가 얇아져 통로가 뚫린 모양으로 보인다")]
-    [SerializeField] private Color minimapOpenColor = new Color(0.180f, 0.831f, 0.478f, 1f);
+    [Tooltip("열림 = 민트 #10FFB8. 막대가 얇아져 통로가 뚫린 모양으로 보인다")]
+    [SerializeField] private Color minimapOpenColor = new Color(0.063f, 1f, 0.722f, 1f);
 
-    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2E7DE0 (대본의 \"푸른색이 됐습니다\")")]
-    [SerializeField] private Color minimapUnlockedColor = new Color(0.180f, 0.490f, 0.878f, 1f);
+    [Tooltip("해금됐지만 닫혀 있을 때 = 파랑 #2F8CFF (대본의 \"푸른색이 됐습니다\")")]
+    [SerializeField] private Color minimapUnlockedColor = new Color(0.184f, 0.549f, 1f, 1f);
 
     [Header("Minimap Shape")]
     [Tooltip("열림일 때 표시용 막대의 두께 비율. 작을수록 가늘다. 1이면 두께 변화 없음")]
     [SerializeField, Range(0.1f, 1f)] private float openThicknessRatio = 0.3f;
+
+    [Tooltip("미니맵 격벽 막대를 둥근 알약 모양으로 그린다. 끄면 예전 각진 막대")]
+    [SerializeField] private bool roundedMinimapShape = true;
 
     [Tooltip("잠김일 때 격벽 위에 띄울 자물쇠 아이콘(위에서 본 모양). 비우면 표시하지 않는다")]
     [SerializeField] private Sprite lockIcon;
@@ -556,11 +559,31 @@ public class ControllableWall : NetworkBehaviour
             _minimapScaleCached = true;
         }
 
-        // 두께 축 = 수평 두 축 중 작은 쪽. 길이(문 폭)는 그대로 둔다.
-        Vector3 scale = _minimapBaseScale;
+        bar.localScale = _minimapBaseScale;
 
-        if (IsUnlocked && IsOpen)
+        // 각진 큐브 대신 모서리가 둥근 알약 모양 평면으로 바꾼다. 열림이면 가운데를 비워
+        // 양 끝 문틀 조각만 남긴다(통로가 뚫린 느낌). 닫힘은 한 덩어리 알약.
+        if (roundedMinimapShape)
         {
+            MeshFilter meshFilter = minimapWallRenderer.GetComponent<MeshFilter>();
+
+            if (meshFilter != null)
+            {
+                Mesh previous = _minimapPillMesh;
+                _minimapPillMesh = RoundedShapes.BuildBarMesh(bar.lossyScale, IsUnlocked && IsOpen, 0.25f);
+                meshFilter.sharedMesh = _minimapPillMesh;
+
+                if (previous != null)
+                {
+                    DestroyMesh(previous);
+                }
+            }
+        }
+        else if (IsUnlocked && IsOpen)
+        {
+            Vector3 scale = _minimapBaseScale;
+
+            // 두께 축 = 수평 두 축 중 작은 쪽. 길이(문 폭)는 그대로 둔다.
             if (scale.x <= scale.z)
             {
                 scale.x *= openThicknessRatio;
@@ -569,11 +592,26 @@ public class ControllableWall : NetworkBehaviour
             {
                 scale.z *= openThicknessRatio;
             }
+
+            bar.localScale = scale;
         }
 
-        bar.localScale = scale;
-
         UpdateLockIcon(!IsUnlocked);
+    }
+
+    private Mesh _minimapPillMesh;
+
+    private static void DestroyMesh(Mesh mesh)
+    {
+        // 에디터 모드 테스트에서는 Destroy 가 허용되지 않는다.
+        if (Application.isPlaying)
+        {
+            Destroy(mesh);
+        }
+        else
+        {
+            DestroyImmediate(mesh);
+        }
     }
 
     private void UpdateLockIcon(bool show)
@@ -622,6 +660,11 @@ public class ControllableWall : NetworkBehaviour
         if (_lockIconTransform != null)
         {
             Destroy(_lockIconTransform.gameObject);
+        }
+
+        if (_minimapPillMesh != null)
+        {
+            DestroyMesh(_minimapPillMesh);
         }
 
         if (_indicatorRoot != null)

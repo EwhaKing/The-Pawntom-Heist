@@ -35,6 +35,20 @@ public class MainbaseControlUI : MonoBehaviour
 
     public Tab CurrentTab { get; private set; }
 
+    /// <summary>탭 버튼의 위치(튜토리얼 안내 틀용). 버튼을 못 찾았으면 null.</summary>
+    public RectTransform GetTabRect(Tab tab)
+    {
+        UnityEngine.UI.Button button = tab switch
+        {
+            Tab.Position => positionTabButton,
+            Tab.Wall => wallTabButton,
+            Tab.Sprinkler => sprinklerTabButton,
+            _ => lightTabButton
+        };
+
+        return button != null ? (RectTransform)button.transform : null;
+    }
+
     [Header("Root")]
     [SerializeField] private GameObject root;
 
@@ -50,6 +64,10 @@ public class MainbaseControlUI : MonoBehaviour
     [Header("Hacking")]
     [SerializeField] private Hacking.HackingManager hackingManager;
     [SerializeField] private Hacking.SecurityLevel hackingLevel = Hacking.SecurityLevel.Normal;
+
+    [Header("Style")]
+    [Tooltip("켜면 창·탭·글자 색을 TerminalPalette(미니게임 UI 팔레트)로 칠하고 테두리 장식을 단다")]
+    [SerializeField] private bool applyTerminalStyle = true;
 
     [Header("Tab Buttons (비워두면 onClick 연결을 보고 자동 탐색)")]
     [SerializeField] private UnityEngine.UI.Button positionTabButton;
@@ -68,6 +86,11 @@ public class MainbaseControlUI : MonoBehaviour
         if (root == null)
         {
             root = gameObject;
+        }
+
+        if (applyTerminalStyle)
+        {
+            ApplyTerminalStyle();
         }
 
         FindTabButtons();
@@ -210,6 +233,187 @@ public class MainbaseControlUI : MonoBehaviour
         if (guideText != null)
         {
             guideText.text = "전등을 조작할 구역을 선택하세요.";
+        }
+    }
+
+    // ───────────── 단말기 스타일(미니게임 UI 팔레트) ─────────────
+
+    private const string DecorName = "TerminalDecor";
+
+    private Transform FindChildDeep(string childName)
+    {
+        Transform start = root != null ? root.transform : transform;
+
+        foreach (Transform t in start.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == childName)
+            {
+                return t;
+            }
+        }
+
+        return null;
+    }
+
+    private void TintImage(string childName, Color color)
+    {
+        Transform t = FindChildDeep(childName);
+        UnityEngine.UI.Image image = t != null ? t.GetComponent<UnityEngine.UI.Image>() : null;
+
+        if (image != null)
+        {
+            image.color = color;
+        }
+    }
+
+    private void TintText(string childName, Color color, bool bold = false)
+    {
+        Transform t = FindChildDeep(childName);
+        TMPro.TMP_Text text = t != null ? t.GetComponent<TMPro.TMP_Text>() : null;
+
+        if (text != null)
+        {
+            text.color = color;
+
+            if (bold)
+            {
+                text.fontStyle |= TMPro.FontStyles.Bold;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 씬의 단순 흰/회색 UI 를 해킹 미니게임 UI 에셋 팔레트로 바꾼다. 배치·크기는 건드리지 않고 색과 장식만 얹는다.
+    /// 장식(테두리·모서리 괄호·헤더 선)은 한 번만 만든다.
+    /// </summary>
+    private void ApplyTerminalStyle()
+    {
+        TintImage("DimBackground", new Color(TerminalPalette.Black.r, TerminalPalette.Black.g, TerminalPalette.Black.b, 0.86f));
+        TintImage("WindowPanel", TerminalPalette.Dark);
+        TintImage("WindowHeader", TerminalPalette.Black);
+        TintImage("MapFrame", TerminalPalette.Charcoal);
+        TintImage("MapViewport", TerminalPalette.Dark);
+
+        TintText("TitleText", TerminalPalette.Mint, true);
+        TintText("ZoomText", TerminalPalette.Light);
+        TintText("GuideText", TerminalPalette.Text);
+
+        // 닫기 버튼은 경고색, 탭은 민트(활성) — 비활성 탭은 RefreshTabButtons 가 어둡게 한다.
+        TintImage("CloseButton", TerminalPalette.Coral);
+        Transform close = FindChildDeep("CloseButton");
+
+        if (close != null)
+        {
+            foreach (TMPro.TMP_Text text in close.GetComponentsInChildren<TMPro.TMP_Text>(true))
+            {
+                text.color = TerminalPalette.Black;
+            }
+        }
+
+        foreach (string tabName in new[] { "Tab_Position", "Tab_Wall", "Tab_Sprinkler", "Tab_Light" })
+        {
+            TintImage(tabName, TerminalPalette.Mint);
+            Transform tab = FindChildDeep(tabName);
+
+            if (tab == null)
+            {
+                continue;
+            }
+
+            foreach (TMPro.TMP_Text text in tab.GetComponentsInChildren<TMPro.TMP_Text>(true))
+            {
+                text.color = TerminalPalette.Black;
+                text.fontStyle |= TMPro.FontStyles.Bold;
+            }
+        }
+
+        Transform panel = FindChildDeep("WindowPanel");
+        Transform header = FindChildDeep("WindowHeader");
+        Transform mapFrame = FindChildDeep("MapFrame");
+
+        if (panel != null && panel.Find(DecorName) == null)
+        {
+            AddOutline(panel, TerminalPalette.Mid, 3f);
+            AddCornerBrackets(panel as RectTransform, TerminalPalette.Mint, 26f, 3f, 8f);
+        }
+
+        if (header != null && header.Find(DecorName) == null)
+        {
+            // 헤더 아래 민트 선.
+            RectTransform line = NewDecor(header as RectTransform, TerminalPalette.Mint);
+            line.anchorMin = new Vector2(0f, 0f);
+            line.anchorMax = new Vector2(1f, 0f);
+            line.pivot = new Vector2(0.5f, 0f);
+            line.offsetMin = new Vector2(0f, 0f);
+            line.offsetMax = new Vector2(0f, 2f);
+        }
+
+        if (mapFrame != null && mapFrame.Find(DecorName) == null)
+        {
+            AddOutline(mapFrame, TerminalPalette.Light, 2f);
+            AddCornerBrackets(mapFrame as RectTransform, TerminalPalette.Mint, 20f, 2f, 0f);
+        }
+    }
+
+    private static void AddOutline(Transform target, Color color, float distance)
+    {
+        UnityEngine.UI.Graphic graphic = target.GetComponent<UnityEngine.UI.Graphic>();
+
+        if (graphic == null || target.GetComponent<UnityEngine.UI.Outline>() != null)
+        {
+            return;
+        }
+
+        UnityEngine.UI.Outline outline = target.gameObject.AddComponent<UnityEngine.UI.Outline>();
+        outline.effectColor = color;
+        outline.effectDistance = new Vector2(distance, -distance);
+    }
+
+    private static RectTransform NewDecor(RectTransform parent, Color color)
+    {
+        GameObject go = new GameObject(DecorName, typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+        go.layer = parent.gameObject.layer;
+
+        RectTransform rect = (RectTransform)go.transform;
+        rect.SetParent(parent, false);
+
+        UnityEngine.UI.Image image = go.GetComponent<UnityEngine.UI.Image>();
+        image.color = color;
+        image.raycastTarget = false;
+
+        return rect;
+    }
+
+    /// <summary>네 모서리에 「 」 모양 괄호를 단다(미니게임 키 UI 의 모서리 표시와 같은 모양).</summary>
+    private static void AddCornerBrackets(RectTransform parent, Color color, float length, float thickness, float inset)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        for (int cx = 0; cx <= 1; cx++)
+        {
+            for (int cy = 0; cy <= 1; cy++)
+            {
+                float sx = cx == 0 ? 1f : -1f; // 안쪽으로 향하는 방향
+                float sy = cy == 0 ? 1f : -1f;
+                Vector2 anchor = new Vector2(cx, cy);
+
+                // 가로 변
+                RectTransform h = NewDecor(parent, color);
+                h.anchorMin = h.anchorMax = anchor;
+                h.pivot = new Vector2(cx == 0 ? 0f : 1f, cy == 0 ? 0f : 1f);
+                h.sizeDelta = new Vector2(length, thickness);
+                h.anchoredPosition = new Vector2(sx * inset, sy * inset);
+
+                // 세로 변
+                RectTransform v = NewDecor(parent, color);
+                v.anchorMin = v.anchorMax = anchor;
+                v.pivot = h.pivot;
+                v.sizeDelta = new Vector2(thickness, length);
+                v.anchoredPosition = new Vector2(sx * inset, sy * inset);
+            }
         }
     }
 

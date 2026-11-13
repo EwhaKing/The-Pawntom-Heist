@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 /// <summary>
@@ -35,6 +37,7 @@ public class PlayerHitFeedback : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
         BuildOverlay();
 
         _audio = gameObject.AddComponent<AudioSource>();
@@ -43,14 +46,43 @@ public class PlayerHitFeedback : MonoBehaviour
         _hitClip = CreateHitClip();
     }
 
+    /// <summary>내 화면의 연출. 피격이 아닌 연출(금고가 깨질 때 놀람 등)이 화면 흔들림만 빌려 쓴다.</summary>
+    public static PlayerHitFeedback Instance { get; private set; }
+
+    /// <summary>붉은 번쩍임·소리 없이 카메라만 한 번 흔든다. strength 1 = 피격 정도.</summary>
+    public void ShakeOnce(float strength)
+    {
+        if (_shakeTarget == null)
+        {
+            return;
+        }
+
+        if (_shakeRemaining <= 0f)
+        {
+            _shakeBase = _shakeTarget.localPosition;
+        }
+
+        _shakeRemaining = ShakeSeconds;
+        Transform parent = _shakeTarget.parent;
+        float parentScale = parent != null ? Mathf.Max(0.0001f, parent.lossyScale.y) : 1f;
+        _shakeScale = ShakeWorldAmplitude / parentScale * Mathf.Max(0.1f, strength);
+    }
+
     private void OnDestroy()
     {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
         StopShake();
 
         if (_vignette != null)
         {
             Destroy(_vignette);
         }
+
+        DestroyChromaVolume();
 
         if (_hitClip != null)
         {
@@ -68,6 +100,10 @@ public class PlayerHitFeedback : MonoBehaviour
     {
         StopShake();
         _shakeTarget = playerCamera != null ? playerCamera.transform : null;
+
+        // 색수차 후처리는 플레이어 카메라에 건다. 카메라가 바뀌면 이전 카메라의 후처리 설정을 돌려 놓는다.
+        SetCameraPostProcessing(false);
+        _cameraData = playerCamera != null ? playerCamera.GetUniversalAdditionalCameraData() : null;
     }
 
     /// <param name="severity">최대 체력 대비 이번에 깎인 비율(0~1).</param>
@@ -97,21 +133,113 @@ public class PlayerHitFeedback : MonoBehaviour
         }
     }
 
-    /// <summary>체력 비율. 낮으면 화면 가장자리가 붉게 맥박친다.</summary>
+    /// <summary>체력 비율. 깎인 만큼 화면 가장자리가 붉어지고 글리치가 늘며, 낮으면 맥박친다.</summary>
     public void SetHealthRatio(float ratio)
     {
         _lowHealthWeight = ratio > 0f && ratio < LowHealthRatio ? 1f - ratio / LowHealthRatio : 0f;
+        _damageWeight = ratio >= 1f ? 0f : Mathf.Clamp01(1f - ratio);
+    }
+
+    // ───────────── 색수차(카메라 색상 분리) ─────────────
+    // 파스모포비아처럼 화면 전체에 색수차 필터를 건다. URP 후처리(ChromaticAberration)라 가장자리로 갈수록 R·G·B 가 어긋나 보인다.
+    // 맞을 때는 붉은 번쩍임(아래 Update)이고, 색수차는 체력이 깎인 만큼 계속 심해진다. 평소(체력 가득)에는 후처리를 꺼 둔다.
+
+    private const float ChromaMax = 1f;              // 체력이 거의 없을 때의 색수차 세기(0~1)
+    private const float ChromaCurve = 0.75f;         // 1 보다 작을수록 조금만 다쳐도 눈에 띈다
+
+    private Volume _chromaVolume;
+    private VolumeProfile _chromaProfile;
+    private ChromaticAberration _chroma;
+    private UniversalAdditionalCameraData _cameraData;
+    private bool _cameraPostWas;
+    private bool _cameraPostForced;
+    private float _damageWeight;
+    private float _chromaCurrent;
+
+    private void BuildChromaVolume()
+    {
+        _chromaProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+        _chromaProfile.name = "HitChromaProfile";
+        _chroma = _chromaProfile.Add<ChromaticAberration>(true);
+        _chroma.intensity.Override(0f);
+
+        GameObject go = new GameObject("HitChromaVolume");
+        go.transform.SetParent(transform, false);
+        _chromaVolume = go.AddComponent<Volume>();
+        _chromaVolume.isGlobal = true;
+        _chromaVolume.priority = 150f;
+        _chromaVolume.weight = 1f;
+        _chromaVolume.sharedProfile = _chromaProfile;
+    }
+
+    private void DestroyChromaVolume()
+    {
+        SetCameraPostProcessing(false);
+
+        if (_chromaVolume != null)
+        {
+            Destroy(_chromaVolume.gameObject);
+            _chromaVolume = null;
+        }
+
+        if (_chromaProfile != null)
+        {
+            Destroy(_chromaProfile);
+            _chromaProfile = null;
+        }
+    }
+
+    // 플레이어 카메라는 후처리가 꺼져 있다. 효과가 있는 동안만 켜고, 끝나면 원래 값으로 돌린다.
+    private void SetCameraPostProcessing(bool on)
+    {
+        if (_cameraData == null)
+        {
+            _cameraPostForced = false;
+            return;
+        }
+
+        if (on && !_cameraPostForced)
+        {
+            _cameraPostWas = _cameraData.renderPostProcessing;
+            _cameraData.renderPostProcessing = true;
+            _cameraPostForced = true;
+        }
+        else if (!on && _cameraPostForced)
+        {
+            _cameraData.renderPostProcessing = _cameraPostWas;
+            _cameraPostForced = false;
+        }
+    }
+
+    private void UpdateChroma(float deltaTime)
+    {
+        if (_chroma == null)
+        {
+            return;
+        }
+
+        // 깎인 체력 비율에 따라 부드럽게 따라간다(회복하면 서서히 사라진다).
+        float target = _damageWeight <= 0f ? 0f : Mathf.Pow(_damageWeight, ChromaCurve) * ChromaMax;
+        _chromaCurrent = Mathf.MoveTowards(_chromaCurrent, target, deltaTime * 1.5f);
+        float intensity = Mathf.Clamp01(_chromaCurrent);
+
+        _chroma.intensity.value = intensity;
+        SetCameraPostProcessing(intensity > 0.01f);
     }
 
     private void Update()
     {
         _flash = Mathf.Max(0f, _flash - Time.unscaledDeltaTime / FlashFadeSeconds);
+        UpdateChroma(Time.unscaledDeltaTime);
 
         float pulse = _lowHealthWeight > 0f
             ? _lowHealthWeight * (0.18f + 0.12f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f)))
             : 0f;
 
-        float alpha = Mathf.Max(_flash, pulse);
+        // 체력이 깎인 만큼 가장자리가 은은하게 붉게 남는다(맞을 때마다 조금씩 진해진다).
+        float baseline = _damageWeight * 0.32f;
+
+        float alpha = Mathf.Max(_flash, Mathf.Max(pulse + baseline * 0.5f, baseline));
         Color color = HitColor;
         color.a = alpha;
         _overlay.color = color;
@@ -178,6 +306,8 @@ public class PlayerHitFeedback : MonoBehaviour
         _overlay.raycastTarget = false; // 클릭을 가로채지 않는다
         _overlay.color = new Color(HitColor.r, HitColor.g, HitColor.b, 0f);
         _overlay.enabled = false;
+
+        BuildChromaVolume();
     }
 
     /// <summary>가운데는 투명하고 가장자리로 갈수록 진해지는 원형 비네트(흰색 — 색은 RawImage.color 로 준다).</summary>

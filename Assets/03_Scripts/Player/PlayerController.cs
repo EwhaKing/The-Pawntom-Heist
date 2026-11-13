@@ -112,16 +112,57 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    // 연출용 "깜짝 놀라 펄쩍": 금고가 깨질 때처럼 캐릭터가 놀라 한 번 뛰어오른다. 스태미나·입력과 상관없다.
+    private bool _pendingStartleHop;
+    private float _startleHopExpire;
+
+    /// <summary>
+    /// 캐릭터가 놀라 제자리에서 한 번 펄쩍 뛴다(상태 권한이 있는 쪽에서만 효과가 난다).
+    /// 바닥에 닿아 있을 때 실행되고, 0.5초 안에 닿지 못하면 취소된다.
+    /// </summary>
+    public void RequestStartleHop()
+    {
+        _pendingStartleHop = true;
+        _startleHopExpire = Time.time + 0.5f;
+    }
+
+    private void TryStartleHop()
+    {
+        if (!_pendingStartleHop)
+        {
+            return;
+        }
+
+        if (Time.time > _startleHopExpire || !Object.HasStateAuthority)
+        {
+            _pendingStartleHop = false;
+            return;
+        }
+
+        if (!_controller.Grounded)
+        {
+            return;
+        }
+
+        _pendingStartleHop = false;
+        float impulse = Mathf.Sqrt(2f * Mathf.Abs(_controller.gravity) * jumpHeight);
+        _controller.Jump(false, impulse);
+    }
+
     public override void FixedUpdateNetwork()
     {
         if (_playerData.IsDead)
         {
+            _pendingStartleHop = false;
+
             if (Object.HasStateAuthority || Object.HasInputAuthority)
             {
                 _controller.Velocity = Vector3.zero;
             }
             return;
         }
+
+        TryStartleHop();
 
         if (!GetInput(out NetworkInputData input)) { return; }
 

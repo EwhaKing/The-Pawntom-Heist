@@ -449,7 +449,7 @@ public class FirstPersonArmsView : MonoBehaviour
             return;
         }
 
-        if (!_inventory.TryPredictDrop(_heldItemId, out Vector3 position, out Quaternion rotation))
+        if (!_inventory.TryPredictDrop(_heldItemId, out Vector3 position, out Quaternion rotation, out float dropScale))
         {
             return; // 버릴 수 없는 아이템
         }
@@ -478,7 +478,8 @@ public class FirstPersonArmsView : MonoBehaviour
             ToHand = false,
             ToPosition = position,
             ToRotation = rotation,
-            ToScale = template.RootScale,
+            // 실제 아이템은 생길 때 가장 긴 변이 DropItemSize 로 줄어든다. 같은 크기로 내려놓아야 바뀌는 순간 튀지 않는다.
+            ToScale = template.RootScale * dropScale,
             Duration = dropFlySeconds,
             RequestDropOnLand = true,
             LingerAfterLand = 0.35f

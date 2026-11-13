@@ -39,10 +39,56 @@ namespace Pawntom.Tutorial.Core
     {
         private static readonly TutorialSignal[] NoSignals = new TutorialSignal[0];
 
+        // 대본 문자열 안의 {{강조할 말}} 표시는 글자 수에 세지 않는다. 대사창이 강조 구간만 다른 색으로 칠한다.
         public TutorialLine(string id, TutorialSpeaker speaker, string text)
-            : this(id, speaker, text, null, NoSignals, 0f, 0f, TutorialLineAction.None)
+            : this(id, speaker, StripEmphasis(text, out int[] ranges), null, NoSignals, 0f, 0f, TutorialLineAction.None, ranges)
         {
         }
+
+        /// <summary>{{ }} 표시를 걷어 낸 글자와, 강조 구간(시작 이상·끝 미만 글자 번호 쌍)을 돌려준다.</summary>
+        private static string StripEmphasis(string raw, out int[] ranges)
+        {
+            ranges = NoRanges;
+
+            if (string.IsNullOrEmpty(raw) || raw.IndexOf("{{", StringComparison.Ordinal) < 0)
+            {
+                return raw;
+            }
+
+            System.Text.StringBuilder text = new System.Text.StringBuilder(raw.Length);
+            System.Collections.Generic.List<int> list = new System.Collections.Generic.List<int>(4);
+            int i = 0;
+
+            while (i < raw.Length)
+            {
+                if (i + 1 < raw.Length && raw[i] == '{' && raw[i + 1] == '{')
+                {
+                    list.Add(text.Length);
+                    i += 2;
+                    continue;
+                }
+
+                if (i + 1 < raw.Length && raw[i] == '}' && raw[i + 1] == '}' && list.Count % 2 == 1)
+                {
+                    list.Add(text.Length);
+                    i += 2;
+                    continue;
+                }
+
+                text.Append(raw[i]);
+                i++;
+            }
+
+            if (list.Count % 2 == 1)
+            {
+                list.RemoveAt(list.Count - 1); // 닫히지 않은 표시는 무시
+            }
+
+            ranges = list.ToArray();
+            return text.ToString();
+        }
+
+        private static readonly int[] NoRanges = new int[0];
 
         private TutorialLine(
             string id,
@@ -52,7 +98,8 @@ namespace Pawntom.Tutorial.Core
             TutorialSignal[] hintCompleteOn,
             float hintAutoHideSeconds,
             float preDelaySeconds,
-            TutorialLineAction action)
+            TutorialLineAction action,
+            int[] emphasis)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -67,7 +114,11 @@ namespace Pawntom.Tutorial.Core
             HintAutoHideSeconds = hintAutoHideSeconds;
             PreDelaySeconds = preDelaySeconds;
             Action = action;
+            Emphasis = emphasis ?? NoRanges;
         }
+
+        /// <summary>강조(다른 색) 구간. [시작, 끝) 글자 번호가 쌍으로 이어진다. 없으면 빈 배열.</summary>
+        public int[] Emphasis { get; }
 
         /// <summary>대본 번호. 예: "2-7".</summary>
         public string Id { get; }
@@ -102,23 +153,23 @@ namespace Pawntom.Tutorial.Core
         /// <summary>행동으로 지워지는 안내 문구를 붙인 사본.</summary>
         public TutorialLine WithHint(string hint, params TutorialSignal[] completeOn)
         {
-            return new TutorialLine(Id, Speaker, Text, hint, completeOn, HintAutoHideSeconds, PreDelaySeconds, Action);
+            return new TutorialLine(Id, Speaker, Text, hint, completeOn, HintAutoHideSeconds, PreDelaySeconds, Action, Emphasis);
         }
 
         /// <summary>시간이 지나면 지워지는 안내 문구를 붙인 사본. completeOn 이 오면 더 일찍 지워진다.</summary>
         public TutorialLine WithTimedHint(string hint, float seconds, params TutorialSignal[] completeOn)
         {
-            return new TutorialLine(Id, Speaker, Text, hint, completeOn, seconds, PreDelaySeconds, Action);
+            return new TutorialLine(Id, Speaker, Text, hint, completeOn, seconds, PreDelaySeconds, Action, Emphasis);
         }
 
         public TutorialLine WithPreDelay(float seconds)
         {
-            return new TutorialLine(Id, Speaker, Text, Hint, HintCompleteOn, HintAutoHideSeconds, seconds, Action);
+            return new TutorialLine(Id, Speaker, Text, Hint, HintCompleteOn, HintAutoHideSeconds, seconds, Action, Emphasis);
         }
 
         public TutorialLine WithAction(TutorialLineAction action)
         {
-            return new TutorialLine(Id, Speaker, Text, Hint, HintCompleteOn, HintAutoHideSeconds, PreDelaySeconds, action);
+            return new TutorialLine(Id, Speaker, Text, Hint, HintCompleteOn, HintAutoHideSeconds, PreDelaySeconds, action, Emphasis);
         }
 
         public override string ToString()

@@ -40,7 +40,7 @@ public class PlayerPositionManager : MonoBehaviour
     [SerializeField] private RectTransform enemyMarkerPrefab;
 
     [Tooltip("적 마커 색(UI_SPEC 의미 규칙: 위험 = 적색)")]
-    [SerializeField] private Color enemyMarkerColor = new Color(1f, 0.18f, 0.12f, 1f);
+    [SerializeField] private Color enemyMarkerColor = new Color(1f, 0.306f, 0.337f, 1f);
 
     [Tooltip("미해금 구역 가림막(MapHiddenAreaUI) 아래에 있는 적은 숨긴다 — 해금 전 구역의 적은 보이지 않는다")]
     [SerializeField] private bool hideEnemiesUnderMask = true;

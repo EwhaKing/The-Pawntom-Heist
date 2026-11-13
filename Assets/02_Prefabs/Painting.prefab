@@ -171,7 +171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PickupDisplay
   spinDegreesPerSecond: 30
-  layFlatIfThin: 1
+  layFlatIfThin: 0
   thinRatio: 0.4
   snapToGround: 1
   hoverHeight: 0.35

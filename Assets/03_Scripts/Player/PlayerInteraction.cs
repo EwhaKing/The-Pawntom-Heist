@@ -36,14 +36,17 @@ public class PlayerInteraction : NetworkBehaviour
     [Tooltip("Raycast가 대상을 맞추지 못했을 때 사용하는 보조 SphereCast 반경")]
     [SerializeField] private float interactRadius = 0.2f;
 
-    [Tooltip("현장에서 격벽을 조작할 수 있는 최대 거리")]
-    [SerializeField, Min(0.5f)]
-    private float wallInteractDistance = 3f;
+    // 격벽·아이템 거리도 모든 E 상호작용과 같은 기준으로 통일했다(InteractRange 의 상수). 가까이 다가가야 선택된다.
+    private static float wallInteractDistance
+    {
+        get { return InteractRange.WallDistance; }
+    }
 
-    [Tooltip("월드 아이템(열쇠·전리품)을 줍기 위해 카메라에서 아이템 경계까지 다가가야 하는 거리(m). 조준선만 맞으면 멀리서도 줍히던 것을 막는다.\n" +
-             "플레이어 발 위치가 아니라 카메라 기준이라, 벽에 걸린 큰 그림도 조준한 만큼 닿는다.")]
-    [SerializeField, Min(0.5f)]
-    private float itemInteractDistance = 2.5f;
+    // 카메라 기준 거리라, 벽에 걸린 큰 그림도 조준한 만큼 닿는다.
+    private static float itemInteractDistance
+    {
+        get { return InteractRange.ItemDistance; }
+    }
 
     // 아이템 줍기 범위 판정. 안내 표시와 E 입력이 같은 기준을 쓴다.
     private bool IsItemInRange(NetworkItem item)
@@ -252,7 +255,15 @@ public class PlayerInteraction : NetworkBehaviour
         }
 
         ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(item.ItemId) : null;
-        return data != null && !string.IsNullOrEmpty(data.itemName) ? data.itemName : "아이템";
+        if (data == null || string.IsNullOrEmpty(data.itemName))
+        {
+            return "아이템";
+        }
+
+        // 팔 수 있는 물건이면 가치(판매가)를 이름 옆에 보여 준다. 열쇠처럼 값이 없는 물건은 이름만.
+        return data.sellPrice > 0
+            ? $"{data.itemName}  <color=#FFD54A>{data.sellPrice} G</color>"
+            : data.itemName;
     }
 
     /// <summary>

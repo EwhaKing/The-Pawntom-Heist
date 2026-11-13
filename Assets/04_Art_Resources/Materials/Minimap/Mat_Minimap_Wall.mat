@@ -29,7 +29,7 @@ Material:
     - _ShowInPerspective: 0
     - _UsePlayerStyle: 1
     m_Colors:
-    - _BaseColor: {r: 0.38431373, g: 0.8, b: 0.46666667, a: 1}
+    - _BaseColor: {r: 0.576, g: 0.576, b: 0.576, a: 1}
     - _PlayerColor: {r: 0.5411765, g: 0.5411765, b: 0.5411765, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

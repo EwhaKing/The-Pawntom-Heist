@@ -63,6 +63,9 @@ namespace Pawntom.TutorialBridge
         [Tooltip("알려 준 지점 주변으로 적끼리 흩어지는 반경(m). 적 개체 기본값(소집 흩어짐)은 매우 커서 지정 지점을 벗어나므로 줄여 쓴다")]
         [SerializeField, Min(0f)] private float spreadAroundPoint = 2.5f;
 
+        [Tooltip("조사 목표가 집결 지점에서 (흩어지는 반경 + 이 값)보다 멀면 발자국을 따라가는 중으로 보고 집결 명령을 다시 보내지 않는다(m)")]
+        [SerializeField, Min(0f)] private float traceFollowMargin = 4f;
+
         [Header("수색")]
         [SerializeField, Min(0f)] private float searchSeconds = 5f;
         [Tooltip("수색·자유 순찰 중 한 지점 주변을 서성이는 반경(m)")]
@@ -217,7 +220,8 @@ namespace Pawntom.TutorialBridge
             // 경보가 울린 뒤에는 수색·자유 순찰도 같은 빠른 속도를 유지한다. 배회 반경만 단계마다 다르다.
             float radius = phase == Phase.Gather ? gatherWanderRadius : searchWanderRadius;
             float spreadRadius = spreadAroundPoint;
-            agent.Brain.SetInvestigateOverride(gatherSpeedMultiplier, radius, spreadRadius, true);
+            // 털 흔적(발자국)은 무시하지 않는다: 금고방으로 가다가 발자국을 발견하면 그것을 따라온다(Step 이 이 동안 재호출을 건너뛴다).
+            agent.Brain.SetInvestigateOverride(gatherSpeedMultiplier, radius, spreadRadius, false);
         }
 
         private void Update()
@@ -302,7 +306,12 @@ namespace Pawntom.TutorialBridge
 
                     if (!engaged && now >= plan.NextSendTime)
                     {
-                        Send(agent, gatherPoint.position);
+                        // 이동 중 발자국을 발견해 그 자취를 따라가는 중이면 금고방으로 되돌리지 않는다.
+                        if (!IsFollowingTrace(agent))
+                        {
+                            Send(agent, gatherPoint.position);
+                        }
+
                         plan.NextSendTime = now + resendSeconds;
                     }
 
@@ -347,6 +356,19 @@ namespace Pawntom.TutorialBridge
 
                     break;
             }
+        }
+
+        // 조사 중인데 목표가 금고방 주변(흩어지는 반경 + 여유) 밖이면 발자국 같은 단서를 따라가는 중이다.
+        private bool IsFollowingTrace(EnemyAgent agent)
+        {
+            if (agent.State != EnemyState.Investigate || agent.Brain == null)
+            {
+                return false;
+            }
+
+            Vector3? target = agent.Brain.CurrentTarget;
+            return target.HasValue &&
+                   HorizontalDistance(target.Value, gatherPoint.position) > spreadAroundPoint + traceFollowMargin;
         }
 
         // 금고방 안에 들어섰거나, 격벽이 닫혀 길이 끊긴 채 문 앞 끝까지 와서 멈췄으면 도착이다.

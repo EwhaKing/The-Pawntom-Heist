@@ -188,6 +188,16 @@ public class InventoryManager : NetworkBehaviour
     /// </summary>
     public bool TryPredictDrop(int itemId, out Vector3 position, out Quaternion rotation)
     {
+        return TryPredictDrop(itemId, out position, out rotation, out _);
+    }
+
+    /// <summary>
+    /// 위와 같고, 바닥에 놓인 아이템의 크기 배율(프리팹 스케일 대비)도 돌려준다.
+    /// 놓이는 아이템은 NetworkItem.Spawned 에서 줄어들므로, 연출이 프리팹 크기로 내려놓으면 실제 아이템이 생길 때 갑자기 작아진다.
+    /// </summary>
+    public bool TryPredictDrop(int itemId, out Vector3 position, out Quaternion rotation, out float dropScale)
+    {
+        dropScale = 1f;
         position = transform.position;
         rotation = Quaternion.identity;
         ItemData data = ItemDatabase.Instance != null ? ItemDatabase.Instance.GetItemData(itemId) : null;
@@ -198,6 +208,7 @@ public class InventoryManager : NetworkBehaviour
         }
 
         FindDropPose(data.modelPrefab.transform, out position, out rotation, out _);
+        dropScale = PrefabFootprint(data.modelPrefab.transform).DropScale;
         return true;
     }
 
@@ -322,6 +333,9 @@ public class InventoryManager : NetworkBehaviour
 
         /// <summary>놓는 방향 기준 좌우 폭의 절반.</summary>
         public float HalfWidth;
+
+        /// <summary>버려질 때 프리팹 크기에 곱해지는 배율(NetworkItem.Spawned 가 가장 긴 변을 DropItemSize 로 줄이는 값).</summary>
+        public float DropScale;
     }
 
     private static readonly Dictionary<Transform, Footprint> FootprintCache = new Dictionary<Transform, Footprint>();
@@ -395,6 +409,7 @@ public class InventoryManager : NetworkBehaviour
             BottomOffset = lowest < float.MaxValue ? -lowest * dropScale : 0f,
             BackExtent = -minZ * dropScale,
             FrontExtent = maxZ * dropScale,
+            DropScale = dropScale,
             CenterX = minX <= maxX ? (minX + maxX) * 0.5f * dropScale : 0f,
             HalfWidth = minX <= maxX ? (maxX - minX) * 0.5f * dropScale : 0f
         };
