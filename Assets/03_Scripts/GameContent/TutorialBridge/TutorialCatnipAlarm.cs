@@ -404,8 +404,31 @@ namespace Pawntom.TutorialBridge
 
             SpawnFlash(bounds.center);
             SpawnDebris(bounds, debrisMaterial);
+            StartleLocalPlayer();
             // 부수지만 지우지 않는다 - 죽어서 이 미션으로 돌아오면 되살려야 한다.
             vaultRoot.SetActive(false);
+        }
+
+        // 금고가 깨지는 순간 깜냥이가 깜짝 놀라 펄쩍 뛰고, 화면이 한 번 크게 흔들린다.
+        private static void StartleLocalPlayer()
+        {
+            TutorialDirector director = TutorialDirector.Active;
+            Transform player = director != null ? director.LocalPlayerTransform : null;
+
+            if (player != null)
+            {
+                PlayerController controller = player.GetComponent<PlayerController>();
+
+                if (controller != null)
+                {
+                    controller.RequestStartleHop();
+                }
+            }
+
+            if (PlayerHitFeedback.Instance != null)
+            {
+                PlayerHitFeedback.Instance.ShakeOnce(2.6f);
+            }
         }
 
         private static void SpawnFlash(Vector3 position)

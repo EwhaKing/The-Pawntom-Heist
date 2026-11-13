@@ -14,8 +14,11 @@ public class EscapeButtonInteraction : NetworkBehaviour
     [Tooltip("가까이 가서 겨눴을 때 \"E | 이름\" 으로 보일 이름")]
     [SerializeField] private string interactName = "출발";
 
-    [Tooltip("버튼 경계에서 이 거리(m) 안으로 다가가야 안내가 뜨고 E 가 먹는다")]
-    [SerializeField, Min(0f)] private float interactMargin = 1.5f;
+    // 거리는 InteractRange.StandardMargin 한 값으로 통일했다(모든 E 상호작용 대상 공통).
+    private static float interactMargin
+    {
+        get { return InteractRange.StandardMargin; }
+    }
 
     public string InteractName
     {

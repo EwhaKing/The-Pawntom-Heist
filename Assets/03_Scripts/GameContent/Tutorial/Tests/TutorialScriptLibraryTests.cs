@@ -10,12 +10,12 @@ namespace Pawntom.Tutorial.Tests
         private static readonly string[] ScriptIds =
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
-            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-8", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12",
+            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-8", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12", "2-13",
             "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-5b", "3-5c", "3-6", "3-7", "3-8",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-6a", "4-7a", "4-7b", "4-8", "4-9", "4-10", "4-10b", "4-11", "4-12", "4-13", "4-14", "4-15",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-6b", "4-6a", "4-7a", "4-7b", "4-7c", "4-8", "4-9", "4-10", "4-10b", "4-11a", "4-11b", "4-12", "4-13", "4-13b", "4-14", "4-15",
             "5-1", "5-1b", "5-2", "5-3", "5-4", "5-5", "5-6", "5-6b", "5-7", "5-8", "5-9", "5-10", "5-11",
             "6-1", "6-2", "6-3", "6-4", "6-5", "6-6",
-            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-5", "7-6", "7-7", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13", "7-14",
+            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-5", "7-6", "7-7", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13", "7-14", "7-15a", "7-15b",
             "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7", "8-7b",
 
             // 상황별 반복 대사(후보 포함)
@@ -28,12 +28,12 @@ namespace Pawntom.Tutorial.Tests
         private static readonly string[] HappyPathOrder =
         {
             "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9",
-            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12",
+            "2-1", "2-2", "2-3", "2-4", "2-5a", "2-5b", "2-6", "2-7", "2-9", "2-9b", "2-9c", "2-10a", "2-10b", "2-10c", "2-10d", "2-11", "2-12", "2-13",
             "3-1", "3-2", "3-3", "3-4", "3-5", "3-5b", "3-5c", "3-7", "3-8",
-            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-7a", "4-7b", "4-8", "4-11", "4-12", "4-13",
+            "4-1", "4-2", "4-3", "4-4", "4-5", "4-6", "4-6b", "4-7a", "4-7b", "4-7c", "4-8", "4-11a", "4-11b", "4-12", "4-13",
             "5-1", "5-2", "5-3", "5-4", "5-5", "5-7", "5-8", "5-9", "5-10", "5-11",
             "6-1", "6-2", "6-3", "6-4", "6-5",
-            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-6", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13",
+            "7-1", "7-2", "7-3", "7-3b", "7-4", "7-6", "7-8", "7-8b", "7-9", "7-10", "7-11", "7-12", "7-13", "7-14",
             "8-1", "8-2", "8-3", "8-4", "8-5", "8-6", "8-7", "8-7b"
         };
 
@@ -192,7 +192,7 @@ namespace Pawntom.Tutorial.Tests
             }
 
             // 4-14(실패) → 4-11·4-12(재시도 성공, 푸른 격벽 열기 안내)
-            CollectionAssert.AreEqual(new[] { "4-10b", "4-11", "4-12" }, started.GetRange(started.Count - 3, 3));
+            CollectionAssert.AreEqual(new[] { "4-10b", "4-11a", "4-11b", "4-12" }, started.GetRange(started.Count - 4, 4));
         }
 
         // 격벽 해킹 시작(4-7)까지 마친 상태.
@@ -400,6 +400,53 @@ namespace Pawntom.Tutorial.Tests
             Pump(sequencer, 0f);
 
             CollectionAssert.DoesNotContain(started, "7-7");
+        }
+
+        [Test]
+        public void TutorialLine_EmphasisMarkup_IsStrippedAndRangesReturned()
+        {
+            // {{ }} 로 감싼 말은 글자 수에 세지 않고, 강조 구간(시작 이상·끝 미만)으로 따로 돌려준다.
+            TutorialLine line = new TutorialLine("t-1", TutorialSpeaker.Command, "가{{나다}}라{{마}}");
+
+            Assert.AreEqual("가나다라마", line.Text);
+            CollectionAssert.AreEqual(new[] { 1, 3, 4, 5 }, line.Emphasis);
+
+            // 사본(WithHint 등)도 강조를 유지한다.
+            Assert.AreEqual(4, line.WithHint("힌트").Emphasis.Length);
+
+            // 닫히지 않은 표시는 무시한다.
+            TutorialLine open = new TutorialLine("t-2", TutorialSpeaker.Command, "가{{나다");
+            Assert.AreEqual("가나다", open.Text);
+            Assert.AreEqual(0, open.Emphasis.Length);
+        }
+
+        [Test]
+        public void CreateDefault_DirectorBeatIds_AreMainBeats()
+        {
+            // 디렉터(터미널 안내·탈출 버튼 안내)가 GetMainState 로 읽는 id 는 메인 비트여야 한다. 아니면 매 프레임 예외가 난다.
+            TutorialSequencer sequencer = new TutorialSequencer(TutorialScriptLibrary.CreateDefault());
+
+            foreach (string id in new[] { "4-4", "4-11", "4-14", "7-13", "6-1" })
+            {
+                Assert.DoesNotThrow(() => sequencer.GetMainState(id), id);
+            }
+        }
+
+        [Test]
+        public void CreateDefault_EventLine_CutsInOverIdleReminder()
+        {
+            // 가만히 있을 때 나오는 재촉 대사가 떠 있어도, 이벤트(해킹 성공 4-11)가 오면 그 대사가 바로 나온다.
+            List<string> started = new List<string>();
+            TutorialSequencer sequencer = StartedAtDoorHack(started);
+
+            sequencer.Raise(TutorialSignal.IdleAtTerminal);
+            sequencer.Tick(0f); // Pump 로 넘기지 않아 재촉 대사가 떠 있는 채로 둔다
+            Assert.AreEqual("R-door-1", sequencer.CurrentLine.Id);
+
+            sequencer.Raise(TutorialSignal.DoorHackSucceeded);
+            sequencer.Tick(0f);
+
+            Assert.AreEqual("4-11a", sequencer.CurrentLine.Id);
         }
 
         [Test]
@@ -750,6 +797,13 @@ namespace Pawntom.Tutorial.Tests
             sequencer.Raise(TutorialSignal.AllDoorsUnlocked);
             Pump(sequencer, 0f);
 
+            // 둘째 문은 해금만 됐고 아직 닫혀 있다 → 열라는 안내(4-13b)가 먼저 나온다.
+            Assert.AreEqual("4-13b", started[started.Count - 1]);
+            CollectionAssert.DoesNotContain(started, "4-14");
+
+            sequencer.Raise(TutorialSignal.AllDoorsOpened);
+            Pump(sequencer, 0f);
+
             Assert.AreEqual("4-14", started[started.Count - 1]);
         }
 
@@ -794,7 +848,7 @@ namespace Pawntom.Tutorial.Tests
             sequencer.Raise(TutorialSignal.DepartRejectedNoCatnip);
             Pump(sequencer, 0f);
 
-            Assert.AreEqual("7-14", started[started.Count - 1]);
+            Assert.AreEqual("7-15b", started[started.Count - 1]);
         }
     }
 }

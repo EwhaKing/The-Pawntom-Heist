@@ -18,7 +18,6 @@ namespace Pawntom.TutorialBridge
     public sealed class TutorialVault : MonoBehaviour
     {
         [Header("상호작용")]
-        [SerializeField, Min(0.1f)] private float interactRadius = 2.5f;
 
         [Tooltip("금고 앞에서 \"E | 이름\" 으로 보일 이름")]
         [SerializeField] private string interactName = "금고 해킹";
@@ -81,9 +80,18 @@ namespace Pawntom.TutorialBridge
             }
         }
 
-        public float InteractRadius
+        /// <summary>플레이어(수평 위치)가 금고 앞 상호작용 범위 안에 있는가. 모든 E 상호작용과 같은 표준 거리를 쓴다.</summary>
+        public bool IsPlayerInRange(Vector3 playerPosition)
         {
-            get { return interactRadius; }
+            return _chest != null
+                ? _chest.IsPlayerInRange(playerPosition)
+                : InteractRange.IsInRange(this, playerPosition, InteractRange.StandardMargin);
+        }
+
+        /// <summary>안내 상자·판정에 쓰는 범위 상자.</summary>
+        public Bounds RangeBounds()
+        {
+            return InteractRange.RangeBounds(_chest != null ? (Component)_chest : this, InteractRange.StandardMargin);
         }
 
         private static readonly System.Collections.Generic.List<TutorialVault> ActiveVaults =
@@ -142,18 +150,7 @@ namespace Pawntom.TutorialBridge
             }
 
             // 열쇠 금고가 같이 있으면 그쪽 범위 기준을 따른다. 안내가 뜨는 거리와 E(열쇠 사용)가 먹는 거리가 같아야 한다.
-            bool inRange;
-
-            if (_chest != null)
-            {
-                inRange = _chest.IsPlayerInRange(player.position);
-            }
-            else
-            {
-                Vector3 delta = player.position - transform.position;
-                delta.y = 0f;
-                inRange = delta.sqrMagnitude <= interactRadius * interactRadius;
-            }
+            bool inRange = IsPlayerInRange(player.position);
 
             if (!inRange)
             {
@@ -349,7 +346,8 @@ namespace Pawntom.TutorialBridge
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(1f, 0.82f, 0.35f, 0.8f);
-            Gizmos.DrawWireSphere(transform.position, interactRadius);
+            Bounds range = RangeBounds();
+            Gizmos.DrawWireCube(range.center, range.size);
         }
     }
 }

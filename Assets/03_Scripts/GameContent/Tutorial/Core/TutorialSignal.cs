@@ -150,6 +150,9 @@ namespace Pawntom.Tutorial.Core
         DepartRejectedNoCatnip,
 
         /// <summary>4-14 격벽이 둘 이상 해금돼 있다(첫 문 + 나머지 문). 상태형. 이정표로 세지 않는다 — 첫 해킹 성공과 구분하기 위해.</summary>
-        AllDoorsUnlocked
+        AllDoorsUnlocked,
+
+        /// <summary>격벽이 둘 이상이고 해금된 격벽이 전부 열려 있다. 상태형. 4-13b(둘째 문 열기) 안내를 내리고 4-14 를 연다.</summary>
+        AllDoorsOpened
     }
 }

@@ -55,8 +55,11 @@ public class VaultChest : NetworkBehaviour
 
     public float MaxUseDistance => maxUseDistance;
 
-    [Tooltip("금고 경계에서 이 거리(m) 안으로 다가가야 안내가 뜨고 E 가 먹는다. 서버 검증(Max Use Distance)과는 별개다")]
-    [SerializeField, Min(0f)] private float interactMargin = 1.5f;
+    // 거리는 InteractRange.StandardMargin 한 값으로 통일했다. 서버 검증(Max Use Distance)과는 별개다.
+    private static float interactMargin
+    {
+        get { return InteractRange.StandardMargin; }
+    }
 
     /// <summary>플레이어가 금고 앞 상호작용 범위 안에 있는가. 안내 표시와 E 입력이 같은 기준을 쓴다.</summary>
     public bool IsPlayerInRange(Vector3 playerPosition)

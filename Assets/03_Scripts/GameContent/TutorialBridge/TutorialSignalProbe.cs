@@ -31,10 +31,17 @@ namespace Pawntom.TutorialBridge
         [Header("주기")]
         [SerializeField, Min(0.02f)] private float pollInterval = 0.1f;
 
-        [Header("근접 판정 (월드 단위)")]
-        [SerializeField, Min(0.1f)] private float terminalRadius = 3.5f;
-        [SerializeField, Min(0.1f)] private float doorRadius = 3.5f;
-        [SerializeField, Min(0.1f)] private float lootRadius = 2.5f;
+        // 근접 판정은 화면에 보이는 초록 안내 상자와 같은 범위다(상자 안에 들어섰을 때만 대사가 나온다).
+        // 상자보다 먼 곳에서 대사가 뜨던 반경 설정(terminalRadius·doorRadius·lootRadius·keyNoticeRadius)은 없앴다.
+        private const float TerminalGuideExpand = 2.4f; // 안내 상자와 같은 값(TryGetGuideBounds)
+        private const float WallGuideExpand = 1.5f;
+
+        /// <summary>수평으로만 상자 안에 있는가(높이는 따지지 않는다).</summary>
+        private static bool InsideHorizontally(Bounds bounds, Vector3 position)
+        {
+            return position.x >= bounds.min.x && position.x <= bounds.max.x &&
+                   position.z >= bounds.min.z && position.z <= bounds.max.z;
+        }
 
         [Header("2단계 조작 확인")]
         [Tooltip("2-1 'WASD로 이동하고 마우스로 둘러봅시다' 완료로 볼 이동 거리")]
@@ -55,8 +62,6 @@ namespace Pawntom.TutorialBridge
         [SerializeField] private int catnipItemId = 1;
         [Tooltip("금고 열쇠 아이템 ID. ItemData_VaultKey 와 같다. 전리품으로 세지 않는다")]
         [SerializeField] private int keyItemId = 10;
-        [Tooltip("이 거리(m) 안으로 열쇠에 다가가면 5-7 '열쇠 발견' 대사가 나온다")]
-        [SerializeField, Min(0.5f)] private float keyNoticeRadius = 4f;
 
         [Header("4단계 해킹 종류 안내")]
         [Tooltip("격벽 해킹이 시작된 뒤 이만큼 지나서 걸린 종류의 신호를 보낸다. 4-7 이 먼저 재생 중이어야 4-8~4-10 창이 열려 있다")]
@@ -529,10 +534,7 @@ namespace Pawntom.TutorialBridge
                     continue;
                 }
 
-                Vector3 delta = position - vault.transform.position;
-                delta.y = 0f;
-
-                if (delta.sqrMagnitude <= vault.InteractRadius * vault.InteractRadius)
+                if (vault.IsPlayerInRange(position))
                 {
                     return true;
                 }
@@ -571,7 +573,7 @@ namespace Pawntom.TutorialBridge
                         if (_terminals[i] != null)
                         {
                             bounds = _terminalBounds[i];
-                            bounds.Expand(new Vector3(2.4f, 0f, 2.4f));
+                            bounds.Expand(new Vector3(TerminalGuideExpand, 0f, TerminalGuideExpand));
                             return true;
                         }
                     }
@@ -601,7 +603,7 @@ namespace Pawntom.TutorialBridge
                     {
                         if (nodes[i] != null && !nodes[i].IsConnected)
                         {
-                            bounds = RadiusBounds(nodes[i].transform.position, nodes[i].InteractRadius);
+                            bounds = nodes[i].RangeBounds();
                             return true;
                         }
                     }
@@ -615,7 +617,8 @@ namespace Pawntom.TutorialBridge
 
                         if (item != null && item.Object != null && item.Object.IsValid && !item.IsPickedUp)
                         {
-                            bounds = RadiusBounds(item.transform.position, keyNoticeRadius * 0.5f);
+                            // 열쇠 모양에 맞춘 작은 상자. 반경 상자(수 m)는 열쇠에서 한참 떨어져도 "여기 있다"고 느껴졌다.
+                            bounds = ItemGuideBounds(item, KeyGuidePadding);
                             return true;
                         }
                     }
@@ -629,7 +632,7 @@ namespace Pawntom.TutorialBridge
                     {
                         if (vaults[i] != null && !vaults[i].IsOpened)
                         {
-                            bounds = RadiusBounds(vaults[i].transform.position, vaults[i].InteractRadius);
+                            bounds = vaults[i].RangeBounds();
                             return true;
                         }
                     }
@@ -687,9 +690,11 @@ namespace Pawntom.TutorialBridge
         }
 
         // 아이템의 보이는 모양(렌더러) 경계를 조금 넓힌 것. 렌더러가 없으면 충돌체 경계, 그것도 없으면 위치 기준 작은 상자.
-        private static Bounds ItemGuideBounds(NetworkItem item)
+        private const float KeyGuidePadding = 0.75f; // 열쇠는 작아서 상자를 크게 잡는다(전리품은 0.25)
+
+        private static Bounds ItemGuideBounds(NetworkItem item, float padding = 0.25f)
         {
-            const float Padding = 0.25f;
+            float Padding = padding;
 
             bool has = false;
             Bounds bounds = new Bounds(item.transform.position, Vector3.zero);
@@ -794,6 +799,21 @@ namespace Pawntom.TutorialBridge
             return count;
         }
 
+        private bool AllUnlockedWallsOpen()
+        {
+            for (int i = 0; i < _walls.Length; i++)
+            {
+                ControllableWall wall = _walls[i];
+
+                if (wall != null && wall.Object != null && wall.Object.IsValid && (bool)wall.IsUnlocked && !(bool)wall.IsOpen)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>조건에 맞는 격벽이 정확히 하나일 때만 그 경계를 준다.</summary>
         private bool TryGetSingleWallBounds(bool unlocked, out Bounds bounds)
         {
@@ -811,7 +831,7 @@ namespace Pawntom.TutorialBridge
 
                 matches++;
                 bounds = _wallBounds[i];
-                bounds.Expand(new Vector3(1.5f, 0f, 1.5f));
+                bounds.Expand(new Vector3(WallGuideExpand, 0f, WallGuideExpand));
             }
 
             return matches == 1;
@@ -992,7 +1012,10 @@ namespace Pawntom.TutorialBridge
             {
                 for (int i = 0; i < _terminals.Length; i++)
                 {
-                    if (_terminals[i] != null && _terminalBounds[i].SqrDistance(position) <= terminalRadius * terminalRadius)
+                    Bounds guide = _terminalBounds[i];
+                    guide.Expand(new Vector3(TerminalGuideExpand, 0f, TerminalGuideExpand));
+
+                    if (_terminals[i] != null && InsideHorizontally(guide, position))
                     {
                         Emit(TutorialSignal.NearTerminal);
                         break;
@@ -1061,6 +1084,20 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
+            ControllableWall first = FirstDoorWall();
+
+            if (first != null && first != wall)
+            {
+                Emit(TutorialSignal.WrongDoorHackStarted);
+            }
+        }
+
+        /// <summary>
+        /// 첫 번째로 해킹할 문 = 복도 A 끝(CorridorAEndReached 영역)에서 가장 가까운 격벽. 영역이 없으면 null.
+        /// 터미널 안내 틀이 어느 붉은 격벽부터 가리킬지 고르는 데도 쓴다.
+        /// </summary>
+        public ControllableWall FirstDoorWall()
+        {
             var zones = TutorialZone.All;
             Vector3 anchor = default;
             bool found = false;
@@ -1077,7 +1114,7 @@ namespace Pawntom.TutorialBridge
 
             if (!found)
             {
-                return;
+                return null;
             }
 
             ControllableWall first = null;
@@ -1099,10 +1136,7 @@ namespace Pawntom.TutorialBridge
                 }
             }
 
-            if (first != null && first != wall)
-            {
-                Emit(TutorialSignal.WrongDoorHackStarted);
-            }
+            return first;
         }
 
         private void HandleHackingStarted(SecurityLevel level, HackingGameType type)
@@ -1188,12 +1222,15 @@ namespace Pawntom.TutorialBridge
             if (_walls.Length >= 2 && CountWalls(false) == 0 && CountWalls(true) >= 2)
             {
                 Emit(TutorialSignal.AllDoorsUnlocked);
+
+                if (CountWalls(true) >= 2 && AllUnlockedWallsOpen())
+                {
+                    Emit(TutorialSignal.AllDoorsOpened);
+                }
             }
 
             bool zoneForLocked = TutorialZone.HasZoneFor(TutorialSignal.CorridorAEndReached);
             bool zoneForBlue = TutorialZone.HasZoneFor(TutorialSignal.BlueDoorAhead);
-            float radiusSq = doorRadius * doorRadius;
-
             for (int i = 0; i < _walls.Length; i++)
             {
                 ControllableWall wall = _walls[i];
@@ -1212,7 +1249,11 @@ namespace Pawntom.TutorialBridge
 
                 _wallWasOpen[i] = open;
 
-                if (_wallBounds[i].SqrDistance(position) > radiusSq)
+                // 안내 상자(격벽 + WallGuideExpand) 안에 들어섰을 때만.
+                Bounds wallGuide = _wallBounds[i];
+                wallGuide.Expand(new Vector3(WallGuideExpand, 0f, WallGuideExpand));
+
+                if (!InsideHorizontally(wallGuide, position))
                 {
                     continue;
                 }
@@ -1317,22 +1358,19 @@ namespace Pawntom.TutorialBridge
             PollKey(position);
             PollVaultUnlock();
 
-            int count = Physics.OverlapSphereNonAlloc(position, lootRadius, _overlap, ~0, QueryTriggerInteraction.Collide);
-
-            for (int i = 0; i < count; i++)
+            // 전리품 둘레의 초록 안내 상자(ItemGuideBounds) 안에 들어섰을 때만 알린다.
+            // 열쇠는 전리품이 아니다(NearLoot 에 세지 않는다). 열쇠 근처는 PollKey 가 따로 알린다.
+            for (int i = 0; i < _lootItems.Length; i++)
             {
-                Collider hit = _overlap[i];
+                NetworkItem item = _lootItems[i];
 
-                if (hit == null)
+                if (item == null || item.Object == null || !item.Object.IsValid || item.IsPickedUp ||
+                    item.ItemId == keyItemId)
                 {
                     continue;
                 }
 
-                NetworkItem item = hit.GetComponentInParent<NetworkItem>();
-
-                // 열쇠는 전리품이 아니다(NearLoot 에 세지 않는다). 열쇠 근처는 PollKey 가 따로 알린다.
-                if (item != null && item.Object != null && item.Object.IsValid && !item.IsPickedUp &&
-                    item.ItemId != keyItemId)
+                if (InsideHorizontally(ItemGuideBounds(item), position))
                 {
                     Emit(TutorialSignal.NearLoot);
                     return;
@@ -1340,11 +1378,9 @@ namespace Pawntom.TutorialBridge
             }
         }
 
-        // 5-7: 아직 줍지 않은 열쇠가 가까이(keyNoticeRadius) 있다. 방 한가운데 열쇠를 발견하는 순간이다.
+        // 5-7: 아직 줍지 않은 열쇠 둘레의 초록 안내 상자 안에 들어섰다. 방 한가운데 열쇠를 발견하는 순간이다.
         private void PollKey(Vector3 position)
         {
-            float radiusSq = keyNoticeRadius * keyNoticeRadius;
-
             for (int i = 0; i < _keyItems.Length; i++)
             {
                 NetworkItem item = _keyItems[i];
@@ -1354,10 +1390,7 @@ namespace Pawntom.TutorialBridge
                     continue;
                 }
 
-                Vector3 delta = item.transform.position - position;
-                delta.y = 0f;
-
-                if (delta.sqrMagnitude <= radiusSq)
+                if (InsideHorizontally(ItemGuideBounds(item, KeyGuidePadding), position))
                 {
                     Emit(TutorialSignal.NearKey);
                     return;

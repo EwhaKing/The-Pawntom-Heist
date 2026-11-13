@@ -109,6 +109,12 @@ namespace Pawntom.TutorialBridge
         private bool _directorLock;
         private bool _dialogueHold;
         private bool _settlementOpening;
+
+        // 7-13 이후 출발 버튼에 띄우는 초록 안내 상자. 버튼은 움직이지 않으므로 범위를 한 번만 구해 둔다.
+        private const string EscapeGuideBeatId = "7-13";
+        private EscapeButtonInteraction _escapeButton;
+        private Bounds _escapeButtonBounds;
+        private float _nextEscapeButtonSearch;
         private bool _ending;
         private float _nextLockReassert;
 
@@ -727,12 +733,11 @@ namespace Pawntom.TutorialBridge
 
             _radio.SetMode(TutorialRadioIndicatorView.Mode.Hidden);
 
-            float card = 0f;
+            // 검은 화면 위에 글자가 하나씩 떨어지는 MISSION COMPLETE 연출. 끝날 때까지 기다린다.
+            _missionComplete.Play();
 
-            while (card < 1f)
+            while (!_missionComplete.IsDone)
             {
-                card += Time.unscaledDeltaTime / 1.2f;
-                _eyelids.SetEndCard(card, EndTitle, EndSubtitle);
                 yield return null;
             }
 
@@ -740,7 +745,7 @@ namespace Pawntom.TutorialBridge
             Completed?.Invoke();
 
             // 카드를 잠시 보여 준 뒤 메인(로비) 화면으로 돌아간다. 씬이 바뀌면 이 디렉터도 함께 사라진다.
-            yield return new WaitForSecondsRealtime(endCardHoldSeconds);
+            yield return new WaitForSecondsRealtime(Mathf.Min(endCardHoldSeconds, 1f)); // 연출 자체에 유지 시간이 들어 있다
             _ = GameManager.Instance.ReturnToMainMenuAsync();
         }
 
@@ -761,6 +766,8 @@ namespace Pawntom.TutorialBridge
             glyphs.Append(TutorialTheme.CommandName).Append(TutorialTheme.CatName)
                 .Append("RX 수신 TX 발신 RADIO 수신 중 발신 중 대기 교신 종료 TUTORIAL COMPLETE")
                 .Append("정산 가져온 전리품 가방이 비어 있습니다 합계 G 정산 완료 아이템 # 분전반 접속 중 %")
+                .Append("격벽 탭 클릭 클릭해서 해킹 더블클릭해서 열기")
+                .Append("MISSION COMPLETE 교신 종료  ·  TUTORIAL COMPLETE")
                 .Append("0123456789").Append(RadioNoiseText.Glyphs);
 
             foreach (TutorialLine line in script.AllLines())
@@ -791,6 +798,14 @@ namespace Pawntom.TutorialBridge
 
             _radio = hud.gameObject.AddComponent<TutorialRadioIndicatorView>();
             _radio.Build(_factory, hud.transform);
+
+            _missionComplete = overlay.gameObject.AddComponent<TutorialMissionCompleteView>();
+            _missionComplete.Build(_factory, overlay,
+                letter => _audio?.PlayBlip(Pawntom.Tutorial.Core.TutorialSpeaker.Command),
+                () => _audio?.PlaySquelch());
+
+            _terminalGuide = overlay.gameObject.AddComponent<TutorialTerminalGuideView>();
+            _terminalGuide.Build(_factory, overlay);
 
             _guide = GetOrAdd<TutorialGuideMarker>();
             _guide.Build();
@@ -883,8 +898,172 @@ namespace Pawntom.TutorialBridge
         /// <summary>
         /// 다음 목적지에 연초록 안내 상자를 띄운다. 조작이 허용된 뒤부터, 엔딩·정산 전까지만.
         /// </summary>
+        // ───────────── 터미널 안에서 누를 곳 안내 ─────────────
+
+        private float _holdReleaseWait;
+        private TutorialMissionCompleteView _missionComplete;
+        private TutorialTerminalGuideView _terminalGuide;
+        private MainbaseControlUI _terminalUi;
+        private float _nextTerminalUiSearch;
+
+        private const string TerminalLabelTab = "격벽 탭 클릭";
+        private const string TerminalLabelHack = "클릭해서 해킹";
+        private const string TerminalLabelOpen = "더블클릭해서 열기";
+
+        /// <summary>
+        /// 터미널이 열려 있는 동안, 지금 눌러야 할 곳(탭 → 격벽 버튼)을 초록 틀로 가리킨다.
+        /// 해금됐지만 닫힌 격벽이 있으면 그것을 더블클릭으로 열게 하고, 없으면 붉은(잠긴) 격벽을 클릭해 해킹하게 한다.
+        /// 격벽 탭이 아닌 화면이면 먼저 탭을 가리킨다. 4-6(격벽 안내)이 시작된 뒤에만 나온다.
+        /// </summary>
+        private void UpdateTerminalGuide()
+        {
+            if (_terminalGuide == null)
+            {
+                return;
+            }
+
+            if (!TryGetTerminalGuide(out RectTransform target, out string label))
+            {
+                _terminalGuide.Hide();
+                return;
+            }
+
+            _terminalGuide.Show(target, label);
+        }
+
+        private bool TryGetTerminalGuide(out RectTransform target, out string label)
+        {
+            target = null;
+            label = null;
+
+            // 대사가 끝난 뒤에 띄운다(대사가 뜨는 동안에는 막과 틀이 화면을 가리지 않는다).
+            if (!_controlEverEnabled || _ending || _directorLock || HackingManager.AnyHackingActive || !_sequencer.IsDialogueIdle)
+            {
+                return false;
+            }
+
+            TutorialBeatState gateState = _sequencer.GetMainState("4-4");
+
+            if (gateState != TutorialBeatState.Playing && gateState != TutorialBeatState.Done)
+            {
+                return false;
+            }
+
+            if (_terminalUi == null)
+            {
+                if (Time.unscaledTime < _nextTerminalUiSearch)
+                {
+                    return false;
+                }
+
+                _nextTerminalUiSearch = Time.unscaledTime + 1f;
+                _terminalUi = FindFirstObjectByType<MainbaseControlUI>(FindObjectsInactive.Include);
+
+                if (_terminalUi == null)
+                {
+                    return false;
+                }
+            }
+
+            if (!_terminalUi.IsOpen)
+            {
+                return false;
+            }
+
+            // 해야 할 일이 남았는지 먼저 본다: 해금됐지만 닫힌 격벽 → 더블클릭, 없으면 잠긴 격벽 → 해킹.
+            bool secondPhaseOver = _sequencer.GetMainState("4-14") != TutorialBeatState.Pending;
+            ControllableWall firstDoor = _sequencer.GetMainState("4-11") == TutorialBeatState.Pending ? _probe.FirstDoorWall() : null;
+
+            WallControlButtonUI openTarget = null;
+            WallControlButtonUI hackTarget = null;
+            WallControlButtonUI hackFirst = null;
+            var buttons = WallControlButtonUI.Active;
+
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                WallControlButtonUI button = buttons[i];
+                ControllableWall wall = button != null ? button.TargetWall : null;
+
+                if (wall == null)
+                {
+                    continue;
+                }
+
+                if (wall.IsUnlocked)
+                {
+                    if (!wall.IsOpen && openTarget == null)
+                    {
+                        openTarget = button;
+                    }
+                }
+                else
+                {
+                    if (hackTarget == null)
+                    {
+                        hackTarget = button;
+                    }
+
+                    if (wall == firstDoor)
+                    {
+                        hackFirst = button;
+                    }
+                }
+            }
+
+            WallControlButtonUI pick = null;
+            string pickLabel = null;
+
+            if (openTarget != null)
+            {
+                pick = openTarget;
+                pickLabel = TerminalLabelOpen;
+            }
+            else if (hackTarget != null && !secondPhaseOver)
+            {
+                pick = hackFirst != null ? hackFirst : hackTarget;
+                pickLabel = TerminalLabelHack;
+            }
+
+            // 격벽 버튼이 안 보이는 화면(다른 탭)이면 격벽 탭부터 누르게 한다.
+            if (_terminalUi.CurrentTab != MainbaseControlUI.Tab.Wall)
+            {
+                // 누를 격벽이 남아 있을 때만(할 일이 없는데 탭만 가리키지 않는다).
+                bool wallsLeft = false;
+                ControllableWall[] all = FindObjectsByType<ControllableWall>(FindObjectsSortMode.None);
+
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && ((!all[i].IsUnlocked && !secondPhaseOver) || (all[i].IsUnlocked && !all[i].IsOpen)))
+                    {
+                        wallsLeft = true;
+                        break;
+                    }
+                }
+
+                if (!wallsLeft)
+                {
+                    return false;
+                }
+
+                target = _terminalUi.GetTabRect(MainbaseControlUI.Tab.Wall);
+                label = TerminalLabelTab;
+                return target != null;
+            }
+
+            if (pick == null)
+            {
+                return false;
+            }
+
+            target = (RectTransform)pick.transform;
+            label = pickLabel;
+            return true;
+        }
+
         private void UpdateGuide()
         {
+            UpdateTerminalGuide();
+
             Transform player = _probe.LocalPlayerTransform;
 
             if (!_controlEverEnabled || _ending || _directorLock || player == null)
@@ -917,6 +1096,15 @@ namespace Pawntom.TutorialBridge
 
             HideExtraGuides();
 
+            // 본부에 돌아와 출발 버튼을 누를 차례면 버튼을 초록 상자로 가리킨다(정산이 뜨면 사라진다).
+            Bounds escapeBounds;
+
+            if (TryGetEscapeButtonGuide(out escapeBounds))
+            {
+                _guide.Show(escapeBounds, player.position, EscapeGuideMinSize, EscapeGuideMinSize);
+                return;
+            }
+
             TutorialSignal target = TutorialGuidePlanner.Choose(_sequencer, _canResolveGuide);
             Bounds bounds;
 
@@ -928,6 +1116,68 @@ namespace Pawntom.TutorialBridge
             {
                 _guide.Hide();
             }
+        }
+
+        private const float EscapeGuideMinSize = 0.5f;
+
+        /// <summary>
+        /// 7-13(본부 도착, 출발 버튼 안내)이 시작된 뒤 정산이 뜨기 전까지, 출발 버튼의 범위를 준다.
+        /// 캣닢 없이 눌러 거절돼도(7-14) 정산이 뜨기 전이면 계속 가리킨다.
+        /// </summary>
+        private bool TryGetEscapeButtonGuide(out Bounds bounds)
+        {
+            bounds = default;
+
+            TutorialBeatState state = _sequencer.GetMainState(EscapeGuideBeatId);
+
+            if ((state != TutorialBeatState.Playing && state != TutorialBeatState.Done) ||
+                _settlementOpening || _settlement.IsOpen)
+            {
+                return false;
+            }
+
+            if (_escapeButton == null)
+            {
+                // 못 찾았으면 1초에 한 번만 다시 찾는다(UpdateGuide 는 매 프레임 돈다).
+                if (Time.unscaledTime < _nextEscapeButtonSearch)
+                {
+                    return false;
+                }
+
+                _nextEscapeButtonSearch = Time.unscaledTime + 1f;
+                _escapeButton = FindFirstObjectByType<EscapeButtonInteraction>();
+
+                if (_escapeButton == null)
+                {
+                    return false;
+                }
+
+                Renderer[] renderers = _escapeButton.GetComponentsInChildren<Renderer>();
+                bool has = false;
+
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (!has)
+                    {
+                        _escapeButtonBounds = renderers[i].bounds;
+                        has = true;
+                    }
+                    else
+                    {
+                        _escapeButtonBounds.Encapsulate(renderers[i].bounds);
+                    }
+                }
+
+                if (!has)
+                {
+                    _escapeButtonBounds = new Bounds(_escapeButton.transform.position, Vector3.one * EscapeGuideMinSize);
+                }
+
+                _escapeButtonBounds.Expand(0.12f);
+            }
+
+            bounds = _escapeButtonBounds;
+            return true;
         }
 
         private void HideExtraGuides()
@@ -962,11 +1212,30 @@ namespace Pawntom.TutorialBridge
                     GameWorldPause.Acquire(_dialogue); // 대사만 움직이고 적·상호작용 대상은 멈춘다
                 }
             }
-            else if (_dialogueHold && !TutorialDialogueView.IsConfirmHeld())
+            else if (_dialogueHold)
             {
-                _dialogueHold = false;
-                TutorialInputLock.Release(_dialogue);
-                GameWorldPause.Release(_dialogue);
+                // 넘기기에 쓴 Space 를 뗀 뒤에 푼다. 그런데 Space 가 눌린 채로 읽히면(창 포커스를 잃어 키 상태가 남는 등)
+                // 영원히 못 풀어 게임이 멈춘 것처럼 된다 — 3초가 지나도 안 풀리면 강제로 풀고 기록을 남긴다.
+                if (!TutorialDialogueView.IsConfirmHeld())
+                {
+                    _dialogueHold = false;
+                    _holdReleaseWait = 0f;
+                    TutorialInputLock.Release(_dialogue);
+                    GameWorldPause.Release(_dialogue);
+                }
+                else
+                {
+                    _holdReleaseWait += Time.unscaledDeltaTime;
+
+                    if (_holdReleaseWait >= 3f)
+                    {
+                        Debug.LogWarning("[TutorialDirector] 넘기기 키가 3초 넘게 눌린 것으로 읽혀 대사 정지를 강제로 풀었습니다(멈춤 방지).");
+                        _dialogueHold = false;
+                        _holdReleaseWait = 0f;
+                        TutorialInputLock.Release(_dialogue);
+                        GameWorldPause.Release(_dialogue);
+                    }
+                }
             }
 
             // 대사를 읽는 동안 해킹 미니게임의 제한 시간이 흐르지 않게 멈춘다. 넘기기에 쓴 Space 를 뗀 뒤에 다시 돌린다

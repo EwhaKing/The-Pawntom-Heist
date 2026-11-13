@@ -232,7 +232,7 @@ namespace Hacking
         /// </summary>
         public void PressSlot(int slotIndex)
         {
-            if (!isActive)
+            if (!isActive || InputBlocked)
             {
                 return;
             }

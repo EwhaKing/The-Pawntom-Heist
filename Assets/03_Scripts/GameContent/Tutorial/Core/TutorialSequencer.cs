@@ -605,8 +605,89 @@ namespace Pawntom.Tutorial.Core
             }
         }
 
+        // 가만히 있을 때 나오는 상황 대사(R-move·R-door 등: 단계 0 의 번갈아 쓰는 보조 대사)인가.
+        private static bool IsIdleBeat(TutorialBeat beat)
+        {
+            return beat.Kind == TutorialBeatKind.Side && beat.Rotating && !beat.Urgent && beat.Stage == 0;
+        }
+
+        private readonly List<QueuedLine> _idleStrip = new List<QueuedLine>(4);
+
+        /// <summary>
+        /// 이벤트 대사(메인 비트·일반 사이드)가 나올 차례가 되면 재촉용 상황 대사는 양보한다.
+        /// 줄을 선 상황 대사는 버리고, 떠 있는 상황 대사는 끊어서 이벤트 대사가 바로 나오게 한다.
+        /// 상황 대사가 먼저 떠 있다는 이유로 이벤트 대사가 늦어지거나 묻히지 않는다.
+        /// </summary>
+        private void PreemptIdleLines()
+        {
+            bool idleCurrent = _hasCurrent && IsIdleBeat(_current.Owner);
+            bool idleQueued = false;
+            bool otherQueued = false;
+
+            for (int i = 0; i < _queue.Count; i++)
+            {
+                if (IsIdleBeat(_queue[i].Owner))
+                {
+                    idleQueued = true;
+                }
+                else
+                {
+                    otherQueued = true;
+                }
+            }
+
+            if (!idleCurrent && !idleQueued)
+            {
+                return;
+            }
+
+            // 줄 선 상황 대사를 잠시 빼 둔다. 이벤트 대사가 없으면 되돌려 놓는다.
+            _idleStrip.Clear();
+
+            for (int i = _queue.Count - 1; i >= 0; i--)
+            {
+                if (IsIdleBeat(_queue[i].Owner))
+                {
+                    _idleStrip.Insert(0, _queue[i]);
+                    _queue.RemoveAt(i);
+                }
+            }
+
+            bool eventReady = otherQueued;
+
+            // 줄에 이벤트 대사가 없으면, 지금 시작할 수 있는 메인 비트가 있는지 본다(시작하면 줄에 그 대사가 들어온다).
+            if (!eventReady && (idleCurrent || _idleStrip.Count > 0))
+            {
+                eventReady = TryStartMain();
+            }
+
+            if (!eventReady)
+            {
+                _queue.InsertRange(0, _idleStrip);
+                _idleStrip.Clear();
+                return;
+            }
+
+            for (int i = 0; i < _idleStrip.Count; i++)
+            {
+                if (_idleStrip[i].SideIndex >= 0)
+                {
+                    _sideQueued[_idleStrip[i].SideIndex] = false;
+                }
+            }
+
+            _idleStrip.Clear();
+
+            if (idleCurrent)
+            {
+                CompleteCurrentLine(); // 안에서 Advance 가 이어서 이벤트 대사를 시작한다
+            }
+        }
+
         private void Advance()
         {
+            PreemptIdleLines();
+
             while (!_hasCurrent)
             {
                 if (_queue.Count > 0)

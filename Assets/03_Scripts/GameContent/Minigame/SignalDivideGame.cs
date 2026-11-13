@@ -5,7 +5,7 @@ namespace Hacking
     /// <summary>
     /// WASD 중 랜덤으로 선택된 2개의 키를 번갈아 눌러 게이지를 채우는 미니게임
     ///
-    /// 같은 키를 연속으로 누르면 무시되고, 다른 키로 바꿔 눌러야 게이지가 오름
+    /// 같은 키를 연속으로 누르면 누른 만큼 게이지가 깎이고, 다른 키로 바꿔 눌러야 게이지가 오름
     /// 게이지는 가만히 있으면 초당 일정량 감소하므로 리듬을 놓치면 실패
     ///
     /// 게이지 UI는 이 스크립트가 직접 그리지 않고, HackingPopupView가 Progress 값을 읽어서 그림
@@ -16,6 +16,8 @@ namespace Hacking
         [SerializeField] private float maxGauge = 100f;
         [SerializeField] private float gaugeDecreasePerSecond = 3f;
         [SerializeField] private float gaugeIncreasePerPress = 10f;
+        [Tooltip("같은 키를 연달아 누를 때마다 깎이는 게이지")]
+        [SerializeField] private float gaugePenaltyPerSameKeyPress = 10f;
 
         private readonly KeyCode[] candidateKeys =
         {
@@ -193,7 +195,7 @@ namespace Hacking
         /// </summary>
         private void CheckSignalInput(KeyCode pressed)
         {
-            if (!isActive)
+            if (!isActive || InputBlocked)
             {
                 return;
             }
@@ -209,7 +211,10 @@ namespace Hacking
             {
                 lastRejectedKey = pressed;
                 RejectedPressCount++;
-                Debug.Log($"[SignalDivideGame] 같은 키 연속 입력 무시: {pressed}");
+
+                // 같은 키를 연타하면 누른 횟수만큼 게이지가 깎인다(무시만 하면 연타해도 손해가 없다).
+                progressGauge = Mathf.Max(0f, progressGauge - gaugePenaltyPerSameKeyPress);
+                Debug.Log($"[SignalDivideGame] 같은 키 연속 입력 감점: {pressed} / 게이지: {progressGauge:F1}");
                 return;
             }
 

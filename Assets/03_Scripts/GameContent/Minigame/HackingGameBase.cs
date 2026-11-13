@@ -19,12 +19,37 @@ namespace Hacking
         /// 다른 화면(튜토리얼 대사 등)이 미니게임을 잠시 멈춰 둔다. 멈춘 동안 타이머·입력·UI 버튼 입력이 모두 멈춘다.
         /// 대사를 읽는 동안 제한 시간이 흘러 조작도 못 하고 실패하는 것을 막는다.
         /// </summary>
-        public static bool Paused { get; set; }
+        public static bool Paused
+        {
+            get { return _paused; }
+            set
+            {
+                // 대사가 끝나 풀리는 순간부터 잠깐 더 입력을 막는다. 대사를 넘기려고 누른 키·클릭이
+                // 그대로 미니게임 판정으로 들어가는 것(실수 입력)을 막기 위해서다.
+                if (_paused && !value)
+                {
+                    _graceUntil = Time.unscaledTime + InputGraceSeconds;
+                }
+
+                _paused = value;
+            }
+        }
+
+        private const float InputGraceSeconds = 0.6f;
+        private static bool _paused;
+        private static float _graceUntil;
+
+        /// <summary>멈춰 있거나 멈춤이 풀린 직후(보호 시간)라 키·클릭 입력을 받지 않아야 하는가.</summary>
+        public static bool InputBlocked
+        {
+            get { return _paused || Time.unscaledTime < _graceUntil; }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
-            Paused = false;
+            _paused = false;
+            _graceUntil = 0f;
         }
 
         /// <summary>HackingPopupView가 타이머 UI를 갱신할 때 참조합니다.</summary>
@@ -64,11 +89,14 @@ namespace Hacking
         {
             currentTime = timeLimit;
             isActive = true;
+
+            // 시작 직후 잠깐은 입력을 받지 않는다(팝업을 연 클릭·대사를 넘기던 입력이 첫 판정이 되지 않게).
+            _graceUntil = Mathf.Max(_graceUntil, Time.unscaledTime + 0.35f);
         }
 
         protected virtual void Update()
         {
-            if (!isActive || Paused) return;
+            if (!isActive || InputBlocked) return;
 
             UpdateTimer();
             if (!isActive) return; // 타이머 종료로 이미 FinishGame이 호출됐을 수 있음

@@ -17,9 +17,6 @@ namespace Pawntom.TutorialBridge
     public sealed class TutorialSecurityNode : MonoBehaviour
     {
         [Header("상호작용")]
-        [Tooltip("이 거리(수평) 안에서 상호작용 키를 길게 누르면 접속한다")]
-        [SerializeField, Min(0.1f)] private float interactRadius = 2.5f;
-
         [Tooltip("분전반 앞에서 \"E | 이름\" 으로 보일 이름(길게 눌러 접속)")]
         [SerializeField] private string interactName = "분전반 접속 (길게)";
 
@@ -46,9 +43,10 @@ namespace Pawntom.TutorialBridge
 
         public bool IsConnected { get; private set; }
 
-        public float InteractRadius
+        /// <summary>안내 상자·판정에 쓰는 범위 상자. 모든 E 상호작용과 같은 표준 거리(분전반 경계 + 1.2m)다.</summary>
+        public Bounds RangeBounds()
         {
-            get { return interactRadius; }
+            return InteractRange.RangeBounds(this, InteractRange.StandardMargin);
         }
 
         private static readonly System.Collections.Generic.List<TutorialSecurityNode> ActiveNodes =
@@ -111,9 +109,7 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
-            Vector3 delta = player.position - transform.position;
-            delta.y = 0f;
-            bool near = delta.sqrMagnitude <= interactRadius * interactRadius;
+            bool near = InteractRange.IsInRange(this, player.position, InteractRange.StandardMargin);
 
             if (near)
             {
@@ -206,7 +202,8 @@ namespace Pawntom.TutorialBridge
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(0.49f, 1f, 0.7f, 0.8f);
-            Gizmos.DrawWireSphere(transform.position, interactRadius);
+            Bounds range = RangeBounds();
+            Gizmos.DrawWireCube(range.center, range.size);
         }
     }
 }

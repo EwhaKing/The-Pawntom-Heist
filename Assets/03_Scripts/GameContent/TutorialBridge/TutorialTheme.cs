@@ -64,7 +64,7 @@ namespace Pawntom.TutorialBridge
         public const int OverlaySortingOrder = 1000;
 
         // ── 화자 ──
-        public const string CommandName = "지휘부";
+        public const string CommandName = "???";
         public const string CatName = "깜냥이";
     }
 }

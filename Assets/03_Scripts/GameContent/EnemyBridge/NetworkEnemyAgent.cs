@@ -60,6 +60,12 @@ namespace Pawntom.EnemyBridge
             _agent = GetComponent<EnemyAgent>();
             _navMeshAgent = GetComponent<NavMeshAgent>();
 
+            // 발자국을 알아챘을 때 머리 위 느낌표 + 깡충(프리팹을 고치지 않고 스스로 붙인다).
+            if (GetComponent<EnemyNoticeCue>() == null)
+            {
+                gameObject.AddComponent<EnemyNoticeCue>();
+            }
+
             if (_agent != null)
             {
                 _agent.SelfTick = false;
@@ -137,6 +143,44 @@ namespace Pawntom.EnemyBridge
 
             _agent.Tick(Runner.DeltaTime);
             ReplicatedState = _agent.State;
+
+            if (_agent.Brain != null)
+            {
+                ReplicatedNoticeCount = _agent.Brain.TraceNoticeCount;
+                ReplicatedSpotCount = _agent.Brain.SpotNoticeCount;
+            }
+        }
+
+        // 플레이어를 직접 발견한 횟수(빨간 느낌표용).
+        [Networked] private int ReplicatedSpotCount { get; set; }
+
+        public int SpotNoticeCount
+        {
+            get
+            {
+                if (HasStateAuthority && _agent != null && _agent.Brain != null)
+                {
+                    return _agent.Brain.SpotNoticeCount;
+                }
+
+                return ReplicatedSpotCount;
+            }
+        }
+
+        // 발자국을 알아챈 횟수. 모든 피어의 느낌표 연출이 이 숫자의 증가를 보고 같은 순간에 뜬다.
+        [Networked] private int ReplicatedNoticeCount { get; set; }
+
+        public int TraceNoticeCount
+        {
+            get
+            {
+                if (HasStateAuthority && _agent != null && _agent.Brain != null)
+                {
+                    return _agent.Brain.TraceNoticeCount;
+                }
+
+                return ReplicatedNoticeCount;
+            }
         }
 
         private bool _motionFrozen;

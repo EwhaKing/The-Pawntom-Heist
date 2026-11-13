@@ -44,6 +44,10 @@ public class ItemSpawnManager : NetworkBehaviour
              "스폰 지점마다 따로 확률을 굴리면(예: 4곳 × 50%) 전리품이 하나도 안 뜰 수 있기 때문이다(6.25%).")]
     [SerializeField] private bool guaranteeAtLeastOneInScene = true;
 
+    [Tooltip("묶음 전체에서 최소 몇 곳은 반드시 아이템을 만들지(위 옵션이 켜져 있을 때). 기본 1. 튜토리얼 씬은 코드에서 자동으로 2 이상으로 본다.\n" +
+             "확률에서 빠진 지점 중에서 모자란 만큼 무작위로 골라 만든다(그 지점을 가진 매니저의 프리팹·아이템 ID 로).")]
+    [SerializeField, Min(1)] private int guaranteedMinimumInScene = 1;
+
     // ── 묶음 굴림 상태 ──
     // 매니저들이 한 씬에서 차례로 Spawned 되므로, "마지막 차례인데 아직 아무도 못 만들었다"를 세어 그때 강제로 하나 만든다.
     // 같은 세션(Runner)·같은 씬 안에서만 이어지고, 다르면 새 묶음으로 센다.
@@ -53,12 +57,17 @@ public class ItemSpawnManager : NetworkBehaviour
     private static int _groupDecided;
     private static int _groupSpawned;
 
+    // 확률에서 빠진 지점들(어느 매니저의 지점인지 함께). 최소 개수를 못 채우면 여기서 골라 만든다.
+    private static readonly System.Collections.Generic.List<(ItemSpawnManager owner, Transform point)> _groupSkipped =
+        new System.Collections.Generic.List<(ItemSpawnManager owner, Transform point)>(8);
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetGroup()
     {
         _groupRunner = null;
         _groupSceneHandle = -1;
         _groupExpected = _groupDecided = _groupSpawned = 0;
+        _groupSkipped.Clear();
     }
 
     /// <summary>
@@ -73,42 +82,78 @@ public class ItemSpawnManager : NetworkBehaviour
         SpawnItems();
     }
 
+    // 같은 세션·같은 씬이면 이어서, 다르면 새 묶음으로 센다. 첫 매니저가 지점을 기록하기 전에 불러야 한다.
+    private void EnsureGroup()
+    {
+        int sceneHandle = gameObject.scene.handle;
+
+        if (ReferenceEquals(_groupRunner, Runner) && _groupSceneHandle == sceneHandle)
+        {
+            return;
+        }
+
+        _groupRunner = Runner;
+        _groupSceneHandle = sceneHandle;
+        _groupDecided = _groupSpawned = 0;
+        _groupExpected = 0;
+        _groupSkipped.Clear();
+
+        ItemSpawnManager[] managers = FindObjectsByType<ItemSpawnManager>(FindObjectsSortMode.None);
+
+        for (int i = 0; i < managers.Length; i++)
+        {
+            if (managers[i] != null && managers[i].isActiveAndEnabled &&
+                managers[i].guaranteeAtLeastOneInScene && managers[i].gameObject.scene.handle == sceneHandle)
+            {
+                _groupExpected++;
+            }
+        }
+    }
+
     /// <summary>
-    /// 이 매니저의 차례를 묶음에 알리고, 지금 강제로 하나 만들어야 하는지 돌려준다.
+    /// 이 매니저의 차례를 묶음에 알린다. 마지막 차례이고 묶음 전체에서 만든 곳이 최소 개수에 모자라면,
+    /// 확률에서 빠진 지점 중 무작위로 골라 모자란 만큼 만든다.
     /// </summary>
-    private bool ReportAndCheckForce(int spawnedHere)
+    private void ReportAndForce(int spawnedHere)
     {
         if (!guaranteeAtLeastOneInScene)
         {
-            return false;
+            return;
         }
 
-        int sceneHandle = gameObject.scene.handle;
-
-        if (!ReferenceEquals(_groupRunner, Runner) || _groupSceneHandle != sceneHandle)
-        {
-            _groupRunner = Runner;
-            _groupSceneHandle = sceneHandle;
-            _groupDecided = _groupSpawned = 0;
-            _groupExpected = 0;
-
-            ItemSpawnManager[] managers = FindObjectsByType<ItemSpawnManager>(FindObjectsSortMode.None);
-
-            for (int i = 0; i < managers.Length; i++)
-            {
-                if (managers[i] != null && managers[i].isActiveAndEnabled &&
-                    managers[i].guaranteeAtLeastOneInScene && managers[i].gameObject.scene.handle == sceneHandle)
-                {
-                    _groupExpected++;
-                }
-            }
-        }
-
+        EnsureGroup();
         _groupDecided++;
         _groupSpawned += spawnedHere;
 
-        // 마지막 차례이고 아직 아무도 아이템을 만들지 못했다면 이 매니저가 책임진다.
-        return _groupSpawned == 0 && _groupDecided >= _groupExpected;
+        if (_groupDecided < _groupExpected)
+        {
+            return;
+        }
+
+        // 튜토리얼 씬은 전리품 방에 최소 2개가 나오게 한다(다른 씬은 기본 1). 인스펙터 값이 더 크면 그 값을 쓴다.
+        bool tutorialScene = gameObject.scene.name.Contains("Tutorial");
+        int minimum = Mathf.Max(guaranteedMinimumInScene, tutorialScene ? 2 : 1);
+        int need = minimum - _groupSpawned;
+
+        while (need > 0 && _groupSkipped.Count > 0)
+        {
+            int pick = Random.Range(0, _groupSkipped.Count);
+            (ItemSpawnManager owner, Transform point) forced = _groupSkipped[pick];
+            _groupSkipped.RemoveAt(pick);
+
+            if (forced.owner == null || forced.point == null)
+            {
+                continue;
+            }
+
+            Debug.Log($"[ItemSpawnManager] 전리품이 최소 개수에 모자라 {forced.point.name} 에 강제로 생성합니다.");
+
+            if (forced.owner.SpawnAt(forced.point))
+            {
+                _groupSpawned++;
+                need--;
+            }
+        }
     }
 
     /// <summary>
@@ -173,7 +218,11 @@ public class ItemSpawnManager : NetworkBehaviour
         }
 
         int spawnedHere = 0;
-        System.Collections.Generic.List<Transform> skipped = new System.Collections.Generic.List<Transform>(spawnPoints.Length);
+
+        if (guaranteeAtLeastOneInScene)
+        {
+            EnsureGroup();
+        }
 
         // 등록된 스폰 포인트 검사
         foreach (Transform spawnPoint in spawnPoints)
@@ -188,7 +237,11 @@ public class ItemSpawnManager : NetworkBehaviour
             if (Random.value > spawnChance)
             {
                 Debug.Log($"[ItemSpawnManager] {spawnPoint.name} : 아이템 생성 안 됨");
-                skipped.Add(spawnPoint);
+                if (guaranteeAtLeastOneInScene)
+                {
+                    _groupSkipped.Add((this, spawnPoint));
+                }
+
                 continue;
             }
 
@@ -200,16 +253,7 @@ public class ItemSpawnManager : NetworkBehaviour
             spawnedHere++;
         }
 
-        // 묶음 전체에서 아무것도 안 떴고 이 매니저가 마지막 차례면, 확률에서 빠진 지점 하나를 골라 반드시 만든다.
-        if (ReportAndCheckForce(spawnedHere) && skipped.Count > 0)
-        {
-            Transform forcedPoint = skipped[Random.Range(0, skipped.Count)];
-            Debug.Log($"[ItemSpawnManager] 전리품이 하나도 안 떠서 {forcedPoint.name} 에 강제로 생성합니다.");
-
-            if (SpawnAt(forcedPoint))
-            {
-                _groupSpawned++;
-            }
-        }
+        // 묶음 전체에서 만든 곳이 최소 개수에 모자라고 이 매니저가 마지막 차례면, 확률에서 빠진 지점을 골라 채운다.
+        ReportAndForce(spawnedHere);
     }
 }
