@@ -240,7 +240,8 @@ public class PlayerController : NetworkBehaviour
             Runner, Mathf.Max(0.01f, _contactDamageInterval));
     }
 
-    public void ResetTutorialLook()
+    /// <summary>체크포인트 재시도로 되살아날 때 시점·버튼 기록·접촉 피해 쿨다운을 처음 상태로.</summary>
+    public void ResetLookForRespawn()
     {
         ViewPitch = 0f;
         _previousButtons = default;

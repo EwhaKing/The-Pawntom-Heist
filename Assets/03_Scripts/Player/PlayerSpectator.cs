@@ -51,8 +51,8 @@ public sealed class PlayerSpectator : MonoBehaviour
 
     private void LateUpdate()
     {
-        // 튜토리얼은 일반 관전 대신 단계 재시도 화면이 카메라를 관리합니다.
-        if (Pawntom.TutorialBridge.TutorialDirector.Active != null) return;
+        // 연출 세션(튜토리얼)은 일반 관전 대신 단계 재시도 화면이 카메라를 관리합니다.
+        if (ScriptedSessionMode.IsActive) return;
         if (!CanSpectate)
         {
             if (_started) StopSpectating();
@@ -85,15 +85,21 @@ public sealed class PlayerSpectator : MonoBehaviour
             else if (keyboard.leftArrowKey.wasPressedThisFrame) SelectTarget(-1);
         }
 
-        if (_targetCamera != null)
+        // 문구는 관전 대상이 바뀔 때만 다시 만든다(매 프레임 문자열 보간은 GC 할당이다).
+        PlayerData labelFor = _targetCamera != null ? _target : null;
+
+        if (!_labelValid || labelFor != _labelFor)
         {
-            _label.text = $"관전 중 · {_target.SelectedCatType} ({_target.Object.InputAuthority})\n← 이전 팀원    다음 팀원 →";
-        }
-        else
-        {
-            _label.text = "사망했습니다 · 관전할 생존 팀원이 없습니다";
+            _labelValid = true;
+            _labelFor = labelFor;
+            _label.text = labelFor != null
+                ? $"관전 중 · {labelFor.SelectedCatType} ({labelFor.Object.InputAuthority})\n← 이전 팀원    다음 팀원 →"
+                : "사망했습니다 · 관전할 생존 팀원이 없습니다";
         }
     }
+
+    private PlayerData _labelFor;
+    private bool _labelValid;
 
     private bool IsEligible(PlayerData candidate)
     {
@@ -189,6 +195,7 @@ public sealed class PlayerSpectator : MonoBehaviour
 
     private void CreateLabel()
     {
+        _labelValid = false;
         GameObject root = new GameObject("Spectator Status", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         _canvas = root.GetComponent<Canvas>();
         _canvas.renderMode = RenderMode.ScreenSpaceOverlay;

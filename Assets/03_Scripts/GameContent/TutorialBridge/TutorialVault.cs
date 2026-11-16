@@ -113,12 +113,14 @@ namespace Pawntom.TutorialBridge
         private void Awake()
         {
             _actions = new InputSystemActions();
+            SyncBindings();
             _chest = GetComponent<VaultChest>();
         }
 
         private void OnEnable()
         {
             _actions?.Player.Enable();
+            InputManager.BindingsChanged += SyncBindings;
 
             if (!ActiveVaults.Contains(this))
             {
@@ -129,7 +131,14 @@ namespace Pawntom.TutorialBridge
         private void OnDisable()
         {
             _actions?.Player.Disable();
+            InputManager.BindingsChanged -= SyncBindings;
             ActiveVaults.Remove(this);
+        }
+
+        // 이 컴포넌트의 입력 인스턴스에 옵션창 키 설정을 맞춘다(키를 바꾼 플레이어도 안내·판정이 같은 키를 쓰게).
+        private void SyncBindings()
+        {
+            InputManager.Instance.CopyBindingOverridesTo(_actions);
         }
 
         private void OnDestroy()
@@ -296,6 +305,15 @@ namespace Pawntom.TutorialBridge
             }
 
             _chest.RequestOpenAfterMinigame(inventory.Object, true);
+
+            // Host 에서는 RPC 가 그 자리에서 실행된다. 금고가 거절했으면(해킹 중 범위를 벗어남 등) 열림·캣닢 생성이 없으므로
+            // false 를 돌려 가방에 바로 넣는 쪽으로 넘긴다. 예전에는 무조건 true 라 캣닢이 어디에도 생기지 않아 7단계에서 진행이 멈췄다.
+            if (_chest.Object.HasStateAuthority && !_chest.IsOpened)
+            {
+                Debug.LogWarning("[TutorialVault] 금고가 열림 요청을 거절해 캣닢을 가방에 바로 넣습니다.", this);
+                return false;
+            }
+
             return true;
         }
 

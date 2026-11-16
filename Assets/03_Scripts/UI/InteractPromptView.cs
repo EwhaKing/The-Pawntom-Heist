@@ -1,7 +1,5 @@
-using Pawntom.TutorialBridge;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -9,8 +7,8 @@ using UnityEngine.UI;
 ///
 /// 구성:
 /// - 왼쪽 키 칩(둥근 흰 네모 + 키 글자), 오른쪽 이름(흰 글씨 + 어두운 테두리). 씬·프리팹 없이 코드로 만든다.
-/// - 키 글자는 상호작용 입력 바인딩에서 읽는다(바인딩을 바꾸면 따라간다). 읽지 못하면 E.
-/// - 폰트는 한글이 모자라지 않도록 튜토리얼 UI 와 같은 방식의 동적 폰트를 쓴다(<see cref="TutorialUIFactory"/>).
+/// - 키 글자는 InputManager 의 실제 상호작용 바인딩에서 읽는다(옵션창에서 키를 바꾸면 바로 따라간다). 읽지 못하면 E.
+/// - 폰트는 한글이 모자라지 않도록 공용 런타임 UI 폰트를 쓴다(<see cref="RuntimeUIFactory.Shared"/>).
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class InteractPromptView : MonoBehaviour
@@ -20,7 +18,7 @@ public sealed class InteractPromptView : MonoBehaviour
 
     private static InteractPromptView _instance;
 
-    private TutorialUIFactory _factory;
+    private RuntimeUIFactory _factory;
     private CanvasGroup _group;
     private TextMeshProUGUI _nameText;
     private TextMeshProUGUI _keyText;
@@ -58,10 +56,21 @@ public sealed class InteractPromptView : MonoBehaviour
     private void Awake()
     {
         Build();
+        InputManager.BindingsChanged += RefreshKey;
+    }
+
+    private void RefreshKey()
+    {
+        if (_keyText != null)
+        {
+            _keyText.text = ReadInteractKey();
+        }
     }
 
     private void OnDestroy()
     {
+        InputManager.BindingsChanged -= RefreshKey;
+
         if (_chipSprite != null)
         {
             Destroy(_chipSprite);
@@ -99,7 +108,7 @@ public sealed class InteractPromptView : MonoBehaviour
 
     private void Build()
     {
-        _factory = new TutorialUIFactory(null);
+        _factory = new RuntimeUIFactory(RuntimeUIFactory.Shared.Font);
 
         Canvas canvas = _factory.CreateCanvas("InteractPromptCanvas", 40, transform);
 
@@ -201,32 +210,8 @@ public sealed class InteractPromptView : MonoBehaviour
 
     private static string ReadInteractKey()
     {
-        InputSystemActions actions = null;
-
-        try
-        {
-            actions = new InputSystemActions();
-            // 길게 누르기 같은 상호작용 문구("HOLD E")는 빼고 키 이름만 읽는다.
-            string display = actions.Player.Interact.GetBindingDisplayString(
-                InputBinding.DisplayStringOptions.DontIncludeInteractions, "Keyboard&Mouse");
-
-            if (!string.IsNullOrEmpty(display))
-            {
-                return display.ToUpperInvariant();
-            }
-        }
-        catch (System.Exception)
-        {
-            // 바인딩을 못 읽어도 안내는 떠야 한다.
-        }
-        finally
-        {
-            if (actions != null)
-            {
-                actions.Dispose();
-            }
-        }
-
-        return "E";
+        // 바인딩 오버라이드(옵션창에서 바꾼 키)는 InputManager 의 액션에만 걸려 있다.
+        // 새 InputSystemActions 를 만들어 읽으면 에셋 기본값(E)만 보인다.
+        return InputManager.Instance.GetKeyDisplayName("Interact", "E");
     }
 }

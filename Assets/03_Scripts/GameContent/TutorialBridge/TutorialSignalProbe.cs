@@ -176,11 +176,13 @@ namespace Pawntom.TutorialBridge
         private void Awake()
         {
             _actions = new InputSystemActions();
+            SyncBindings();
         }
 
         private void OnEnable()
         {
             _actions?.Player.Enable();
+            InputManager.BindingsChanged += SyncBindings;
 
             HackingManager.HackingStarted += HandleHackingStarted;
             HackingManager.HackingFinished += HandleHackingFinished;
@@ -195,6 +197,7 @@ namespace Pawntom.TutorialBridge
         private void OnDisable()
         {
             _actions?.Player.Disable();
+            InputManager.BindingsChanged -= SyncBindings;
 
             HackingManager.HackingStarted -= HandleHackingStarted;
             HackingManager.HackingFinished -= HandleHackingFinished;
@@ -204,6 +207,12 @@ namespace Pawntom.TutorialBridge
             InventoryManager.AddRejectedFull -= HandleInventoryFull;
             WallControlButtonUI.HackRequested -= HandleWallHackRequested;
             RuleManager.DepartureRejectedNoExit -= HandleDepartureRejected;
+        }
+
+        // 이 컴포넌트의 입력 인스턴스에 옵션창 키 설정을 맞춘다(키를 바꾼 플레이어도 안내·판정이 같은 키를 쓰게).
+        private void SyncBindings()
+        {
+            InputManager.Instance.CopyBindingOverridesTo(_actions);
         }
 
         private void OnDestroy()
@@ -260,6 +269,20 @@ namespace Pawntom.TutorialBridge
             ResetIdleTimers();
             MarkControlEnabled();
             ResetLookReference();
+            SyncWallStates();
+        }
+
+        /// <summary>
+        /// 체크포인트 복원으로 격벽 상태가 바뀐 뒤, "이전 프레임에 열려 있었나" 기록을 지금 상태로 맞춘다.
+        /// 맞추지 않으면 복원으로 열린 격벽을 플레이어가 연 것으로 보고 DoorOpened 를 한 번 더 낸다.
+        /// </summary>
+        private void SyncWallStates()
+        {
+            for (int i = 0; i < _walls.Length && i < _wallWasOpen.Length; i++)
+            {
+                ControllableWall wall = _walls[i];
+                _wallWasOpen[i] = wall != null && wall.Object != null && wall.Object.IsValid && wall.IsOpen;
+            }
         }
 
         private void Update()

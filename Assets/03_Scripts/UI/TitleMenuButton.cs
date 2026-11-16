@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -23,6 +24,11 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
     private TitleMenuUI _menu;
 
     private bool _initialized;
+
+    // 전용 아트가 없는 버튼(OPTIONS)용: 코드로 그린 막대 스프라이트 + 글자. UseGeneratedLabel 참고.
+    private TextMeshProUGUI _generatedLabel;
+    private Texture2D _generatedNormalTexture;
+    private Texture2D _generatedHighlightTexture;
 
     public Button Button
     {
@@ -77,6 +83,97 @@ public class TitleMenuButton : MonoBehaviour, IPointerEnterHandler
             // 두 이미지 폭이 1px 다르다. 원본 크기로 맞춰 1:1 픽셀로 그린다(늘이거나 줄이면 글자가 흐려진다).
             _image.SetNativeSize();
         }
+
+        if (_generatedLabel != null)
+        {
+            // 기존 아트와 같은 규칙: 평소 = 검은 막대 + 흰 글자, 선택 = 흰 막대 + 검은 글자.
+            _generatedLabel.color = highlighted ? Color.black : Color.white;
+        }
+    }
+
+    /// <summary>
+    /// 글자가 구워진 전용 스프라이트가 없을 때, 기존 버튼과 같은 크기의 기울어진 막대를 코드로 그리고 그 위에 글자를 얹는다.
+    /// (복제한 버튼에 쓴다. 전용 아트가 생기면 normalSprite/highlightSprite 를 넣은 진짜 버튼으로 바꾼다.)
+    /// </summary>
+    public void UseGeneratedLabel(string label)
+    {
+        Initialize();
+
+        Vector2Int size = normalSprite != null
+            ? new Vector2Int((int)normalSprite.rect.width, (int)normalSprite.rect.height)
+            : new Vector2Int(368, 82);
+
+        normalSprite = CreateBarSprite(size, Color.black, out _generatedNormalTexture);
+        highlightSprite = CreateBarSprite(size, Color.white, out _generatedHighlightTexture);
+
+        if (_generatedLabel == null)
+        {
+            RuntimeUIFactory factory = new RuntimeUIFactory(RuntimeUIFactory.Shared.Font);
+            _generatedLabel = factory.CreateText("GeneratedLabel", transform, 40f, Color.white, TextAlignmentOptions.Center);
+            _generatedLabel.fontStyle = FontStyles.Bold | FontStyles.Italic;
+            _generatedLabel.characterSpacing = 2f;
+            _generatedLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            RuntimeUIFactory.Stretch(_generatedLabel.rectTransform);
+        }
+
+        _generatedLabel.text = label;
+        _image.sprite = null; // 다음 SetHighlighted 가 새 스프라이트로 바꾸도록
+    }
+
+    // 기존 막대 아트를 흉내 낸 평행사변형(오른쪽으로 기울어짐). 가장자리는 1px 부드럽게.
+    private static Sprite CreateBarSprite(Vector2Int size, Color color, out Texture2D texture)
+    {
+        const float Slant = 22f;
+        const float VerticalMargin = 6f;
+
+        int width = Mathf.Max(8, size.x);
+        int height = Mathf.Max(8, size.y);
+        texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        texture.name = "TitleGeneratedBar";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.hideFlags = HideFlags.DontSave;
+
+        Color32[] pixels = new Color32[width * height];
+        float top = height - VerticalMargin;
+
+        for (int y = 0; y < height; y++)
+        {
+            float py = y + 0.5f;
+            float vertical = Mathf.Clamp01(Mathf.Min(py - VerticalMargin, top - py) + 0.5f);
+            float t = Mathf.InverseLerp(VerticalMargin, top, py);
+            float left = Mathf.Lerp(0f, Slant, t);
+            float right = Mathf.Lerp(width - Slant, width, t);
+
+            for (int x = 0; x < width; x++)
+            {
+                float px = x + 0.5f;
+                float horizontal = Mathf.Clamp01(Mathf.Min(px - left, right - px) + 0.5f);
+                Color c = color;
+                c.a = vertical * horizontal;
+                pixels[y * width + x] = c;
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+
+        Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0f, 1f), 100f);
+        sprite.name = "TitleGeneratedBar";
+        sprite.hideFlags = HideFlags.DontSave;
+        return sprite;
+    }
+
+    private void OnDestroy()
+    {
+        if (_generatedNormalTexture == null)
+        {
+            return;
+        }
+
+        Destroy(normalSprite);
+        Destroy(highlightSprite);
+        Destroy(_generatedNormalTexture);
+        Destroy(_generatedHighlightTexture);
     }
 
     public void OnPointerEnter(PointerEventData eventData)

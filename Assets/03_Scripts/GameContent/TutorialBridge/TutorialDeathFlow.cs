@@ -36,7 +36,9 @@ namespace Pawntom.TutorialBridge
         private bool _animatorEnabled;
         private readonly Dictionary<Renderer, bool> _hands = new Dictionary<Renderer, bool>();
         private readonly Dictionary<PlayerStatusUI, bool> _portraits = new Dictionary<PlayerStatusUI, bool>();
-        private bool _inputWasBlocked;
+        // 로컬 플레이어 Transform → PlayerData 캐시(매 프레임 GetComponent 하지 않게).
+        private Transform _cachedLocal;
+        private PlayerData _cachedLocalData;
 
         public bool IsShowing { get; private set; }
 
@@ -57,8 +59,7 @@ namespace Pawntom.TutorialBridge
         public void CaptureCheckpoint(int stage)
         {
             if (IsShowing || (_checkpoint != null && _checkpoint.Stage == stage)) return;
-            Transform local = _director.LocalPlayerTransform;
-            PlayerData player = local != null ? local.GetComponent<PlayerData>() : null;
+            PlayerData player = LocalPlayerData();
             if (player == null || player.Object == null || !player.Object.IsValid || player.IsDead) return;
             _checkpoint = new TutorialStageCheckpoint(stage, player);
             Debug.Log($"[TutorialDeathFlow] {stage}단계 시작 체크포인트 저장: {_checkpoint.Position}");
@@ -67,8 +68,7 @@ namespace Pawntom.TutorialBridge
         private void Update()
         {
             if (_director == null || _view == null) return;
-            Transform local = _director.LocalPlayerTransform;
-            PlayerData player = local != null ? local.GetComponent<PlayerData>() : null;
+            PlayerData player = LocalPlayerData();
             if (!IsShowing)
             {
                 if (player == null || player.Object == null || !player.Object.IsValid) return;
@@ -81,6 +81,19 @@ namespace Pawntom.TutorialBridge
             if (_failureCamera == null && Time.unscaledTime > _diedAt + 0.1f &&
                 (_presentation != null ? _presentation.CanStartSpectating : Time.unscaledTime > _diedAt + 1.2f))
                 ShowThirdPerson();
+        }
+
+        private PlayerData LocalPlayerData()
+        {
+            Transform local = _director.LocalPlayerTransform;
+
+            if (local != _cachedLocal)
+            {
+                _cachedLocal = local;
+                _cachedLocalData = local != null ? local.GetComponent<PlayerData>() : null;
+            }
+
+            return _cachedLocalData;
         }
 
         private void BeginDeath(PlayerData player)
@@ -99,8 +112,9 @@ namespace Pawntom.TutorialBridge
                 _portraits[status] = status.PortraitVisible;
                 status.PortraitVisible = false;
             }
-            _inputWasBlocked = GameplayInputBlocker.IsBlocked;
-            GameplayInputBlocker.SetBlocked(true);
+            // 실패 화면은 자기 이름으로 입력을 막는다(소유자 방식). 이미 열려 있던 단말기·ESC 메뉴의 차단과 섞이지 않아,
+            // 재시도 때 이것만 풀어도 다른 UI 가 건 차단은 그대로 남는다.
+            GameplayInputBlocker.Acquire(this);
             _view.ShowDeath();
         }
 
@@ -167,8 +181,11 @@ namespace Pawntom.TutorialBridge
         {
             // 사망 처리의 팝업 정리 등이 입력 차단을 풀어도 실패 화면에서는 게임 조작을 차단합니다.
             // Fusion Render 뒤의 LateUpdate에서 확인해 실행 순서에 영향을 받지 않도록 합니다.
-            if (IsShowing && (!GameplayInputBlocker.IsBlocked || Cursor.lockState != CursorLockMode.None || !Cursor.visible))
-                GameplayInputBlocker.SetBlocked(true);
+            if (IsShowing)
+            {
+                if (!GameplayInputBlocker.IsHeldBy(this)) GameplayInputBlocker.Acquire(this);
+                GameplayInputBlocker.EnsureCursorFree();
+            }
             if (_failureCamera == null) return;
             // 적이 실패 화면의 카메라 위치로 걸어 들어오는 경우도 다시 검사합니다.
             if (!IsCameraPositionFree(_cameraEnd) || Time.unscaledTime >= _nextCameraCheck)
@@ -264,19 +281,20 @@ namespace Pawntom.TutorialBridge
                 _view.AllowRetry();
                 return;
             }
-            if (!_player.TryRestartTutorial(_checkpoint.Position, _checkpoint.Rotation))
+            if (!_player.TryRespawnAtCheckpoint(_checkpoint.Position, _checkpoint.Rotation))
             {
                 _view.AllowRetry();
                 return;
             }
             _checkpoint.RestoreWorld(_player);
-            _presentation?.ResetTutorialPresentation();
+            _presentation?.ResetDeathPresentation();
             RestoreView();
             // 카메라 원위치 복구 뒤 시점을 정면으로 맞춥니다.
-            _player.GetComponent<PlayerController>().ResetTutorialLook();
+            _player.GetComponent<PlayerController>().ResetLookForRespawn();
             IsShowing = false;
             _view.Hide();
-            GameplayInputBlocker.SetBlocked(false);
+            // 예전에는 SetBlocked(false) 로 차단을 통째로 풀어, 사망 전부터 열려 있던 UI 뒤에서 이동 입력이 살아났다.
+            GameplayInputBlocker.Release(this);
             _director.ResumeStage(_checkpoint.Stage);
             Debug.Log($"[TutorialDeathFlow] {_checkpoint.Stage}단계 시작부터 재시도");
         }
@@ -306,7 +324,8 @@ namespace Pawntom.TutorialBridge
             if (!IsShowing) return;
             _presentation?.SetViewingCamera(_sourceCamera);
             RestoreView();
-            GameplayInputBlocker.SetBlocked(_inputWasBlocked);
+            // 씬을 떠나는 중일 수 있으므로 커서는 건드리지 않고 이 화면의 차단만 지운다(커서는 GameManager 가 정한다).
+            GameplayInputBlocker.Forget(this);
             IsShowing = false;
         }
     }

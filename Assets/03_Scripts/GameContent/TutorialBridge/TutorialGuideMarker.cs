@@ -40,6 +40,14 @@ namespace Pawntom.TutorialBridge
                 shader = Shader.Find("Universal Render Pipeline/Unlit");
             }
 
+            // 빌드에서 위 셰이더가 빠지면 new Material(null) 이 예외를 던져 안내 상자가 통째로 사라졌다.
+            // 엔진 내장 셰이더로 한 번 더 받친다(항상 포함된다).
+            if (shader == null)
+            {
+                shader = Shader.Find("Hidden/Internal-Colored");
+                Debug.LogWarning("[TutorialGuideMarker] Sprites/Default·URP Unlit 셰이더를 찾지 못해 내장 셰이더로 대신합니다.");
+            }
+
             _fillMaterial = new Material(shader) { name = "TutorialGuideFill", hideFlags = HideFlags.DontSave };
             _edgeMaterial = new Material(shader) { name = "TutorialGuideEdge", hideFlags = HideFlags.DontSave };
             _fillMaterial.renderQueue = 3000;

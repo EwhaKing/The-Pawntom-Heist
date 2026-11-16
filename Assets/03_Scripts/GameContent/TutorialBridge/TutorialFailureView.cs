@@ -42,6 +42,8 @@ namespace Pawntom.TutorialBridge
                 new Vector2(0f, -110f), new Vector2(1100f, 64f));
             _prompt = prompt.gameObject.AddComponent<CanvasGroup>();
             gameObject.AddComponent<GraphicRaycaster>();
+            // 사망 연출(PlayerDeathPresentation)이 이 캔버스를 흑백 후처리 아래로 옮기지 않게 한다 — 주황 문구는 원래 색으로 보여야 한다.
+            if (GetComponent<DeathOverlayExempt>() == null) gameObject.AddComponent<DeathOverlayExempt>();
             Hide();
         }
 
@@ -72,6 +74,9 @@ namespace Pawntom.TutorialBridge
             float time = Time.unscaledTime - _openedAt;
             _message.alpha = Mathf.Clamp01(time / 0.65f);
             _prompt.alpha = Mathf.Clamp01((time - 0.45f) / 0.3f);
+
+            // ESC 메뉴·옵션창이 떠 있으면 Space/Enter 는 그쪽 몫이다(메뉴를 보는 중에 재시도가 눌리지 않게).
+            if (GameMenuHost.IsOpen) { _confirmReleased = false; return; }
 
             Keyboard keyboard = Keyboard.current;
             bool held = keyboard != null && (keyboard.enterKey.isPressed || keyboard.spaceKey.isPressed);

@@ -46,7 +46,7 @@ namespace Pawntom.TutorialBridge
             {
                 if (wall.Object == null || !wall.Object.IsValid || wall.Runner != player.Runner) continue;
                 bool unlocked = wall.IsUnlocked, open = wall.IsOpen;
-                _restoreWorld.Add(() => { if (wall != null && wall.Object != null && wall.Object.IsValid) wall.RestoreTutorialCheckpoint(unlocked, open); });
+                _restoreWorld.Add(() => { if (wall != null && wall.Object != null && wall.Object.IsValid) wall.RestoreCheckpointState(unlocked, open); });
             }
             foreach (TutorialSecurityNode node in TutorialSecurityNode.All)
             {

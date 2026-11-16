@@ -81,6 +81,12 @@ public class MainbaseControlUI : MonoBehaviour
     private readonly System.Collections.Generic.Dictionary<UnityEngine.UI.Graphic, Color> tabOriginalColors =
         new System.Collections.Generic.Dictionary<UnityEngine.UI.Graphic, Color>();
 
+    private void OnDestroy()
+    {
+        // 열린 채로 씬이 바뀌어도 이 창이 건 입력 차단이 남지 않게 한다.
+        GameplayInputBlocker.Release(this);
+    }
+
     private void Awake()
     {
         if (root == null)
@@ -125,7 +131,7 @@ public class MainbaseControlUI : MonoBehaviour
     
         ShowPositionTab();
 
-        GameplayInputBlocker.SetBlocked(true);
+        GameplayInputBlocker.Acquire(this);
 
         Debug.Log("[MainbaseControlUI] UI 열림");
 
@@ -145,7 +151,7 @@ public class MainbaseControlUI : MonoBehaviour
             root.SetActive(false);
         }
 
-        GameplayInputBlocker.SetBlocked(false);
+        GameplayInputBlocker.Release(this);
 
         Debug.Log("[MainbaseControlUI] UI 닫힘");
 
