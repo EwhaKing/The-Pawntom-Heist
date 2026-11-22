@@ -28,8 +28,8 @@ public class CatData : ScriptableObject
     [SerializeField, Min(1f)] private float maxStamina = 100f;
     [SerializeField, Min(0f)] private float staminaRegenRate = 20f;
     [SerializeField, Min(0f)] private float sprintStaminaCost = 10f;
-    [SerializeField, Min(0f)] private float jumpStaminaCost = 15f;
-    [SerializeField, Min(0f)] private float parkourStaminaCost = 35f;
+    [SerializeField, Min(0f)] private float jumpStaminaCost = 0f;
+    [SerializeField, Min(0f)] private float parkourStaminaCost = 10f;
     [SerializeField, Min(0f)] private float exhaustedDuration = 3f;
 
     [Header("Description")]
