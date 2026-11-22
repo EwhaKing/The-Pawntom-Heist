@@ -41,8 +41,8 @@ public class PlayerData : NetworkBehaviour
     private const float DefaultMaxStamina = 100f;
     private const float DefaultStaminaRegenRate = 20f;
     private const float DefaultSprintStaminaCost = 10f;
-    private const float DefaultJumpStaminaCost = 15f;
-    private const float DefaultParkourStaminaCost = 35f;
+    private const float DefaultJumpStaminaCost = 0f;
+    private const float DefaultParkourStaminaCost = 10f;
     private const float DefaultExhaustedDuration = 3f;
 
     [Header("Cat Data")]

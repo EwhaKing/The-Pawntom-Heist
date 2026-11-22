@@ -21,7 +21,7 @@ MonoBehaviour:
   maxStamina: 100
   staminaRegenRate: 20
   sprintStaminaCost: 10
-  jumpStaminaCost: 15
-  parkourStaminaCost: 35
+  jumpStaminaCost: 0
+  parkourStaminaCost: 10
   exhaustedDuration: 3
   description: BlackCatDescription

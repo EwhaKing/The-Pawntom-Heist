@@ -17,6 +17,7 @@ public class PlayerAnimationView : MonoBehaviour
     public Transform ModelRoot => modelRoot;
     private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
     private static readonly int AirborneHash = Animator.StringToHash("Airborne");
+    private static readonly int ParkourModeHash = Animator.StringToHash("ParkourMode");
 
     [SerializeField] private Animator animator;
 
@@ -35,6 +36,8 @@ public class PlayerAnimationView : MonoBehaviour
     private NetworkObject _networkObject;
     private NetworkCharacterController _controller;
     private PlayerLocomotionModel _model;
+    private PlayerParkour _parkour;
+    private bool _hasParkourParam;
     private bool _ownerVisualApplied;
     private Camera _ownCamera;
     private Renderer[] _ownRenderers;
@@ -54,6 +57,16 @@ public class PlayerAnimationView : MonoBehaviour
         {
             // 이동은 NetworkCharacterController 가 한다. 클립의 루트 이동이 몸을 끌고 가면 안 된다.
             animator.applyRootMotion = false;
+
+            // 파쿠르 클립이 들어오기 전까지 컨트롤러에 ParkourMode(int) 파라미터가 없을 수 있다.
+            _parkour = GetComponent<PlayerParkour>();
+            foreach (AnimatorControllerParameter parameter in animator.parameters)
+            {
+                if (parameter.nameHash == ParkourModeHash && parameter.type == AnimatorControllerParameterType.Int)
+                {
+                    _hasParkourParam = true;
+                }
+            }
         }
 
         SinkModelBySkinWidth();
@@ -95,6 +108,11 @@ public class PlayerAnimationView : MonoBehaviour
 
         animator.SetFloat(LocomotionHash, _model.Locomotion);
         animator.SetBool(AirborneHash, _model.Airborne);
+
+        if (_hasParkourParam && _parkour != null)
+        {
+            animator.SetInteger(ParkourModeHash, (int)_parkour.Mode);
+        }
     }
 
     /// <summary>

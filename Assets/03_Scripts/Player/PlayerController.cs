@@ -50,6 +50,7 @@ public class PlayerController : NetworkBehaviour
     private NetworkCharacterController _controller;
     private PlayerData _playerData;
     private InventoryManager _inventory;
+    private PlayerParkour _parkour;
 
     public float WalkSpeed => walkSpeed;
     public float SprintSpeed => sprintSpeed;
@@ -63,6 +64,7 @@ public class PlayerController : NetworkBehaviour
         _controller = GetComponent<NetworkCharacterController>();
         _playerData = GetComponent<PlayerData>();
         _inventory = GetComponent<InventoryManager>();
+        _parkour = GetComponent<PlayerParkour>();
     }
 
     /// <summary>
@@ -159,6 +161,7 @@ public class PlayerController : NetworkBehaviour
             if (Object.HasStateAuthority || Object.HasInputAuthority)
             {
                 _controller.Velocity = Vector3.zero;
+                _parkour?.ResetState();
             }
             return;
         }
@@ -175,6 +178,20 @@ public class PlayerController : NetworkBehaviour
         bool isSprinting = CanSprint(wantsToSprint);
 
         UpdateStamina(isSprinting);
+
+        NetworkButtons pressed =
+            input.Buttons.GetPressed(_previousButtons);
+
+        NetworkButtons released =
+            input.Buttons.GetReleased(_previousButtons);
+
+        // 벽 매달림·철봉·턱 넘기·도약 중에는 파쿠르가 이번 틱 이동을 맡는다.
+        if (_parkour != null && _parkour.Simulate(input, pressed))
+        {
+            _previousButtons = input.Buttons;
+            return;
+        }
+
         HandleMove(input.Move, isSprinting);
 
         // Move 안의 충돌 콜백에서 사망했으면 같은 틱의 점프도 차단합니다.
@@ -183,12 +200,6 @@ public class PlayerController : NetworkBehaviour
             _controller.Velocity = Vector3.zero;
             return;
         }
-
-        NetworkButtons pressed =
-            input.Buttons.GetPressed(_previousButtons);
-
-        NetworkButtons released =
-            input.Buttons.GetReleased(_previousButtons);
 
         if (pressed.IsSet(InputButton.Jump))
         {
@@ -246,6 +257,7 @@ public class PlayerController : NetworkBehaviour
         ViewPitch = 0f;
         _previousButtons = default;
         ContactDamageCooldown = TickTimer.None;
+        _parkour?.ResetState();
         if (playerCamera != null) playerCamera.transform.localRotation = Quaternion.identity;
     }
 
@@ -314,7 +326,9 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        if (Object.HasStateAuthority &&
+        // 비용이 0 이면(점프 무소모) 깎지 않는다. TryConsumeStamina 는 0 을 실패로 돌려준다.
+        if (_playerData.JumpStaminaCost > 0f &&
+            Object.HasStateAuthority &&
             !_playerData.TryConsumeStamina(_playerData.JumpStaminaCost))
         {
             return;
@@ -336,6 +350,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (!wantsToSprint ||
             _playerData.IsParkouring ||
+            (_parkour != null && _parkour.Mode != ParkourMode.None) ||
             _playerData.IsExhausted)
         {
             return false;
@@ -379,11 +394,5 @@ public class PlayerController : NetworkBehaviour
         _playerData.RestoreStamina(
             _playerData.StaminaRegenRate * Runner.DeltaTime
         );
-    }
-
-    private void HandleParkour()
-    {
-        // TODO: 벽 감지와 파쿠르 이동이 구현되면
-        // PlayerData.TryStartParkour / StopParkour를 이곳에서 호출합니다.
     }
 }
