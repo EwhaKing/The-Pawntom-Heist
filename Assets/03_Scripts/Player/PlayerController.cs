@@ -30,8 +30,9 @@ public class PlayerController : NetworkBehaviour
              "기본값 0.9 는 스케일을 줄이기 전 손맛(키의 약 58%)을 그대로 옮긴 값이다.")]
     [SerializeField, Min(0.01f)] private float jumpHeight = 0.9f;
 
-    [Tooltip("최고점까지 올라가는 시간(초). 짧을수록 빠르고 묵직하다. 기본 0.6 은 스케일 다운 전과 같다.")]
-    [SerializeField, Min(0.05f)] private float jumpRiseSeconds = 0.6f;
+    [Tooltip("최고점까지 올라가는 시간(초). 짧을수록 빠르고 묵직하다.\n" +
+             "0.6 은 중력 5m/s²(지구 절반)이라 '달에서 뛰는' 느낌이 났다. 0.38 → 중력 약 12.5m/s²(지구 1.27배, 게임 손맛 기준).")]
+    [SerializeField, Min(0.05f)] private float jumpRiseSeconds = 0.38f;
 
     [Tooltip("켜면 위 두 값에서 중력을 계산해 NetworkCharacterController.gravity 를 덮어쓴다(낙하도 같은 비율로 맞춰진다).\n" +
              "끄면 NetworkCharacterController 의 중력을 그대로 두고 초기 속도만 높이에 맞춘다.")]
