@@ -240,8 +240,10 @@ public class PlayerController : NetworkBehaviour
         }
 
         EnemyAgent enemy = other.GetComponentInParent<EnemyAgent>();
-        // 스턴 중인 적은 닿아도 물지 못한다.
-        if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned)
+        // PlayerData 의 접촉 피해와 같은 규칙: 추격 중이고 스턴이 아닐 때만 문다.
+        // 순찰 중 스친 접촉은 감지(경계→추격)로 이어질 뿐 물지 않는다(예전에는 이 경로만 순찰 중에도 물었다).
+        if (enemy == null || !enemy.isActiveAndEnabled ||
+            !Pawntom.Enemy.Core.EnemyActionGate.CanBite(enemy.State, enemy.IsStunned))
         {
             return;
         }
