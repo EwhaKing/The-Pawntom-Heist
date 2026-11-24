@@ -45,6 +45,9 @@ namespace Pawntom.TutorialBridge
         private int _blipCursor;
         private float _ambientTarget;
 
+        // 배경 잡음의 페이드 값(옵션 음량을 곱하기 전). 소스 volume 에는 BGM 배율을 곱해 넣는다.
+        private float _ambientLevel;
+
         private void Awake()
         {
             _blipSource = CreateSource("Blip");
@@ -63,10 +66,10 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
-            float volume = Mathf.MoveTowards(_ambientSource.volume, _ambientTarget, Time.unscaledDeltaTime * 0.5f);
-            _ambientSource.volume = volume;
+            _ambientLevel = Mathf.MoveTowards(_ambientLevel, _ambientTarget, Time.unscaledDeltaTime * 0.5f);
+            _ambientSource.volume = _ambientLevel * GameAudioVolume.Bgm;
 
-            if (volume <= 0f && _ambientTarget <= 0f && _ambientSource.isPlaying)
+            if (_ambientLevel <= 0f && _ambientTarget <= 0f && _ambientSource.isPlaying)
             {
                 _ambientSource.Stop();
             }
@@ -100,7 +103,7 @@ namespace Pawntom.TutorialBridge
             }
 
             _blipSource.pitch = Random.Range(0.94f, 1.07f);
-            _blipSource.PlayOneShot(clip, blipVolume);
+            _blipSource.PlayOneShot(clip, blipVolume * GameAudioVolume.Sfx);
         }
 
         /// <summary>무전 잡음 한 덩어리. long=대사 개시("칙..."), short=글리치 순간.</summary>
@@ -110,7 +113,7 @@ namespace Pawntom.TutorialBridge
 
             if (clip != null)
             {
-                _sfxSource.PlayOneShot(clip, staticVolume * (longBurst ? 1f : 0.6f));
+                _sfxSource.PlayOneShot(clip, staticVolume * (longBurst ? 1f : 0.6f) * GameAudioVolume.Sfx);
             }
         }
 
@@ -118,7 +121,7 @@ namespace Pawntom.TutorialBridge
         {
             if (_squelch != null)
             {
-                _sfxSource.PlayOneShot(_squelch, staticVolume);
+                _sfxSource.PlayOneShot(_squelch, staticVolume * GameAudioVolume.Sfx);
             }
         }
 
@@ -126,7 +129,7 @@ namespace Pawntom.TutorialBridge
         {
             if (_heartbeat != null)
             {
-                _sfxSource.PlayOneShot(_heartbeat, heartbeatVolume * volumeScale);
+                _sfxSource.PlayOneShot(_heartbeat, heartbeatVolume * volumeScale * GameAudioVolume.Sfx);
             }
         }
 

@@ -1,13 +1,17 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
-/// 타이틀 메뉴(HOST GAME / JOIN GAME / TUTORIAL / QUIT).
+/// 타이틀 메뉴(HOST GAME / JOIN GAME / TUTORIAL / OPTIONS / QUIT).
 /// <list type="bullet">
 /// <item>선택된 버튼 하나만 흰 막대로 바뀌고 오른쪽으로 살짝 밀려 나온다. 마우스를 올리면 그 버튼이 선택된다.</item>
 /// <item>키보드: ↑↓ / W·S 로 이동, Enter·Space 로 누른다.</item>
 /// <item>처음 들어오면 위에서부터 차례로 미끄러져 나타난다.</item>
 /// <item>로비 상태(접속 전)에서만 보인다. 접속 중·대기실에서는 숨긴다.</item>
+/// <item>OPTIONS: <see cref="optionsButton"/> 이 연결돼 있으면 그 버튼을 쓰고, 비어 있으면 QUIT 버튼을 복제해
+///   코드로 만든다(전용 아트가 아직 없다). 만든 버튼은 QUIT 바로 위에 들어가고 위쪽 버튼들이 한 칸 올라간다.</item>
+/// <item>옵션창(<see cref="GameMenuHost"/>)이 열려 있는 동안 키보드 조작은 옵션창 몫이다.</item>
 /// </list>
 /// </summary>
 public class TitleMenuUI : MonoBehaviour
@@ -30,6 +34,11 @@ public class TitleMenuUI : MonoBehaviour
     [Tooltip("처음 나타날 때 왼쪽에서 들어오는 거리(px)")]
     [SerializeField] private float introDistance = 60f;
 
+    [Tooltip("OPTIONS 버튼(선택). 비우면 QUIT 버튼을 복제해 코드로 만든다. 연결한다면 buttons 배열에도 넣는다.")]
+    [SerializeField] private TitleMenuButton optionsButton;
+
+    private const string GeneratedOptionsLabel = "OPTIONS";
+
     private CanvasGroup _group;
     private RectTransform[] _rects;
     private Vector2[] _home;
@@ -46,6 +55,8 @@ public class TitleMenuUI : MonoBehaviour
         {
             _group = gameObject.AddComponent<CanvasGroup>();
         }
+
+        EnsureOptionsButton();
 
         int count = buttons != null ? buttons.Length : 0;
         _rects = new RectTransform[count];
@@ -124,7 +135,7 @@ public class TitleMenuUI : MonoBehaviour
         float dt = Time.unscaledDeltaTime;
         _introTime += dt;
 
-        if (_group.interactable)
+        if (_group.interactable && !GameMenuHost.IsOpen)
         {
             HandleKeyboard();
         }
@@ -171,6 +182,70 @@ public class TitleMenuUI : MonoBehaviour
                 buttons[_current].Button.onClick.Invoke();
             }
         }
+    }
+
+    /// <summary>OPTIONS 버튼. 인게임 ESC 메뉴와 같은 옵션창을 연다.</summary>
+    public void OnClickOptions()
+    {
+        GameMenuHost.OpenOptionsFromTitle();
+    }
+
+    /// <summary>
+    /// OPTIONS 버튼을 준비한다. 씬에 연결된 버튼이 있으면 클릭만 잇고, 없으면 마지막(QUIT) 버튼을 복제해 바로 위에 끼운다.
+    /// 반드시 위치(_home)를 기록하기 전에 부른다.
+    /// </summary>
+    private void EnsureOptionsButton()
+    {
+        if (optionsButton != null)
+        {
+            optionsButton.Button.onClick.RemoveListener(OnClickOptions);
+            optionsButton.Button.onClick.AddListener(OnClickOptions);
+            return;
+        }
+
+        if (buttons == null || buttons.Length < 2)
+        {
+            return;
+        }
+
+        int last = buttons.Length - 1;
+        TitleMenuButton quit = buttons[last];
+        RectTransform quitRect = (RectTransform)quit.transform;
+        RectTransform aboveRect = (RectTransform)buttons[last - 1].transform;
+
+        // 버튼 사이 간격(기울어진 배치라 x 도 조금씩 어긋난다). 새 버튼은 QUIT 바로 위 칸, 그 위 버튼들은 한 칸씩 올린다
+        // — 아래쪽 끝(QUIT)이 화면 밖으로 밀려나지 않게 위로 늘린다.
+        Vector2 step = quitRect.anchoredPosition - aboveRect.anchoredPosition;
+        Vector2 optionsPosition = aboveRect.anchoredPosition;
+
+        for (int i = 0; i < last; i++)
+        {
+            RectTransform rect = (RectTransform)buttons[i].transform;
+            rect.anchoredPosition -= step;
+        }
+
+        GameObject clone = Instantiate(quit.gameObject, quit.transform.parent);
+        clone.name = "OptionsButton (Generated)";
+        clone.transform.SetSiblingIndex(quit.transform.GetSiblingIndex());
+        ((RectTransform)clone.transform).anchoredPosition = optionsPosition;
+
+        optionsButton = clone.GetComponent<TitleMenuButton>();
+
+        // 복제하면 QUIT 의 클릭 연결(종료)까지 따라온다. 이벤트를 통째로 바꿔 지운다.
+        optionsButton.Button.onClick = new Button.ButtonClickedEvent();
+        optionsButton.Button.onClick.AddListener(OnClickOptions);
+        optionsButton.UseGeneratedLabel(GeneratedOptionsLabel);
+
+        TitleMenuButton[] expanded = new TitleMenuButton[buttons.Length + 1];
+
+        for (int i = 0; i < last; i++)
+        {
+            expanded[i] = buttons[i];
+        }
+
+        expanded[last] = optionsButton;
+        expanded[last + 1] = quit;
+        buttons = expanded;
     }
 
     /// <summary>TUTORIAL 버튼(onClick 연결용). 혼자 Host 로 접속해 튜토리얼 씬으로 간다.</summary>

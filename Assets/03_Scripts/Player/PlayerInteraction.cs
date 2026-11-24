@@ -127,8 +127,7 @@ public class PlayerInteraction : NetworkBehaviour
     /// E키를 중복 처리할 가능성이 있었으므로
     /// 여기서만 상호작용을 실행합니다.
     ///
-    /// 현재 프로젝트에서 정상 작동하던
-    /// Input.GetKeyDown(KeyCode.E) 방식을 유지
+    /// 키는 InputManager 의 상호작용 액션에서 읽는다(키 바꾸기 반영).
     /// </summary>
     private void Update()
     {
@@ -144,8 +143,7 @@ public class PlayerInteraction : NetworkBehaviour
             return;
         }
 
-        // 연출 중 잠금(튜토리얼 대사·오프닝 등)으로 게임 입력이 꺼져 있으면 E 도 막는다.
-        // E 는 입력 액션이 아니라 키를 직접 읽어서, 액션을 꺼도 따로 확인해야 한다.
+        // 연출 중 잠금(튜토리얼 대사·오프닝 등)으로 게임 입력이 꺼져 있으면 상호작용·안내도 막는다.
         if (InputManager.Instance != null && !InputManager.Instance.IsGameplayInputEnabled)
         {
             return;
@@ -153,9 +151,11 @@ public class PlayerInteraction : NetworkBehaviour
 
         UpdatePrompt();
 
-        if (Input.GetKeyDown(KeyCode.E))
+        // 상호작용 액션을 읽는다(옵션창에서 바꾼 키를 따른다). 예전에는 Input.GetKeyDown(KeyCode.E) 로 E 를 직접 읽어
+        // 키를 바꿔도 E 로만 상호작용이 됐다. Update 한 곳에서만 읽어 FixedUpdateNetwork 와 중복 처리하지 않는 점은 같다.
+        if (InputManager.Instance.InteractPressedThisFrame)
         {
-            Debug.Log("[PlayerInteraction] E키 입력 감지");
+            Debug.Log("[PlayerInteraction] 상호작용 키 입력 감지");
 
             TryInteract();
         }

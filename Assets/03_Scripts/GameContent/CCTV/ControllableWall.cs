@@ -360,11 +360,11 @@ public class ControllableWall : NetworkBehaviour
     }
 
     /// <summary>
-    /// 현재 상태를 실제 벽과 미니맵/CCTV 표시용 벽에 반영
+    /// 연출 세션(<see cref="ScriptedSessionMode"/>, 지금은 튜토리얼)의 체크포인트 재시도에서 벽 상태를 되돌린다. 상태 권한에서만.
     /// </summary>
-    public void RestoreTutorialCheckpoint(bool unlocked, bool open)
+    public void RestoreCheckpointState(bool unlocked, bool open)
     {
-        if (Pawntom.TutorialBridge.TutorialDirector.Active == null || !Object.HasStateAuthority) return;
+        if (!ScriptedSessionMode.IsActive || !Object.HasStateAuthority) return;
         IsUnlocked = unlocked;
         IsOpen = open;
         AutoCloseTimer = TickTimer.None;
@@ -372,6 +372,9 @@ public class ControllableWall : NetworkBehaviour
         OnStateChanged?.Invoke();
     }
 
+    /// <summary>
+    /// 현재 상태를 실제 벽과 미니맵/CCTV 표시용 벽에 반영
+    /// </summary>
     private void ApplyWallState()
     {
         // 실제 벽은 색을 바꾸지 않고, 보이기/숨기기만 처리

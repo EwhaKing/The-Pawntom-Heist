@@ -47,6 +47,12 @@ public class MarketUI : MonoBehaviour
 
     private readonly HashSet<int> selectedSlotIndexes = new HashSet<int>();
 
+    private void OnDestroy()
+    {
+        // 열린 채로 씬이 바뀌어도 이 창이 건 입력 차단이 남지 않게 한다.
+        GameplayInputBlocker.Release(this);
+    }
+
     private void Awake()
     {
         if (root == null)
@@ -67,8 +73,10 @@ public class MarketUI : MonoBehaviour
     private void Update()
     {
         if (PlayerData.IsLocalPlayerDead) return;
-        // 튜토리얼 중에는 테스트용 B키로 암시장을 열 수 없다.
-        if (Input.GetKeyDown(KeyCode.B) && Pawntom.TutorialBridge.TutorialDirector.Active == null)
+        // ESC 메뉴·옵션창이 떠 있으면 테스트 단축키(B)로 마켓을 열지 않는다(두 UI 가 입력 차단을 나눠 쥐게 된다).
+        if (GameMenuHost.IsOpen) return;
+        // 연출 세션(튜토리얼) 중에는 테스트용 B키로 암시장을 열 수 없다.
+        if (Input.GetKeyDown(KeyCode.B) && !ScriptedSessionMode.IsActive)
         {
             if (root != null && root.activeSelf)
             {
@@ -157,7 +165,7 @@ public class MarketUI : MonoBehaviour
         RefreshTexts();
 
         // 플레이어 입력 차단 시스템을 쓰고 있다면 유지
-        GameplayInputBlocker.SetBlocked(true);
+        GameplayInputBlocker.Acquire(this);
     }
 
     /// <summary>
@@ -172,7 +180,7 @@ public class MarketUI : MonoBehaviour
 
         selectedSlotIndexes.Clear();
 
-        GameplayInputBlocker.SetBlocked(false);
+        GameplayInputBlocker.Release(this);
     }
 
     /// <summary>

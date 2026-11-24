@@ -116,7 +116,7 @@ public class PlayerHitFeedback : MonoBehaviour
         if (_hitClip != null)
         {
             _audio.pitch = Random.Range(0.92f, 1.06f);
-            _audio.PlayOneShot(_hitClip, 0.9f);
+            _audio.PlayOneShot(_hitClip, 0.9f * GameAudioVolume.Sfx);
         }
 
         if (_shakeTarget != null)

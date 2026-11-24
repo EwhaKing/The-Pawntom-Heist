@@ -56,6 +56,8 @@ namespace Pawntom.TutorialBridge
         private Renderer[] _vaultRenderers;
         private Collider[] _vaultColliders;
         private Vector3 _vaultHome;
+        // BreakVault 가 원래 위치를 기록했는가. 기록 전(경보를 켠 적 없음)에 되살리면 금고가 원점(0,0,0)으로 날아갔다.
+        private bool _hasVaultHome;
 
         public bool IsRunning
         {
@@ -94,6 +96,9 @@ namespace Pawntom.TutorialBridge
         {
             TutorialDirector.LocalPlayerDied -= HandlePlayerDied;
             TutorialDirector.StageResumed -= HandleStageResumed;
+
+            // 경보 도중 꺼지면 코루틴이 정리 없이 멈춘다. 카메라 후처리·사이렌·붉은 화면 볼륨이 남지 않게 여기서 되돌린다.
+            Cleanup();
         }
 
         // 사망 재시도로 단계가 다시 시작되면, 이 연출이 부순 금고를 되살리고 경보를 다시 쓸 수 있게 되돌린다.
@@ -121,7 +126,11 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
-            vaultRoot.transform.position = _vaultHome;
+            if (_hasVaultHome)
+            {
+                vaultRoot.transform.position = _vaultHome;
+            }
+
             vaultRoot.SetActive(true);
 
             if (_vaultRenderers != null)
@@ -193,7 +202,7 @@ namespace Pawntom.TutorialBridge
 
                 if (_siren != null)
                 {
-                    _siren.volume = sirenVolume * fade;
+                    _siren.volume = sirenVolume * fade * GameAudioVolume.Sfx;
                 }
 
                 yield return null;
@@ -211,7 +220,7 @@ namespace Pawntom.TutorialBridge
 
                 if (_siren != null)
                 {
-                    _siren.volume = sirenVolume * k;
+                    _siren.volume = sirenVolume * k * GameAudioVolume.Sfx;
                 }
 
                 yield return null;
@@ -372,6 +381,7 @@ namespace Pawntom.TutorialBridge
             Transform root = vaultRoot.transform;
             Vector3 home = root.position;
             _vaultHome = home;
+            _hasVaultHome = true;
             Renderer[] renderers = vaultRoot.GetComponentsInChildren<Renderer>();
             _vaultRenderers = renderers;
             _vaultColliders = vaultRoot.GetComponentsInChildren<Collider>();

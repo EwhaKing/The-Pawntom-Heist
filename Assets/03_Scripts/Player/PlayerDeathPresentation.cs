@@ -107,7 +107,7 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
 
     public override void Render()
     {
-        if (_spawned && _presented && !_playerData.IsDead) ResetTutorialPresentation();
+        if (_spawned && _presented && !_playerData.IsDead) ResetDeathPresentation();
         // 늦은 참가와 재활성화 시에도 현재 사망 상태를 반영합니다.
         if (!_spawned || !isActiveAndEnabled || !_playerData.IsDead)
         {
@@ -303,7 +303,7 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
         foreach (Canvas canvas in canvases)
         {
             // 실패 문구의 주황색과 회색 베일은 월드 흑백 후처리 위에 표시합니다.
-            if (canvas.GetComponent<Pawntom.TutorialBridge.TutorialFailureView>() != null) continue;
+            if (canvas.GetComponent<DeathOverlayExempt>() != null) continue;
             if (!canvas.isRootCanvas || canvas.renderMode == RenderMode.WorldSpace ||
                 canvas.targetDisplay != _playerCamera.targetDisplay || _screenCanvases.ContainsKey(canvas))
             {
@@ -404,7 +404,7 @@ public sealed class PlayerDeathPresentation : NetworkBehaviour
         _presented = false;
     }
 
-    public void ResetTutorialPresentation()
+    public void ResetDeathPresentation()
     {
         RestoreTraceVisibility();
         ClearGrayscaleEffect();
