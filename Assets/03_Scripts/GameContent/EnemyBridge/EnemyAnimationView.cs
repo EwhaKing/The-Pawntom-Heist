@@ -58,6 +58,7 @@ namespace Pawntom.EnemyBridge
         private Vector3 _lastPosition;
         private bool _hasLast;
         private float _attackCooldown;
+        private bool _wasStunned;
 
         private Vector3 _modelHome;
         private float _soleLocalY;
@@ -193,16 +194,29 @@ namespace Pawntom.EnemyBridge
             return Mathf.Clamp(speed / clipSpeed, 0.6f, 4f);
         }
 
-        /// <summary>추격 중 공격 거리 안에 플레이어가 있으면 공격 간격마다 물기 동작을 낸다(피해 판정과 같은 거리·간격).</summary>
+        /// <summary>
+        /// 추격 중 공격 거리 안에 플레이어가 있으면 공격 간격마다 물기 동작을 낸다(피해 판정과 같은 거리·간격·규칙).
+        /// 한 번 문 뒤 멈춰 있는(스턴) 동안은 물기 동작을 내지 않는다 — 예전에는 피해 없이 무는 모션만 반복됐다.
+        /// </summary>
         private void UpdateAttack(float deltaTime)
         {
+            bool stunned = CurrentlyStunned();
+
+            // 스턴이 시작되는 순간, 아직 재생되지 않은 물기 트리거를 지운다(멈춘 뒤 한 번 더 무는 모습 방지).
+            if (stunned && !_wasStunned && animator != null)
+            {
+                animator.ResetTrigger(AttackHash);
+            }
+
+            _wasStunned = stunned;
+
             if (_attackCooldown > 0f)
             {
                 _attackCooldown -= deltaTime;
                 return;
             }
 
-            if (animator == null || _agent == null || CurrentState() != EnemyState.Chase)
+            if (animator == null || _agent == null || !EnemyActionGate.CanBite(CurrentState(), stunned))
             {
                 return;
             }
@@ -248,6 +262,17 @@ namespace Pawntom.EnemyBridge
             }
 
             return _agent != null ? _agent.State : EnemyState.Patrol;
+        }
+
+        /// <summary>스턴 중인가. 네트워크 적은 복제값(클라이언트도 같은 모습), 로컬 적은 EnemyAgent 값.</summary>
+        private bool CurrentlyStunned()
+        {
+            if (_network != null && _network.Object != null && _network.Object.IsValid)
+            {
+                return _network.IsStunned;
+            }
+
+            return _agent != null && _agent.IsStunned;
         }
 
         /// <summary>

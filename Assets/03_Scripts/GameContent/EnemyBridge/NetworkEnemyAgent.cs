@@ -28,6 +28,9 @@ namespace Pawntom.EnemyBridge
         // 권한이 없는 쪽이 보는 값. 권한자가 매 틱 두뇌의 상태로 덮어쓴다.
         [Networked] private EnemyState ReplicatedState { get; set; }
 
+        // 한 번 문 뒤 멈춰 있는가(스턴). 스턴은 상태 권한(Host)의 EnemyAgent 에만 있어서, 클라이언트가 물기 연출을 끄려면 복제가 필요하다.
+        [Networked] private NetworkBool ReplicatedStunned { get; set; }
+
         private EnemyAgent _agent;
         private NavMeshAgent _navMeshAgent;
 
@@ -44,6 +47,22 @@ namespace Pawntom.EnemyBridge
                 }
 
                 return HasStateAuthority ? _agent.State : ReplicatedState;
+            }
+        }
+
+        /// <summary>
+        /// 스턴(한 번 문 뒤 멈춤) 중인가. 권한이 있으면 EnemyAgent 값, 없으면 복제값이다.
+        /// </summary>
+        public bool IsStunned
+        {
+            get
+            {
+                if (_agent != null && HasStateAuthority)
+                {
+                    return _agent.IsStunned;
+                }
+
+                return ReplicatedStunned;
             }
         }
 
@@ -136,13 +155,17 @@ namespace Pawntom.EnemyBridge
             if (GameWorldPause.IsPaused)
             {
                 SetMotionFrozen(true);
+                ReplicatedStunned = _agent.IsStunned;
                 return;
             }
 
-            SetMotionFrozen(false);
+            // 일시정지가 풀려도 스턴이 남아 있으면 계속 세워 둔다. 예전에는 여기서 무조건 풀어,
+            // 스턴 중에 대사가 떴다 사라지면 두뇌는 멈춘 채 몸만 예전 목적지로 걸어갔다.
+            SetMotionFrozen(EnemyActionGate.ShouldHoldMotion(false, _agent.IsStunned));
 
             _agent.Tick(Runner.DeltaTime);
             ReplicatedState = _agent.State;
+            ReplicatedStunned = _agent.IsStunned;
 
             if (_agent.Brain != null)
             {
