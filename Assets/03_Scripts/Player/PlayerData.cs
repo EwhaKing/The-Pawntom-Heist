@@ -172,8 +172,9 @@ public class PlayerData : NetworkBehaviour
 
             // 쫓아와서 닿았을 때만 문다. 순찰 중 스친 접촉은 감지(경계→추격)로 이어지고, 추격이 되면 그때 문다.
             // 스턴 중인 적은 물지 못한다.
-            if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned ||
-                enemy.State != Pawntom.Enemy.Core.EnemyState.Chase)
+            // 규칙은 물기 연출(EnemyAnimationView)과 같은 EnemyActionGate 를 쓴다.
+            if (enemy == null || !enemy.isActiveAndEnabled ||
+                !Pawntom.Enemy.Core.EnemyActionGate.CanBite(enemy.State, enemy.IsStunned))
             {
                 continue;
             }
