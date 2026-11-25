@@ -13,9 +13,13 @@ public class CatData : ScriptableObject
     [Header("Identity")]
     [SerializeField] private CatType catType;
     [SerializeField] private string displayName;
+    [Tooltip("직업 이름. 로비 슬롯의 직업 라벨에 표시됩니다(예: 에이전트·오퍼레이터·브루저·스카우트).")]
+    [SerializeField] private string roleName;
 
     [Header("Lobby")]
     [SerializeField] private Sprite lobbySprite;
+    [Tooltip("로비 슬롯 이름표 배경. 초상화 배경색과 같은 색을 지정합니다.")]
+    [SerializeField] private Sprite lobbyNameTagSprite;
 
     [Header("Character Select Popup")]
     [SerializeField] private Sprite characterSelectIllustration;
@@ -38,7 +42,9 @@ public class CatData : ScriptableObject
 
     public CatType CatType => catType;
     public string DisplayName => displayName;
+    public string RoleName => roleName;
     public Sprite LobbySprite => lobbySprite;
+    public Sprite LobbyNameTagSprite => lobbyNameTagSprite;
     public Sprite CharacterSelectIllustration => characterSelectIllustration;
     public GameObject PlayerPrefab => playerPrefab;
     public float MaxHealth => maxHealth;
