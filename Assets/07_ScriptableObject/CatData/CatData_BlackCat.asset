@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatData
   catType: 0
   displayName: "\uAC80\uC815\uACE0\uC591\uC774"
+  roleName: "\uC5D0\uC774\uC804\uD2B8"
   lobbySprite: {fileID: 1811759924, guid: e34aa79ca2eef594d9ff0830c3fbe01f, type: 3}
+  lobbyNameTagSprite: {fileID: -208195209, guid: e34aa79ca2eef594d9ff0830c3fbe01f, type: 3}
   characterSelectIllustration: {fileID: 21300000, guid: 991e2e2bdd322604c8c7176f79ebce24, type: 3}
   playerPrefab: {fileID: 0}
   maxHealth: 100
