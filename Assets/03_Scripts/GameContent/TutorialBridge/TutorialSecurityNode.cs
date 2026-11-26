@@ -37,6 +37,8 @@ namespace Pawntom.TutorialBridge
         [SerializeField] private UnityEvent onCastCanceled = new UnityEvent();
 
         private InputSystemActions _actions;
+        private const string ConnectedMessage = "본부에 연결되었습니다.";
+        private TutorialBlinkHighlight _blink;
         private bool _casting;
         private bool _cueFired;
         private float _progress;
@@ -106,6 +108,8 @@ namespace Pawntom.TutorialBridge
             TutorialDirector director = TutorialDirector.Active;
             Transform player = director != null ? director.LocalPlayerTransform : null;
 
+            UpdateBlink(director);
+
             if (player == null)
             {
                 return;
@@ -115,6 +119,13 @@ namespace Pawntom.TutorialBridge
             {
                 // 연결된 동안 계속 알린다(상태형). 2단계를 마치기 전에 먼저 열어도, 순서가 3단계에 오면 3-0 이 열린다.
                 director.Raise(TutorialSignal.SecurityNodeConnected);
+                
+                if (!GameWorldPause.IsPaused && !GameplayInputBlocker.IsBlocked && !director.IsControlLockedByDirector &&
+                    InteractRange.IsInRange(this, player.position, InteractRange.StandardMargin))
+                {
+                    InteractPrompt.ShowMessage(ConnectedMessage);
+                }
+                
                 return;
             }
 
@@ -129,6 +140,18 @@ namespace Pawntom.TutorialBridge
             // 진행도를 그대로 둔 채 대사가 끝나면 이어 간다(3-2 처럼 캐스팅 중에 나오는 대사가 있다).
             if (GameWorldPause.IsPaused)
             {
+                return;
+            }
+
+            if (!director.HasReachedMain(TutorialDirector.SecurityNodeUnlockBeatId))
+            {
+                CancelCast();
+
+                if (near && !GameplayInputBlocker.IsBlocked && !director.IsControlLockedByDirector)
+                {
+                    InteractPrompt.Show(TutorialDirector.LockedPrompt);
+                }
+
                 return;
             }
 
@@ -178,6 +201,20 @@ namespace Pawntom.TutorialBridge
             director.HideCastProgress();
             onConnected.Invoke();
             director.Raise(TutorialSignal.SecurityNodeConnected);
+        }
+
+        private void UpdateBlink(TutorialDirector director)
+        {
+            bool on = director != null && !IsConnected && director.HasReachedMain(TutorialDirector.SecurityNodeUnlockBeatId);
+
+            if (_blink == null)
+            {
+                if (!on) return;
+                _blink = GetComponent<TutorialBlinkHighlight>();
+                if (_blink == null) _blink = gameObject.AddComponent<TutorialBlinkHighlight>();
+            }
+
+            _blink.SetOn(on);
         }
 
         public void RestoreCheckpoint(bool connected)

@@ -153,6 +153,15 @@ namespace Pawntom.Tutorial.Core
         AllDoorsUnlocked,
 
         /// <summary>격벽이 둘 이상이고 해금된 격벽이 전부 열려 있다. 상태형. 4-13b(둘째 문 열기) 안내를 내리고 4-14 를 연다.</summary>
-        AllDoorsOpened
+        AllDoorsOpened,
+
+        /// <summary>아직 갈 때가 아닌 곳(금고 쪽 복도 입구)을 막는 벽 앞에 왔다. 사건형.</summary>
+        EarlyAreaBlocked,
+
+        /// <summary>가방에 전리품(열쇠·캣닢 제외)이 하나도 없다. 상태형. 5-13의 트리거.</summary>
+        LootUnloaded,
+
+        /// <summary>열려 있던 격벽이 닫혔다. 사건형. 4-14b의 트리거.</summary>
+        DoorClosed
     }
 }

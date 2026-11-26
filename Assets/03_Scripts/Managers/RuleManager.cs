@@ -102,6 +102,15 @@ public class RuleManager : NetworkBehaviour
         IsLevelCleared = false;
     }
 
+    /// <summary>
+    /// 출발 버튼을 눌렀을 때 호출
+    /// 조건 불만족시 메세지 출력
+    /// </summary>
+    public bool AnyPlayerHasExitItem
+    {
+        get { return exitItemId > InventoryManager.EmptySlot && InventoryManager.HasAnyPlayerItem(exitItemId); }
+    }
+
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         _cooldown?.Clear();

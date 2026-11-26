@@ -1,3 +1,5 @@
+using UnityEngine;
+
 /// <summary>
 /// 상호작용 안내 문구("E | 이름")를 화면 중앙 아래에 띄우는 진입점.
 ///
@@ -20,4 +22,35 @@ public static class InteractPrompt
 
         InteractPromptView.GetOrCreate().Request(interactName);
     }
+
+    /// <summary>
+    /// 키 칩 없이 글자만 띄운다(상호작용할 것은 없지만 상태를 알려 줄 때. 예: "본부에 연결되었습니다.").
+    /// <see cref="Show"/> 처럼 보이는 동안 <b>매 프레임</b> 부른다.
+    /// </summary>
+    public static void ShowMessage(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        InteractPromptView.GetOrCreate().Request(message, false, Color.white);
+    }
+
+    /// <summary>
+    /// 같은 자리에 글자를 <paramref name="seconds"/> 초 동안 띄운다(한 번만 부르면 된다). 키 칩 없이, 지정한 색으로.
+    /// 버튼을 눌렀는데 조건이 안 맞을 때 알리는 용도(예: 캣닢 없이 출발 버튼). 떠 있는 동안은 일반 안내보다 앞선다.
+    /// </summary>
+    public static void Flash(string message, Color color, float seconds = 2f)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        InteractPromptView.GetOrCreate().Flash(message, color, seconds);
+    }
+
+    /// <summary>경고용 옅은 붉은색(<see cref="Flash"/> 에 쓴다).</summary>
+    public static readonly Color WarningColor = new Color(1f, 0.55f, 0.5f, 1f);
 }

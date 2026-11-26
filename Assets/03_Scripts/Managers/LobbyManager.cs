@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using Pawntom.Lobby;
 using UnityEngine;
 
 /// <summary>
@@ -14,6 +15,10 @@ public class LobbyManager : MonoBehaviour
 
     private readonly Dictionary<PlayerRef, int> _playerSlotMap = new();
     private readonly Dictionary<PlayerRef, LobbyPlayerData> _playerDataMap = new();
+
+    private const int MaxSlots = 4;
+    // CanStartGame은 버튼 갱신마다 불리므로 판정용 버퍼를 미리 잡아 둡니다(할당 없음).
+    private readonly LobbyParticipant[] _participantBuffer = new LobbyParticipant[MaxSlots];
 
     private void Awake()
     {
@@ -69,6 +74,9 @@ public class LobbyManager : MonoBehaviour
 
         _playerSlotMap.Remove(player);
         _playerDataMap.Remove(player);
+
+        // 준비 안 된 참가자가 나가면 시작 가능 여부가 바뀌므로 버튼을 다시 판정합니다.
+        LobbyUI.Instance?.RefreshButtons();
     }
 
     public void RefreshPlayerSlot(PlayerRef player)
@@ -104,6 +112,7 @@ public class LobbyManager : MonoBehaviour
             playerData.PlayerName.ToString(),
             isHost,
             isLocalPlayer,
+            playerData.HasSelectedCat,
             playerData.SelectedCatType,
             playerData.IsReady
         );
@@ -159,6 +168,8 @@ public class LobbyManager : MonoBehaviour
 
            playerData.PlayerRef = player;
            playerData.SlotIndex = slotIndex;
+           playerData.PlayerName = LobbyRules.DefaultPlayerName(slotIndex);
+           playerData.HasSelectedCat = false;
            playerData.IsReady = false;
        }
    );
@@ -236,21 +247,30 @@ public class LobbyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 모두가 ready를 눌렀는지 검사합니다.
+    /// 게임 시작 가능 여부: 모두(호스트 포함) 캐릭터를 골랐고, 호스트를 뺀 모두가 Ready인지 검사합니다.
     /// </summary>
     public bool CanStartGame()
     {
+        LobbyState lobbyState = LobbyState.Instance;
+
+        if (lobbyState == null)
+            return false;
+
+        int count = 0;
+
         foreach (LobbyPlayerData playerData in _playerDataMap.Values)
         {
-            // Host는 Ready 검사 제외
-            if (LobbyState.Instance.IsHost(playerData.PlayerRef))
-                continue;
+            if (count >= _participantBuffer.Length)
+                break;
 
-            if (!playerData.IsReady)
-                return false;
+            _participantBuffer[count++] = new LobbyParticipant(
+                lobbyState.IsHost(playerData.PlayerRef),
+                playerData.HasSelectedCat,
+                playerData.IsReady
+            );
         }
 
-        return true;
+        return LobbyRules.CanStartGame(_participantBuffer, count);
     }
 
     public bool IsLocalPlayerHost()

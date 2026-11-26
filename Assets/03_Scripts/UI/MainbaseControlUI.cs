@@ -28,6 +28,14 @@ public class MainbaseControlUI : MonoBehaviour
     /// <summary>터미널 UI가 닫혔을 때.</summary>
     public static event System.Action Closed;
 
+    public static System.Func<string> CloseBlocker;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetCloseBlocker()
+    {
+        CloseBlocker = null;
+    }
+
     /// <summary>탭이 바뀌었을 때.</summary>
     public static event System.Action<Tab> TabShown;
 
@@ -145,6 +153,17 @@ public class MainbaseControlUI : MonoBehaviour
     {
         // Awake 에서도 Close 를 부르므로, 실제로 열려 있다가 닫힐 때만 Closed 를 알린다.
         bool wasOpen = IsOpen;
+        
+        if (wasOpen && CloseBlocker != null && !PlayerData.IsLocalPlayerDead)
+        {
+            string reason = CloseBlocker();
+
+            if (reason != null)
+            {
+                InteractPrompt.Flash(reason, InteractPrompt.WarningColor);
+                return;
+            }
+        }
 
         if (root != null)
         {
