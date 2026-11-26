@@ -34,7 +34,7 @@ namespace Pawntom.TutorialBridge
         // ── 배치(기준 해상도 px) ──
         // 가장 긴 대사(4-6, 88자)가 27pt 로 세 줄에 들어가는 크기.
         public static readonly Vector2 DialogueSize = new Vector2(1100f, 185f);
-        public const float DialogueBottom = 160f;
+        public const float DialogueBottom = 20f;
 
         // 대화창 위, 왼쪽 가장자리에 서는 화자 초상 칸.
         public static readonly Vector2 PortraitSize = new Vector2(190f, 250f);
