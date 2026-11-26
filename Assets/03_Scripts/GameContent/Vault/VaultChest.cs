@@ -12,7 +12,8 @@ using UnityEngine;
 /// - 금고 개봉 후 모델 및 Collider 숨기기
 ///
 /// 사용 위치:
-/// - TutorialVault_Main
+/// - TutorialVault_Main (해킹은 TutorialVault 가 띄운다)
+/// - 게임 금고 (같은 오브젝트의 VaultHackFlow 가 해킹을 띄운다)
 ///
 /// 필요 컴포넌트:
 /// - NetworkObject
@@ -54,6 +55,12 @@ public class VaultChest : NetworkBehaviour
     public NetworkBool IsOpened { get; set; }
 
     public float MaxUseDistance => maxUseDistance;
+
+    /// <summary>금고를 열면 나오는 보상(전설의 캣닢) 아이템 ID. 캣닢 경보(CatnipAlarm)가 획득 감지에 쓴다.</summary>
+    public int RewardItemId => rewardItemId;
+
+    /// <summary>잠금을 모두 풀기 위해 넣어야 하는 열쇠 수(최소 1).</summary>
+    public int RequiredKeyCount => Mathf.Max(1, requiredKeyCount);
 
     // 거리는 InteractRange.StandardMargin 한 값으로 통일했다. 서버 검증(Max Use Distance)과는 별개다.
     private static float interactMargin

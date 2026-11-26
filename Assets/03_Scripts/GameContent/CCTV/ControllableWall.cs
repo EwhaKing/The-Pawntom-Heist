@@ -1,4 +1,6 @@
 using Fusion;
+using Pawntom.Network;
+using Pawntom.Stage;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -14,7 +16,13 @@ using UnityEngine.AI;
 ///
 /// 특징:
 /// - 상태(IsUnlocked/IsOpen)는 [Networked] 값으로 StateAuthority가 권위를 가진다
-/// - 비권위 피어의 호출은 RPC로 StateAuthority에 요청되고, 실제 반영은 StateAuthority에서만 일어난다
+/// - 공개 조작 메서드(Unlock/TryFieldOpen/OpenWall/CloseWall/ToggleWall)는 "요청"이다. 클라이언트는 RPC 로 보내고,
+///   상태 권한이 요청자(RpcInfo.Source)를 다시 판정한다(<see cref="WallCommandRule"/>):
+///   생존, 위치(현장 개방 = 문 근처 / 본부 조작 = 단말기 앞·본부 안), 상태 전이 유효성, 짧은 쿨다운.
+///   거부되면 요청자에게만 <see cref="LocalRequestRejected"/> 로 알린다. 호출 직후 상태가 바뀌었다고 가정하지 않는다.
+/// - 초기 해금 상태: 상태 권한이 Spawned 에서 레벨 데이터(StageLayoutProvider) → 같은 오브젝트의 DoorLayoutMarker →
+///   기본값(잠김) 순으로 정한다.
+/// - 연출 세션(튜토리얼)의 체크포인트 복원(<see cref="RestoreCheckpointState"/>)은 검증 없이 상태 권한에서 바로 쓴다.
 ///
 /// 사용 위치:
 /// - 실제 맵의 Wall_01, Wall_02 같은 격벽 오브젝트에 붙임
@@ -93,6 +101,17 @@ public class ControllableWall : NetworkBehaviour
     /// <summary>상태가 바뀔 때마다(원격 포함) 호출된다. UI가 구독해 새로고침한다.</summary>
     public event System.Action OnStateChanged;
 
+    /// <summary>내(이 피어의) 요청이 상태 권한에서 거부됐다. 요청한 피어에서만 발생한다.</summary>
+    public static event System.Action<ControllableWall, WallCommand, RequestVerdict> LocalRequestRejected;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        LocalRequestRejected = null;
+    }
+
+    private RequestCooldown _cooldown;
+
     // 닫혀 있을 때의 문 자리(콜라이더 경계). 열리면 콜라이더가 꺼지므로 미리 잡아 둔다.
     private Bounds _doorwayBounds;
     private bool _hasDoorwayBounds;
@@ -166,13 +185,16 @@ public class ControllableWall : NetworkBehaviour
         }
     }
 
+    private bool IsNetworkReady => Object != null && Object.IsValid;
+
     /// <summary>
     /// 현장(침투조) 상호작용. 해금된(푸른) 격벽만 열리고, <see cref="fieldOpenSeconds"/> 뒤 자동으로 닫힌다.
     /// 잠긴(붉은) 격벽이면 false — 본부 해킹으로 먼저 해금해야 한다.
+    /// true 는 "요청을 보냈다"는 뜻이다. 열림은 상태 권한이 요청자 위치를 확인한 뒤 <see cref="IsOpen"/> 으로 반영된다.
     /// </summary>
     public bool TryFieldOpen()
     {
-        if (!allowFieldOpen)
+        if (!allowFieldOpen || !IsNetworkReady)
         {
             return false;
         }
@@ -188,31 +210,101 @@ public class ControllableWall : NetworkBehaviour
             return false;
         }
 
-        if (Object.HasStateAuthority)
-        {
-            DoFieldOpen();
-        }
-        else
-        {
-            RPC_RequestFieldOpen();
-        }
-
+        Request(WallCommand.FieldOpen);
         return true;
     }
 
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RPC_RequestFieldOpen()
+    // ───────── 요청 → 상태 권한 재검증 ─────────
+
+    private void Request(WallCommand command)
     {
-        DoFieldOpen();
+        if (!IsNetworkReady)
+        {
+            Debug.LogWarning($"[ControllableWall] {gameObject.name} 가 네트워크에 스폰되지 않아 {command} 요청을 보낼 수 없습니다.", this);
+            return;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            HandleRequest(Runner.LocalPlayer, command);
+        }
+        else
+        {
+            RPC_Request((int)command);
+        }
     }
 
-    private void DoFieldOpen()
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_Request(int command, RpcInfo info = default)
     {
-        if (!IsUnlocked || IsOpen)
+        HandleRequest(info.Source, (WallCommand)command);
+    }
+
+    private void HandleRequest(PlayerRef source, WallCommand command)
+    {
+        if (!Object.HasStateAuthority)
         {
             return;
         }
 
+        int tick = Runner.Tick.Raw;
+        RequesterFacts requester = WallCommandRule.IsField(command)
+            ? HostRequesters.ForField(source, this, _cooldown, tick)
+            : HostRequesters.ForTerminal(source, _cooldown, tick);
+
+        RequestVerdict verdict = WallCommandRule.Evaluate(command, IsUnlocked, IsOpen, allowFieldOpen, requester);
+
+        if (verdict != RequestVerdict.Accepted)
+        {
+            Reject(source, command, verdict);
+            return;
+        }
+
+        _cooldown?.Record(HostRequesters.Key(source), tick);
+
+        switch (command)
+        {
+            case WallCommand.Unlock:
+                DoUnlock();
+                break;
+
+            case WallCommand.FieldOpen:
+                DoFieldOpen();
+                break;
+
+            case WallCommand.RemoteOpen:
+                DoSetOpen(true);
+                break;
+
+            case WallCommand.RemoteClose:
+                DoSetOpen(false);
+                break;
+        }
+    }
+
+    private void Reject(PlayerRef source, WallCommand command, RequestVerdict verdict)
+    {
+        Debug.Log($"[ControllableWall] {gameObject.name} {command} 요청 거부: {verdict}");
+
+        if (source == Runner.LocalPlayer)
+        {
+            LocalRequestRejected?.Invoke(this, command, verdict);
+        }
+        else if (source != PlayerRef.None)
+        {
+            RPC_NotifyRejected(source, (int)command, (int)verdict);
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_NotifyRejected([RpcTarget] PlayerRef target, int command, int verdict)
+    {
+        Debug.Log($"[ControllableWall] {gameObject.name} 내 요청 거부됨: {(WallCommand)command} / {(RequestVerdict)verdict}");
+        LocalRequestRejected?.Invoke(this, (WallCommand)command, (RequestVerdict)verdict);
+    }
+
+    private void DoFieldOpen()
+    {
         IsOpen = true;
         AutoCloseTimer = TickTimer.CreateFromSeconds(Runner, fieldOpenSeconds);
         Debug.Log($"[ControllableWall] {gameObject.name} 현장 개방 — {fieldOpenSeconds}초 뒤 자동으로 닫힘");
@@ -262,28 +354,97 @@ public class ControllableWall : NetworkBehaviour
     /// </summary>
     public override void Spawned()
     {
+        _cooldown = new RequestCooldown(HostRequesters.SecondsToTicks(Runner, HostRequesters.DefaultCooldownSeconds));
+
+        if (Object.HasStateAuthority)
+        {
+            ApplyInitialStateFromLevelData();
+        }
+
         ApplyWallState();
     }
 
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        _cooldown?.Clear();
+    }
+
     /// <summary>
-    /// 격벽을 해금 상태로 변경
+    /// 상태 권한 1회: 레벨 데이터의 이 문 항목 → 같은 오브젝트의 DoorLayoutMarker → 기본값(잠김, 건드리지 않음).
+    /// 문 Id 는 굽기 도구와 같다(마커가 있으면 마커 Id, 없으면 GameObject 이름).
+    /// </summary>
+    private void ApplyInitialStateFromLevelData()
+    {
+        DoorLayoutMarker marker = GetComponent<DoorLayoutMarker>();
+        string doorId = marker != null ? marker.Id : gameObject.name;
+
+        bool hasLayoutEntry = TryFindLayoutDoor(doorId, out DoorInitialState layoutState);
+        bool hasMarker = TryReadMarkerState(marker, out DoorInitialState markerState);
+
+        if (!DoorInitialStateResolver.TryResolve(hasLayoutEntry, layoutState == DoorInitialState.Unlocked,
+                hasMarker, markerState == DoorInitialState.Unlocked, out bool unlocked))
+        {
+            return;
+        }
+
+        IsUnlocked = unlocked;
+        IsOpen = false;
+        AutoCloseTimer = TickTimer.None;
+    }
+
+    private static bool TryFindLayoutDoor(string doorId, out DoorInitialState state)
+    {
+        state = DoorInitialState.Locked;
+        StageLayoutProvider provider = StageLayoutProvider.Current;
+        StageLayout layout = provider != null ? provider.Layout : null;
+
+        if (layout == null || string.IsNullOrEmpty(doorId))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < layout.Doors.Count; i++)
+        {
+            DoorEntry door = layout.Doors[i];
+
+            if (door != null && door.Id == doorId)
+            {
+                state = door.InitialState;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // 마커는 편집용 컴포넌트라 초기 상태를 공개하지 않는다. 굽기와 같은 경로(AppendTo)로 항목을 만들어 읽는다(Spawned 1회).
+    private static bool TryReadMarkerState(DoorLayoutMarker marker, out DoorInitialState state)
+    {
+        state = DoorInitialState.Locked;
+
+        if (marker == null)
+        {
+            return false;
+        }
+
+        var scratch = new StageLayout();
+        marker.AppendTo(scratch);
+
+        if (scratch.Doors.Count == 0 || scratch.Doors[0] == null)
+        {
+            return false;
+        }
+
+        state = scratch.Doors[0].InitialState;
+        return true;
+    }
+
+    /// <summary>
+    /// 격벽 해금을 요청(본부 해킹 성공). 상태 권한이 요청자가 단말기 앞인지 확인한다.
     /// </summary>
     public void Unlock()
     {
-        if (Object.HasStateAuthority)
-        {
-            DoUnlock();
-        }
-        else
-        {
-            RPC_RequestUnlock();
-        }
-    }
-
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RPC_RequestUnlock()
-    {
-        DoUnlock();
+        Request(WallCommand.Unlock);
     }
 
     private void DoUnlock()
@@ -293,39 +454,21 @@ public class ControllableWall : NetworkBehaviour
     }
 
     /// <summary>
-    /// 격벽을 엽니다.
-    /// 실제 벽은 사라지고, 미니맵/CCTV 표시는 파란색
+    /// 격벽 열기를 요청(본부). 해금된 격벽만 열린다.
+    /// 실제 벽은 사라지고, 미니맵/CCTV 표시는 초록색
     /// </summary>
     public void OpenWall()
     {
-        RequestSetOpen(true);
+        Request(WallCommand.RemoteOpen);
     }
 
     /// <summary>
-    /// 격벽을 닫습니다.
-    /// 실제 벽은 다시 보이고, 미니맵/CCTV 표시는 빨간색
+    /// 격벽 닫기를 요청(본부).
+    /// 실제 벽은 다시 보이고, 미니맵/CCTV 표시는 파란색(해금) 또는 빨간색(잠김)
     /// </summary>
     public void CloseWall()
     {
-        RequestSetOpen(false);
-    }
-
-    private void RequestSetOpen(bool open)
-    {
-        if (Object.HasStateAuthority)
-        {
-            DoSetOpen(open);
-        }
-        else
-        {
-            RPC_RequestSetOpen(open);
-        }
-    }
-
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RPC_RequestSetOpen(NetworkBool open)
-    {
-        DoSetOpen(open);
+        Request(WallCommand.RemoteClose);
     }
 
     private void DoSetOpen(bool open)
@@ -337,17 +480,23 @@ public class ControllableWall : NetworkBehaviour
     }
 
     /// <summary>
-    /// 해금된 격벽의 열림/닫힘을 전환
+    /// 해금된 격벽의 열림/닫힘 전환을 요청. 지금 보이는 상태의 반대를 명시적으로 요청한다 —
+    /// 그사이 상태가 바뀌었으면 상태 권한이 중복으로 거부한다(엇갈린 두 토글이 원래대로 되돌리지 않게).
     /// </summary>
     public void ToggleWall()
     {
+        if (!IsNetworkReady)
+        {
+            return;
+        }
+
         if (!IsUnlocked)
         {
             Debug.Log($"[ControllableWall] {gameObject.name} 아직 해금되지 않음");
             return;
         }
 
-        RequestSetOpen(!IsOpen);
+        Request(IsOpen ? WallCommand.RemoteClose : WallCommand.RemoteOpen);
     }
 
     /// <summary>

@@ -132,6 +132,9 @@ public class GameManager : PawntomSingleton<GameManager>
 
         if (sceneName == SceneNames.Map || sceneName == SceneNames.DemoTutorialMap)
         {
+            // 늦게 들어온 참가자: 씬 로드 완료 콜백보다 RuleManager 의 클리어 반영(EscapeSuccess)이 먼저 올 수 있다.
+            // 씬 로드 시작 때 Loading 으로 바뀌므로, 여기서 Result 라면 같은 로드 중에 확정된 결과다 — 덮어쓰지 않는다.
+            if (CurrentState == GameState.Result) return;
             EnterInGame();
         }
         else if (sceneName == SceneNames.Lobby && _isConnected)
