@@ -77,7 +77,11 @@ namespace Pawntom.Tutorial.Tests
         private static readonly Dictionary<string, string> Tokens = new Dictionary<string, string>
         {
             { "Interact", "E" },
-            { "TerminalExit", "Esc" }
+            { "TerminalExit", "Esc" },
+            { "Move", "WASD" },
+            { "Sprint", "Shift" },
+            { "Jump", "Space" },
+            { "Drop", "Q" }
         };
 
         private static void Pump(TutorialSequencer sequencer, float deltaTime)

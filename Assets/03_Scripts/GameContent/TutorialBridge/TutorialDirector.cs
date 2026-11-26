@@ -329,6 +329,8 @@ namespace Pawntom.TutorialBridge
             }
 
             Active = this;
+            // 게임 코드는 튜토리얼을 직접 보지 않고 이 모드만 본다(사망 시 관전 대신 재시도, 체크포인트 복원 허용 등).
+            ScriptedSessionMode.Enter(this);
 
             _audio = GetOrAdd<TutorialAudio>();
             _probe = GetOrAdd<TutorialSignalProbe>();
@@ -380,6 +382,7 @@ namespace Pawntom.TutorialBridge
             }
 
             Active = null;
+            ScriptedSessionMode.Exit(this);
             StopEnemyGlow();
 
             if (_probe != null && _sequencer != null)

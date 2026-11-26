@@ -310,6 +310,12 @@ namespace Pawntom.TutorialBridge
         /// </summary>
         private bool ConfirmPressedThisFrame()
         {
+            // ESC 메뉴·옵션창이 떠 있으면 Space·클릭은 메뉴 조작이다. 대사가 몰래 넘어가지 않게 한다(대사 시간은 계속 흐른다).
+            if (GameMenuHost.IsOpen)
+            {
+                return false;
+            }
+
             UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
 
             if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
@@ -337,6 +343,11 @@ namespace Pawntom.TutorialBridge
         /// <summary>좌클릭이 이번 프레임에 눌렸는가(일반 대사 넘기기용). 커서가 잠겨 있으면 어디든, 풀려 있으면 대화창 위에서만.</summary>
         private bool ClickPressedThisFrame()
         {
+            if (GameMenuHost.IsOpen)
+            {
+                return false;
+            }
+
             UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
 
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame)

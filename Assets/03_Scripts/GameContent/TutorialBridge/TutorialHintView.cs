@@ -51,6 +51,39 @@ namespace Pawntom.TutorialBridge
             }
         }
 
+        private void OnEnable()
+        {
+            InputManager.BindingsChanged += HandleBindingsChanged;
+        }
+
+        private void OnDisable()
+        {
+            InputManager.BindingsChanged -= HandleBindingsChanged;
+        }
+
+        // 옵션창에서 키를 바꾸면 토큰 표를 다시 채우고, 떠 있는 안내도 새 키로 다시 쓴다.
+        private void HandleBindingsChanged()
+        {
+            Dictionary<string, string> tokens = _tokens as Dictionary<string, string>;
+
+            if (tokens == null)
+            {
+                return;
+            }
+
+            TutorialKeyLabels.Refresh(tokens);
+
+            for (int i = 0; i < _rows.Count; i++)
+            {
+                Row row = _rows[i];
+
+                if (row.Hint != null && !row.Leaving)
+                {
+                    row.Label.text = TutorialHintFormatter.Format(row.Hint.Text, _tokens, TutorialTheme.HighlightOpen, TutorialTheme.HighlightClose);
+                }
+            }
+        }
+
         public void SetDialogueIdle(bool idle)
         {
             _dialogueIdle = idle;
@@ -66,6 +99,8 @@ namespace Pawntom.TutorialBridge
             row.Alpha = 0f;
             row.Label.text = TutorialHintFormatter.Format(hint.Text, _tokens, TutorialTheme.HighlightOpen, TutorialTheme.HighlightClose);
             row.Accent.color = TutorialTheme.HintAccentColor;
+            // 완료 번쩍임 도중 HideAll 로 숨겨진 줄을 다시 쓰면 초록 바탕이 남아 있었다.
+            row.Background.color = TutorialTheme.HintBackgroundColor;
             row.Rect.localScale = Vector3.one;
             row.Rect.gameObject.SetActive(true);
             Relayout(snapNew: row);

@@ -392,6 +392,7 @@ GameObject:
   - component: {fileID: 871239876451230002}
   - component: {fileID: 496279426571805133}
   - component: {fileID: 4455241085619077530}
+  - component: {fileID: 6581930247735120417}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -466,6 +467,7 @@ MonoBehaviour:
   - {fileID: 2501010036201639159}
   - {fileID: 7693582246180369213}
   - {fileID: 871239876451230001}
+  - {fileID: 6581930247735120417}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4206348069862675202
 MonoBehaviour:
@@ -501,12 +503,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   playerCamera: {fileID: 228144081064392142}
   lookSensitivity: 0.2
-  minPitch: -20
+  minPitch: -60
   maxPitch: 20
   walkSpeed: 1.3
   sprintSpeed: 3.2
+  weightSlowPerUnit: 0.06
+  minWeightSpeedRatio: 0.5
   jumpHeight: 0.9
-  jumpRiseSeconds: 0.6
+  jumpRiseSeconds: 0.38
   deriveGravityFromJump: 1
   jumpCutMultiplier: 0.45
   _enemyContactDamage: 25
@@ -527,7 +531,6 @@ MonoBehaviour:
   playerCamera: {fileID: 228144081064392142}
   interactDistance: 20
   interactRadius: 0.5
-  wallInteractDistance: 5
   interactLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -648,7 +651,9 @@ MonoBehaviour:
     m_Bits: 4294967295
   surfaceOffset: 0.03
   alignToGroundNormal: 1
-  randomizeRotation: 1
+  headingJitterDegrees: 12
+  walkFootprintScale: 1
+  sprintFootprintScale: 1.7
 --- !u!114 &6927131166089411136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -795,6 +800,44 @@ MonoBehaviour:
     switchSeconds: 0.3
     switchOffset: {x: 0, y: -0.09, z: -0.02}
     switchRotation: {x: 20, y: 0, z: 0}
+--- !u!114 &6581930247735120417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099201701710747045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4f461a247ce44a7a50b7135864a0ba4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerParkour
+  climbableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  wallProbeDistance: 0.2
+  maxWallNormalY: 0.35
+  maxGrabAngle: 55
+  wallGap: 0.02
+  grabInputThreshold: 0.3
+  climbSpeed: 0.9
+  wallStrafeSpeed: 0.9
+  regrabCooldown: 0.2
+  wallJumpHeight: 0.6
+  wallJumpSpeed: 2.5
+  climbHopHeight: 0.45
+  launchLockSeconds: 0.3
+  launchFallMultiplier: 2.5
+  ledgeSearchHeight: 0.6
+  mantleSeconds: 0.35
+  minFloorNormalY: 0.7
+  barGrabRadius: 0.5
+  barHandReach: 0.35
+  barShimmySpeed: 0.7
+  barSettleSpeed: 4
+  barJumpHeight: 0.3
+  barJumpForwardSpeed: 2.5
+  _Mode: 0
 --- !u!1 &3728135926575439726
 GameObject:
   m_ObjectHideFlags: 0

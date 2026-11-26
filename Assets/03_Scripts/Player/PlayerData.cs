@@ -35,14 +35,14 @@ public class PlayerData : NetworkBehaviour
     [Networked] public Vector3 DeathPosition { get; private set; }
     [Networked] private TickTimer DeathTimer { get; set; }
     private bool _animationFinished;
-    private TickTimer _tutorialRetryProtection;
+    private TickTimer _respawnProtection;
     private InventoryManager _inventory;
     private const float DefaultMaxHealth = 100f;
     private const float DefaultMaxStamina = 100f;
     private const float DefaultStaminaRegenRate = 20f;
     private const float DefaultSprintStaminaCost = 10f;
-    private const float DefaultJumpStaminaCost = 15f;
-    private const float DefaultParkourStaminaCost = 35f;
+    private const float DefaultJumpStaminaCost = 0f;
+    private const float DefaultParkourStaminaCost = 10f;
     private const float DefaultExhaustedDuration = 3f;
 
     [Header("Cat Data")]
@@ -87,7 +87,7 @@ public class PlayerData : NetworkBehaviour
         _inventory = GetComponent<InventoryManager>();
         _animationFinished = false;
         _deathNotified = false;
-        _tutorialRetryProtection = TickTimer.None;
+        _respawnProtection = TickTimer.None;
         if (!Object.HasStateAuthority)
         {
             OnDeathChanged();
@@ -172,8 +172,9 @@ public class PlayerData : NetworkBehaviour
 
             // 쫓아와서 닿았을 때만 문다. 순찰 중 스친 접촉은 감지(경계→추격)로 이어지고, 추격이 되면 그때 문다.
             // 스턴 중인 적은 물지 못한다.
-            if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned ||
-                enemy.State != Pawntom.Enemy.Core.EnemyState.Chase)
+            // 규칙은 물기 연출(EnemyAnimationView)과 같은 EnemyActionGate 를 쓴다.
+            if (enemy == null || !enemy.isActiveAndEnabled ||
+                !Pawntom.Enemy.Core.EnemyActionGate.CanBite(enemy.State, enemy.IsStunned))
             {
                 continue;
             }
@@ -207,8 +208,8 @@ public class PlayerData : NetworkBehaviour
             return;
         }
 
-        if (Pawntom.TutorialBridge.TutorialDirector.Active != null &&
-            (!_tutorialRetryProtection.ExpiredOrNotRunning(Runner) ||
+        if (ScriptedSessionMode.IsActive &&
+            (!_respawnProtection.ExpiredOrNotRunning(Runner) ||
              GameWorldPause.IsPaused)) return; // 대사·연출로 월드가 멈춘 동안만 보호. 분전반 캐스팅(입력만 잠금) 중에는 맞는다.
 
         CurrentHealth = Mathf.Max(0f, CurrentHealth - amount);
@@ -225,23 +226,26 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
-    /// <summary>혼자 진행하는 튜토리얼의 단계 재시도 전용. 일반 맵에서는 부활하지 않는다.</summary>
-    public bool TryRestartTutorial(Vector3 position, Quaternion rotation)
+    /// <summary>
+    /// 연출 세션(<see cref="ScriptedSessionMode"/>, 지금은 혼자 진행하는 튜토리얼)의 체크포인트 재시도 전용.
+    /// 일반 맵에서는 부활하지 않는다.
+    /// </summary>
+    public bool TryRespawnAtCheckpoint(Vector3 position, Quaternion rotation)
     {
-        if (Pawntom.TutorialBridge.TutorialDirector.Active == null || Object == null ||
+        if (!ScriptedSessionMode.IsActive || Object == null ||
             !Object.IsValid || !Object.HasStateAuthority || !IsDead) return false;
         NetworkCharacterController controller = GetComponent<NetworkCharacterController>();
         if (controller == null) return false;
         controller.Teleport(position, rotation);
         controller.Velocity = Vector3.zero;
-        GetComponent<PlayerController>().ResetTutorialLook();
+        GetComponent<PlayerController>().ResetLookForRespawn();
         CurrentHealth = MaxHealth;
         CurrentStamina = MaxStamina;
         IsSprinting = IsParkouring = IsExhausted = false;
         ExhaustedTimer = DeathTimer = TickTimer.None;
         DeathSequenceCompleted = false;
         _animationFinished = _deathNotified = false;
-        _tutorialRetryProtection = TickTimer.CreateFromSeconds(Runner, 2f);
+        _respawnProtection = TickTimer.CreateFromSeconds(Runner, 2f);
         IsDead = false;
         OnHealthChanged();
         OnStaminaChanged();

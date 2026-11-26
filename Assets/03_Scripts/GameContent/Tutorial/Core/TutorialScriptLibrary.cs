@@ -8,8 +8,9 @@ namespace Pawntom.Tutorial.Core
     /// <para><b>표기</b></para>
     /// <list type="bullet">
     /// <item>키 안내 문구의 <c>[...]</c>는 강조 표시(키 칩)로 바뀐다.</item>
-    /// <item><c>{Interact}</c>·<c>{TerminalExit}</c>는 실행 시 실제 키로 치환된다. 문서는 E·Esc 로 적었지만
-    ///       입력 바인딩을 따라가야 안내가 거짓말을 하지 않는다.</item>
+    /// <item><c>{Interact}</c>·<c>{TerminalExit}</c>·<c>{Move}</c>·<c>{Sprint}</c>·<c>{Jump}</c>·<c>{Drop}</c>는 실행 시 실제 키로 치환된다.
+    ///       문서는 E·Esc·WASD·Shift·Space·Q 로 적었지만, 옵션창에서 키를 바꿀 수 있으므로 입력 바인딩을 따라가야 안내가 거짓말을 하지 않는다.
+    ///       미니게임 타이밍의 [Space] 는 미니게임 고정 키라 그대로 둔다.</item>
     /// </list>
     ///
     /// <para>
@@ -22,7 +23,7 @@ namespace Pawntom.Tutorial.Core
         private const TutorialSpeaker Hq = TutorialSpeaker.Command;
         private const TutorialSpeaker Cat = TutorialSpeaker.Kkamnyang;
 
-        private const string SlotDropHint = "[1~4] 번호키 또는 [마우스 스크롤]로 슬롯 선택 후 [Q]키로 버리기";
+        private const string SlotDropHint = "[1~4] 번호키 또는 [마우스 스크롤]로 슬롯 선택 후 [{Drop}]키로 버리기";
 
         public static TutorialScript CreateDefault()
         {
@@ -49,12 +50,12 @@ namespace Pawntom.Tutorial.Core
             // ───────────── 2단계 기본 조작 (본부, 복도 A) ─────────────
             beats.Add(TutorialBeat.Main("2-1", 2, TutorialSignal.None,
                 L("2-1", Hq, "먼저 앞으로 걸어 봅시다. 저 복도 보이죠? 저기로 가면 된답니다.")
-                    .WithHint("[WASD]로 이동하고 [마우스]로 둘러봅시다", TutorialSignal.MovedAndLooked)));
+                    .WithHint("[{Move}]로 이동하고 [마우스]로 둘러봅시다", TutorialSignal.MovedAndLooked)));
 
             // 순서: 달리기(2-2) → 뒤를 돌아보기(2-3) → 발자국 설명(2-4~2-7). 달린 뒤에 돌아봐야 커진 발자국이 보인다.
             beats.Add(TutorialBeat.Main("2-2", 2, TutorialSignal.FirstFootprint,
                 L("2-2", Hq, "저런, 긴장이 많이 됐습니까? 잠입하는 폼이 아직 어색하네요. 몸도 풀 겸 가볍게 달려 볼까요?")
-                    .WithHint("[Shift]키를 누르고 달려봅시다", TutorialSignal.SprintStarted)));
+                    .WithHint("[{Sprint}]키를 누르고 달려봅시다", TutorialSignal.SprintStarted)));
 
             beats.Add(TutorialBeat.Main("2-3", 2, TutorialSignal.SprintStarted,
                 L("2-3", Hq, "자, 한 번 뒤를 돌아보시겠습니까? 지나온 자리에 뭐가 남았는지 봅시다.")
@@ -75,7 +76,7 @@ namespace Pawntom.Tutorial.Core
             beats.Add(TutorialBeat.Main("2-9", 2, TutorialSignal.ObstacleAhead,
                 // 안내는 상자 반대편(ObstacleCleared 영역)에 도착해야 사라진다 — 제자리 점프로는 지워지지 않는다.
                 L("2-9", Hq, "아, 앞에 장애물이 있네요. 앞의 상자를 {{뛰어넘어}} 보십시오")
-                    .WithHint("[Space]키로 점프해봅시다", TutorialSignal.ObstacleCleared)));
+                    .WithHint("[{Jump}]키로 점프해봅시다", TutorialSignal.ObstacleCleared)));
 
             // 파쿠르(벽 타기)가 없는 이유: 아직 어린 고양이라서. 상자를 넘은 직후에 한 번 짚는다.
             beats.Add(TutorialBeat.Main("2-9b", 2, TutorialSignal.ObstacleCleared,
@@ -219,7 +220,7 @@ namespace Pawntom.Tutorial.Core
             // 5-1 은 문이 열려 있을 때만 나온다(수집기가 열린 문 앞 = BlueDoorAhead, 닫힌 해금 문 앞 = BlueDoorClosedAhead 로 나눈다).
             beats.Add(TutorialBeat.Main("5-1", 5, TutorialSignal.BlueDoorAhead,
                 L("5-1", Hq, "열어 둔 푸른 격벽입니다. 경비견이 따라붙기 전에 바로 들어가십시오")
-                    .WithHint("[Shift]키로 달려 열린 문 안으로 들어갑시다", TutorialSignal.LootRoomEntered)));
+                    .WithHint("[{Sprint}]키로 달려 열린 문 안으로 들어갑시다", TutorialSignal.LootRoomEntered)));
 
             beats.Add(TutorialBeat.Side("5-1b", 5, TutorialSignal.BlueDoorClosedAhead, "4-11", "5-2",
                     L("5-1b", Hq, "후배님, 철문이 닫혀 있습니다. 여기서는 못 여니까, 본부 단말기로 돌아가 철문을 더블클릭하셔야 합니다")
@@ -235,7 +236,7 @@ namespace Pawntom.Tutorial.Core
                 L("5-3", Hq, "걸음이 느려진 게 느껴지십니까? 아직 몸이 작으시니 더 크게 느껴질 겁니다. 무게를 알려 주는 표시는 따로 없으니, 몸이 느끼는 속도로 가방 상태를 가늠하셔야 합니다"),
                 L("5-4", Cat, "으, 몸이 바로 무거워져요... 이 정도는 괜찮아요!")
                     // 주운 직후에 버리는 법도 알려 둔다. 가방이 차면 5-5 가 같은 안내를 다시 띄운다.
-                    .WithHint("필요 없는 물건은 [1~4]·[스크롤]로 슬롯을 고르고 [Q]키로 버릴 수 있습니다",
+                    .WithHint("필요 없는 물건은 [1~4]·[스크롤]로 슬롯을 고르고 [{Drop}]키로 버릴 수 있습니다",
                         TutorialSignal.ItemDropped, TutorialSignal.InventoryThreeFilled))
                 // 열쇠는 전리품으로 세지 않는다. 전리품을 하나도 안 줍고 열쇠부터 챙기면 5-3 은 건너뛰고 금고 쪽(5-7~)으로 간다.
                 .SkippableOn(TutorialSignal.KeyAcquired));
@@ -285,7 +286,7 @@ namespace Pawntom.Tutorial.Core
 
             beats.Add(TutorialBeat.Side("6-6", 6, TutorialSignal.EnemyChasing, "6-1", "7-8",
                 L("6-6", Hq, "들켰습니다! 빨리 본부로 도망가세요!")
-                    .WithHint("[Shift]키로 도망칩시다", TutorialSignal.SprintStarted)));
+                    .WithHint("[{Sprint}]키로 도망칩시다", TutorialSignal.SprintStarted)));
 
             // ───────────── 7단계 열쇠 사용, 주의사항, 금고 미니게임, 긴급 탈출 (금고방) ─────────────
             // 금고 미니게임은 Space 타이밍(DigitalSync)으로 고정이다.
@@ -328,7 +329,7 @@ namespace Pawntom.Tutorial.Core
                 L("7-10", Hq, "개들이 들이닥치기 전에, 빨리 {{본부로}} 내달리십시오! 발자국이 계속 생기고 가방도 더 무거워질 테니 죽을 힘을 다해 달려야 합니다!")
                     .WithTimedHint("[긴급 탈출] 본부로 탈출합시다", 5f),
                 L("7-11", Hq, "{{캣닢}}을 들고 {{본부}}로 돌아오십시오. 어서어서요!")
-                    .WithHint("[Shift]키로 달려 본부로 탈출합시다", TutorialSignal.PlayerInMainbase),
+                    .WithHint("[{Sprint}]키로 달려 본부로 탈출합시다", TutorialSignal.PlayerInMainbase),
                 L("7-12", Cat, "으아, 소리가 장난 아니에요! 당장 본부로 튈게요!"))
                 .AsAnchor());
 

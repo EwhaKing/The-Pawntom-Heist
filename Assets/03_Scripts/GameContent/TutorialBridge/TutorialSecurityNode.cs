@@ -69,11 +69,13 @@ namespace Pawntom.TutorialBridge
         private void Awake()
         {
             _actions = new InputSystemActions();
+            SyncBindings();
         }
 
         private void OnEnable()
         {
             _actions?.Player.Enable();
+            InputManager.BindingsChanged += SyncBindings;
 
             if (!ActiveNodes.Contains(this))
             {
@@ -84,8 +86,15 @@ namespace Pawntom.TutorialBridge
         private void OnDisable()
         {
             _actions?.Player.Disable();
+            InputManager.BindingsChanged -= SyncBindings;
             ActiveNodes.Remove(this);
             CancelCast();
+        }
+
+        // 이 컴포넌트의 입력 인스턴스에 옵션창 키 설정을 맞춘다(키를 바꾼 플레이어도 안내·판정이 같은 키를 쓰게).
+        private void SyncBindings()
+        {
+            InputManager.Instance.CopyBindingOverridesTo(_actions);
         }
 
         private void OnDestroy()

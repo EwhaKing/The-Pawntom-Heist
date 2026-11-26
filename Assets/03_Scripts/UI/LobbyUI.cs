@@ -22,6 +22,19 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] Button startGameButton;
     [SerializeField] GameObject readyButton;
 
+    [Header("Show Time! (Host)")]
+    [SerializeField] private Image startGameImage;
+    [SerializeField] private Sprite showTimeActiveSprite;
+    [SerializeField] private Sprite showTimeInactiveSprite;
+
+    [Header("Ready (Client, 임시 버튼)")]
+    [SerializeField] private Button readyButtonComponent;
+    [SerializeField] private TMP_Text readyButtonLabel;
+    [SerializeField] private string readyLabelText = "Ready";
+    [SerializeField] private string cancelLabelText = "Cancel";
+
+    private bool _isLeaving;
+
     [Header("Connection Notice")]
     [SerializeField] private GameObject connectionNoticePanel;
     [SerializeField] private TMP_Text connectionNoticeText;
@@ -129,15 +142,23 @@ public class LobbyUI : MonoBehaviour
 
         if (isHost)
         {
-            startGameButton.interactable =
-                lobbyManager.CanStartGame();
-        }
+            bool canStart = lobbyManager.CanStartGame();
+            startGameButton.interactable = canStart;
 
-        Debug.Log(
-            $"[LobbyUI] 버튼 갱신 | " +
-            $"LocalPlayer={localPlayerData.PlayerRef}, " +
-            $"IsHost={isHost}"
-        );
+            if (startGameImage != null)
+            {
+                Sprite sprite = canStart ? showTimeActiveSprite : showTimeInactiveSprite;
+                if (sprite != null) startGameImage.sprite = sprite;
+            }
+        }
+        else
+        {
+            if (readyButtonComponent != null)
+                readyButtonComponent.interactable = localPlayerData.HasSelectedCat;
+
+            if (readyButtonLabel != null)
+                readyButtonLabel.text = localPlayerData.IsReady ? cancelLabelText : readyLabelText;
+        }
     }
 
     private void RefreshConnectionNotice(GameState state)
@@ -205,6 +226,28 @@ public class LobbyUI : MonoBehaviour
     public void OnClickStartGame()
     {
         GameManager.Instance.StartGame();
+    }
+
+    /// <summary>
+    /// 나가기(«). 세션을 정리하고 메인(로비) 화면으로 돌아갑니다. 연타는 무시합니다.
+    /// </summary>
+    public async void OnClickLeaveRoom()
+    {
+        if (_isLeaving || GameManager.Instance == null) return;
+        _isLeaving = true;
+
+        try
+        {
+            await GameManager.Instance.ReturnToMainMenuAsync();
+        }
+        catch (System.Exception exception)
+        {
+            Debug.LogException(exception);
+        }
+        finally
+        {
+            _isLeaving = false;
+        }
     }
 
     public void OnClickReady()

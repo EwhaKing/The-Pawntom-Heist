@@ -30,8 +30,9 @@ public class PlayerController : NetworkBehaviour
              "기본값 0.9 는 스케일을 줄이기 전 손맛(키의 약 58%)을 그대로 옮긴 값이다.")]
     [SerializeField, Min(0.01f)] private float jumpHeight = 0.9f;
 
-    [Tooltip("최고점까지 올라가는 시간(초). 짧을수록 빠르고 묵직하다. 기본 0.6 은 스케일 다운 전과 같다.")]
-    [SerializeField, Min(0.05f)] private float jumpRiseSeconds = 0.6f;
+    [Tooltip("최고점까지 올라가는 시간(초). 짧을수록 빠르고 묵직하다.\n" +
+             "0.6 은 중력 5m/s²(지구 절반)이라 '달에서 뛰는' 느낌이 났다. 0.38 → 중력 약 12.5m/s²(지구 1.27배, 게임 손맛 기준).")]
+    [SerializeField, Min(0.05f)] private float jumpRiseSeconds = 0.38f;
 
     [Tooltip("켜면 위 두 값에서 중력을 계산해 NetworkCharacterController.gravity 를 덮어쓴다(낙하도 같은 비율로 맞춰진다).\n" +
              "끄면 NetworkCharacterController 의 중력을 그대로 두고 초기 속도만 높이에 맞춘다.")]
@@ -49,6 +50,7 @@ public class PlayerController : NetworkBehaviour
     private NetworkCharacterController _controller;
     private PlayerData _playerData;
     private InventoryManager _inventory;
+    private PlayerParkour _parkour;
 
     public float WalkSpeed => walkSpeed;
     public float SprintSpeed => sprintSpeed;
@@ -62,6 +64,7 @@ public class PlayerController : NetworkBehaviour
         _controller = GetComponent<NetworkCharacterController>();
         _playerData = GetComponent<PlayerData>();
         _inventory = GetComponent<InventoryManager>();
+        _parkour = GetComponent<PlayerParkour>();
     }
 
     /// <summary>
@@ -158,6 +161,7 @@ public class PlayerController : NetworkBehaviour
             if (Object.HasStateAuthority || Object.HasInputAuthority)
             {
                 _controller.Velocity = Vector3.zero;
+                _parkour?.ResetState();
             }
             return;
         }
@@ -174,6 +178,20 @@ public class PlayerController : NetworkBehaviour
         bool isSprinting = CanSprint(wantsToSprint);
 
         UpdateStamina(isSprinting);
+
+        NetworkButtons pressed =
+            input.Buttons.GetPressed(_previousButtons);
+
+        NetworkButtons released =
+            input.Buttons.GetReleased(_previousButtons);
+
+        // 벽 매달림·철봉·턱 넘기·도약 중에는 파쿠르가 이번 틱 이동을 맡는다.
+        if (_parkour != null && _parkour.Simulate(input, pressed))
+        {
+            _previousButtons = input.Buttons;
+            return;
+        }
+
         HandleMove(input.Move, isSprinting);
 
         // Move 안의 충돌 콜백에서 사망했으면 같은 틱의 점프도 차단합니다.
@@ -182,12 +200,6 @@ public class PlayerController : NetworkBehaviour
             _controller.Velocity = Vector3.zero;
             return;
         }
-
-        NetworkButtons pressed =
-            input.Buttons.GetPressed(_previousButtons);
-
-        NetworkButtons released =
-            input.Buttons.GetReleased(_previousButtons);
 
         if (pressed.IsSet(InputButton.Jump))
         {
@@ -228,8 +240,10 @@ public class PlayerController : NetworkBehaviour
         }
 
         EnemyAgent enemy = other.GetComponentInParent<EnemyAgent>();
-        // 스턴 중인 적은 닿아도 물지 못한다.
-        if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsStunned)
+        // PlayerData 의 접촉 피해와 같은 규칙: 추격 중이고 스턴이 아닐 때만 문다.
+        // 순찰 중 스친 접촉은 감지(경계→추격)로 이어질 뿐 물지 않는다(예전에는 이 경로만 순찰 중에도 물었다).
+        if (enemy == null || !enemy.isActiveAndEnabled ||
+            !Pawntom.Enemy.Core.EnemyActionGate.CanBite(enemy.State, enemy.IsStunned))
         {
             return;
         }
@@ -240,11 +254,13 @@ public class PlayerController : NetworkBehaviour
             Runner, Mathf.Max(0.01f, _contactDamageInterval));
     }
 
-    public void ResetTutorialLook()
+    /// <summary>체크포인트 재시도로 되살아날 때 시점·버튼 기록·접촉 피해 쿨다운을 처음 상태로.</summary>
+    public void ResetLookForRespawn()
     {
         ViewPitch = 0f;
         _previousButtons = default;
         ContactDamageCooldown = TickTimer.None;
+        _parkour?.ResetState();
         if (playerCamera != null) playerCamera.transform.localRotation = Quaternion.identity;
     }
 
@@ -313,7 +329,9 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        if (Object.HasStateAuthority &&
+        // 비용이 0 이면(점프 무소모) 깎지 않는다. TryConsumeStamina 는 0 을 실패로 돌려준다.
+        if (_playerData.JumpStaminaCost > 0f &&
+            Object.HasStateAuthority &&
             !_playerData.TryConsumeStamina(_playerData.JumpStaminaCost))
         {
             return;
@@ -335,6 +353,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (!wantsToSprint ||
             _playerData.IsParkouring ||
+            (_parkour != null && _parkour.Mode != ParkourMode.None) ||
             _playerData.IsExhausted)
         {
             return false;
@@ -378,11 +397,5 @@ public class PlayerController : NetworkBehaviour
         _playerData.RestoreStamina(
             _playerData.StaminaRegenRate * Runner.DeltaTime
         );
-    }
-
-    private void HandleParkour()
-    {
-        // TODO: 벽 감지와 파쿠르 이동이 구현되면
-        // PlayerData.TryStartParkour / StopParkour를 이곳에서 호출합니다.
     }
 }
