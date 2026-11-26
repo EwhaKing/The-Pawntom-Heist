@@ -1,0 +1,388 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb470b7daf965b24bae89c296dbf5ae8, type: 3}
+  m_Name: LevelLayoutData_Stage1_1F
+  m_EditorClassIdentifier: Assembly-CSharp::LevelLayoutData
+  _stageNumber: 1
+  _floorNumber: 1
+  _requiredKeyCount: 1
+  _k9Count: 6
+  _docking:
+  - id: dock_1
+    position: {x: 13.085, y: 0, z: 42.3}
+    yaw: 180
+  - id: dock_2
+    position: {x: 47.75, y: 0, z: -38.5}
+    yaw: 270
+  - id: dock_3
+    position: {x: -21, y: 0, z: -88}
+    yaw: 0
+  _itemSpots:
+  - id: item_01
+    position: {x: -60, y: 0, z: 22}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_02
+    position: {x: -35, y: 0, z: 26}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_03
+    position: {x: -30, y: 0, z: 0}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_04
+    position: {x: -55, y: 0, z: 5}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_05
+    position: {x: -3, y: 0, z: 26}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_06
+    position: {x: 30, y: 0, z: 28}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_07
+    position: {x: 30, y: 0, z: 6}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_08
+    position: {x: 50, y: 0, z: 0}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_09
+    position: {x: -52, y: 0, z: -32}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_10
+    position: {x: -30, y: 0, z: -28}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_11
+    position: {x: 15, y: 0, z: -25}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_12
+    position: {x: 40, y: 0, z: -30}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_13
+    position: {x: -10, y: 0, z: -42}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_14
+    position: {x: -55, y: 0, z: -72}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_15
+    position: {x: -40, y: 0, z: -50}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_16
+    position: {x: -30, y: 0, z: -60}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_17
+    position: {x: -40, y: 0, z: -75}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_18
+    position: {x: 0, y: 0, z: -58}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_19
+    position: {x: 20, y: 0, z: -76}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  - id: item_20
+    position: {x: 40, y: 0, z: -68}
+    allowedItemIds: 02000000030000000400000005000000
+    spawnChance: 0.6
+  _keySpots:
+  - id: key_01
+    position: {x: -57, y: 0, z: 30}
+  - id: key_02
+    position: {x: 50, y: 0, z: 24}
+  - id: key_03
+    position: {x: -55, y: 0, z: -62}
+  - id: key_04
+    position: {x: -35, y: 0, z: -64}
+  - id: key_05
+    position: {x: 37, y: 0, z: -26}
+  - id: key_06
+    position: {x: 28, y: 0, z: -66}
+  - id: key_07
+    position: {x: -40, y: 0, z: 2}
+  _patrolRoutes:
+  - id: Route_01_NorthWest
+    waypoints:
+    - {x: -55, y: 0, z: 53.6}
+    - {x: -86.5, y: 0, z: 53.6}
+    - {x: -86.5, y: 0, z: 25.3}
+    - {x: -73.5, y: 0, z: 25.3}
+    - {x: -73.5, y: 0, z: 14.799999}
+    - {x: -44.5, y: 0, z: 14.799999}
+    - {x: -44.5, y: 0, z: 40.8}
+    - {x: -73.5, y: 0, z: 40.8}
+    loop: 0
+  - id: Route_02_NorthCorridor
+    waypoints:
+    - {x: 34, y: 0, z: 52}
+    - {x: 52, y: 0, z: 52}
+    loop: 0
+  - id: Route_03_CenterSpine
+    waypoints:
+    - {x: -14, y: 0, z: 32}
+    - {x: -14, y: 0, z: 3.1999998}
+    loop: 0
+  - id: Route_04_East
+    waypoints:
+    - {x: 56, y: 0, z: 12.400002}
+    - {x: 56, y: 0, z: -6.299999}
+    - {x: 69, y: 0, z: -6.299999}
+    - {x: 69, y: 0, z: 3.4000006}
+    - {x: 76, y: 0, z: 3.4000006}
+    - {x: 76, y: 0, z: 14.400002}
+    loop: 0
+  - id: Route_05_EastHall
+    waypoints:
+    - {x: 23, y: 0, z: -1.6000004}
+    - {x: 23, y: 0, z: -41.8}
+    - {x: 47.5, y: 0, z: -41.8}
+    - {x: 47.5, y: 0, z: -27.8}
+    loop: 0
+  - id: Route_06_LeafRing
+    waypoints:
+    - {x: -24, y: 0, z: -40}
+    - {x: -10, y: 0, z: -40}
+    - {x: -10, y: 0, z: -54}
+    - {x: -24, y: 0, z: -54}
+    loop: 1
+  - id: Route_07_LowRoom
+    waypoints:
+    - {x: -44, y: 0, z: -59}
+    - {x: -72, y: 0, z: -56.5}
+    - {x: -79, y: 0, z: -49.5}
+    - {x: -79, y: 0, z: -65.5}
+    - {x: -72, y: 0, z: -65.5}
+    loop: 0
+  - id: Route_08_SouthWest
+    waypoints:
+    - {x: -113, y: 0, z: -133}
+    - {x: -113, y: 0, z: -117}
+    - {x: -104.5, y: 0, z: -117}
+    - {x: -104.5, y: 0, z: -142}
+    - {x: -85.5, y: 0, z: -142}
+    loop: 0
+  - id: Route_09_SouthRooms
+    waypoints:
+    - {x: -63, y: 0, z: -131}
+    - {x: -63, y: 0, z: -114.5}
+    - {x: -74.5, y: 0, z: -114.5}
+    loop: 0
+  - id: Route_10_HallRing
+    waypoints:
+    - {x: -24, y: 0, z: -106}
+    - {x: -0.5, y: 0, z: -106}
+    - {x: -0.5, y: 0, z: -118}
+    - {x: -24, y: 0, z: -118}
+    loop: 1
+  - id: Route_11_HallLower
+    waypoints:
+    - {x: -30, y: 0, z: -130}
+    - {x: -30, y: 0, z: -137.5}
+    - {x: 4, y: 0, z: -137.5}
+    - {x: 4, y: 0, z: -122}
+    loop: 0
+  - id: Route_12_Spiral
+    waypoints:
+    - {x: 57, y: 0, z: -121}
+    - {x: 68.5, y: 0, z: -115.5}
+    - {x: 62.5, y: 0, z: -128.5}
+    loop: 0
+  _k9Spawns: []
+  _brutusSpawns:
+  - id: brutus_1
+    position: {x: 30, y: 0, z: -58}
+    yaw: 270
+    patrolRadius: 20
+  _doors:
+  - id: Gate_01
+    position: {x: 41.885, y: 2.5, z: 27.799995}
+    yaw: 90
+    security: 0
+    initialState: 0
+  - id: Gate_02
+    position: {x: 49.680004, y: 2.5, z: 19.765}
+    yaw: 0
+    security: 0
+    initialState: 0
+  - id: Gate_03
+    position: {x: 19.375, y: 2.5, z: 29.52}
+    yaw: 90
+    security: 0
+    initialState: 0
+  - id: Gate_04
+    position: {x: -18.825, y: 2.5, z: 28.900002}
+    yaw: 0
+    security: 0
+    initialState: 0
+  - id: door_b01
+    position: {x: -26.615, y: 0, z: 19.900002}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_b02
+    position: {x: -48.2, y: 0, z: -0.7649994}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_b03
+    position: {x: -5.175, y: 0, z: -17.08}
+    yaw: 0
+    security: 0
+    initialState: 0
+  - id: door_b04
+    position: {x: -58.705, y: 0, z: 16.3}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_b05
+    position: {x: -15.2, y: 0, z: -31.36}
+    yaw: 90
+    security: 0
+    initialState: 0
+  - id: door_b06
+    position: {x: 0.3900013, y: 0, z: 1.3899994}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_b07
+    position: {x: 18.075, y: 0, z: -2.7600002}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_b08
+    position: {x: -44.8, y: 0, z: -26.425}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_b09
+    position: {x: 34.075, y: 0, z: -2.7600002}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_b10
+    position: {x: -19.35, y: 0, z: -24.72}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_b11
+    position: {x: 0.3900013, y: 0, z: -8.67}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_b12
+    position: {x: 4.750001, y: 0, z: -22.55}
+    yaw: 90
+    security: 0
+    initialState: 0
+  - id: door_b13
+    position: {x: 43.850002, y: 0, z: -2.795}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e01
+    position: {x: -50, y: 0, z: -51.875}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e02
+    position: {x: -45.5, y: 0, z: -49.375}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e03
+    position: {x: -31.625, y: 0, z: -54.75}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_e04
+    position: {x: -35.75, y: 0, z: -75.125}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e05
+    position: {x: -24.25, y: 0, z: -64.375}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e06
+    position: {x: 4.750001, y: 0, z: -41.875}
+    yaw: 90
+    security: 0
+    initialState: 1
+  - id: door_e07
+    position: {x: -12.125, y: 0, z: -46.5}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_e08
+    position: {x: 7.375001, y: 0, z: -46.5}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_e09
+    position: {x: 28.125, y: 0, z: -46.5}
+    yaw: 0
+    security: 0
+    initialState: 0
+  - id: door_e10
+    position: {x: 16.375, y: 0, z: -37.5}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_e11
+    position: {x: 35.875, y: 0, z: -18}
+    yaw: 0
+    security: 0
+    initialState: 1
+  - id: door_e12
+    position: {x: 33.875, y: 0, z: -34.5}
+    yaw: 0
+    security: 0
+    initialState: 1
+  _vents:
+  - id: vent_01_East
+    position: {x: 37.87, y: 1.2, z: 4}
+  - id: vent_02_West
+    position: {x: -37.75, y: 1.2, z: 9}
+  - id: vent_03_DuctTop
+    position: {x: -21, y: 1.2, z: -43}
+  - id: vent_04_DuctBottom
+    position: {x: -21, y: 1.2, z: -54.75}
+  - id: vent_05_SouthRooms
+    position: {x: -39.5, y: 1.2, z: -54.75}
+  _powerPanels:
+  - id: node_southhall
+    position: {x: 10, y: 0, z: -78}
+    unlockZoneId: Area_02
+  - id: node_west
+    position: {x: -30, y: 0, z: -34.6}
+    unlockZoneId: Area_01
+  _zones:
+  - id: Area_01
+  - id: Area_02
+  _vaults:
+  - id: Vault_Leaf
+    position: {x: -5.2, y: 0, z: -27}
+    yaw: 0

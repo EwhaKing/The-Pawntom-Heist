@@ -11,6 +11,8 @@ using UnityEngine;
 /// - MainbaseMachine 상호작용
 /// - 출발 버튼 상호작용
 /// - 실제 격벽 현장 조작
+/// - 금고 열쇠 사용 / 게임 금고 최종 해킹 진입(VaultHackFlow)
+/// - 분전반(SecurityNode) 길게 누르기 캐스팅 시작
 /// - NetworkItem 획득 및 인벤토리 추가
 /// - 획득한 월드 아이템 제거 요청
 ///
@@ -61,6 +63,7 @@ public class PlayerInteraction : NetworkBehaviour
 
     private PlayerData _playerData;
     private InventoryManager inventoryManager;
+    private VaultKeyInventoryBridge _keyBridge;
 
     /// <summary>
     /// 내 플레이어가 E 로 무언가(기계·출발 버튼·격벽·아이템)를 건드렸다. 인자는 맞은 지점.
@@ -89,6 +92,7 @@ public class PlayerInteraction : NetworkBehaviour
     {
         _playerData = GetComponent<PlayerData>();
         inventoryManager = GetComponent<InventoryManager>();
+        _keyBridge = GetComponent<VaultKeyInventoryBridge>();
 
         if (inventoryManager == null)
         {
@@ -213,6 +217,28 @@ public class PlayerInteraction : NetworkBehaviour
         if (!TryFindInteractionHit(ray, out RaycastHit hit, false))
         {
             return null;
+        }
+
+        // 게임 금고(VaultHackFlow 가 붙은 금고)만 여기서 안내한다. 튜토리얼 금고는 TutorialVault 가 직접 띄운다.
+        VaultChest vaultChest = hit.collider.GetComponentInParent<VaultChest>();
+
+        if (vaultChest != null)
+        {
+            VaultHackFlow hackFlow = vaultChest.GetComponent<VaultHackFlow>();
+
+            if (hackFlow == null || !vaultChest.IsPlayerInRange(transform.position))
+            {
+                return null;
+            }
+
+            return hackFlow.GetPromptName(_keyBridge != null && _keyBridge.HasSelectedKey);
+        }
+
+        SecurityNode securityNode = hit.collider.GetComponentInParent<SecurityNode>();
+
+        if (securityNode != null)
+        {
+            return securityNode.GetPromptName(transform.position);
         }
 
         ControlMachine controlMachine = hit.collider.GetComponentInParent<ControlMachine>();
@@ -371,8 +397,44 @@ public class PlayerInteraction : NetworkBehaviour
                 );
             }
 
+            // 게임 금고: 열쇠를 모두 넣었으면 E 는 최종 해킹(미니게임)이다. 개봉은 성공 뒤 상태 권한이 판정한다.
+            // 튜토리얼 금고에는 VaultHackFlow 가 없어 TutorialVault 가 해킹을 띄운다(아래 RequestInteract 는 그대로).
+            VaultHackFlow hackFlow = vaultChest.GetComponent<VaultHackFlow>();
+
+            if (hackFlow != null && hackFlow.WantsHack)
+            {
+                if (hackFlow.TryStartHack(Object))
+                {
+                    LocalInteracted?.Invoke(hit.point);
+                }
+
+                return;
+            }
+
             // 열쇠 사용과 금고 개봉은 VaultChest가 판정
             vaultChest.RequestInteract(Object);
+            return;
+        }
+
+        // ==========================================
+        // 0-1. 분전반(보안 노드) — 길게 눌러 캐스팅
+        // ==========================================
+
+        SecurityNode securityNode =
+            hit.collider.GetComponentInParent<SecurityNode>();
+
+        if (securityNode != null)
+        {
+            // 누른 순간 캐스팅을 시작한다. 이후 유지·취소·완료는 SecurityNode 가 처리한다(이동 입력은 잠긴다).
+            if (securityNode.TryBeginLocalCast(_playerData))
+            {
+                LocalInteracted?.Invoke(hit.point);
+            }
+            else
+            {
+                Debug.Log("[PlayerInteraction] 분전반 캐스팅을 시작할 수 없습니다(범위 밖·이미 접속됨·사망).");
+            }
+
             return;
         }
 
@@ -741,7 +803,8 @@ public class PlayerInteraction : NetworkBehaviour
         return collider.GetComponentInParent<NetworkItem>() != null ||
             collider.GetComponentInParent<ControlMachine>() != null ||
             collider.GetComponentInParent<EscapeButtonInteraction>() != null ||
-            collider.GetComponentInParent<ControllableWall>() != null;
+            collider.GetComponentInParent<ControllableWall>() != null ||
+            collider.GetComponentInParent<SecurityNode>() != null;
     }
 
     private bool HasClearInteractionPath(Vector3 origin, Collider target)
@@ -811,7 +874,8 @@ public class PlayerInteraction : NetworkBehaviour
                     col.GetComponentInParent<EscapeButtonInteraction>() != null ||
                     col.GetComponentInParent<ControllableWall>() != null ||
                     col.GetComponentInParent<NetworkItem>() != null ||
-                    col.GetComponentInParent<VaultChest>() != null;
+                    col.GetComponentInParent<VaultChest>() != null ||
+                    col.GetComponentInParent<SecurityNode>() != null;
 
                 // 발견 구역, MainbaseZone 같은
                 // 상호작용과 무관한 Trigger는 무시

@@ -9,8 +9,13 @@ using UnityEngine.UI;
 /// - MainbaseControlUI의 지도 위에 표시되는 격벽 버튼
 /// - 실제 ControllableWall과 연결됨
 /// - 미해금 상태에서 클릭하면 해킹 미니게임 실행
-/// - 해킹 성공 시 격벽 해금 + 열림
-/// - 해금 상태에서 더블클릭하면 열림/닫힘 전환
+/// - 해킹 성공 시 격벽 해금을 요청(여는 것은 현장에서)
+/// - 해금 상태에서 더블클릭하면 열림/닫힘 전환을 요청
+///
+/// 네트워크:
+/// - 조작은 모두 상태 권한(호스트)에 보내는 요청이다(단말기 앞인지·상태 전이·쿨다운을 호스트가 다시 본다).
+///   버튼 모양·색은 동기화된 격벽 상태(OnStateChanged)로만 바뀐다 — 결과가 오기 전에 성공으로 칠하지 않는다.
+///   해금 결과를 기다리는 동안(<see cref="PendingSeconds"/>) 다시 해킹하지 않는다.
 ///
 /// 사용 위치:
 /// - MainbaseControlUI > MapContent > Layer_Wall > WallButton_01 같은 UI 버튼에 붙임
@@ -68,6 +73,10 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
 
     private float lastClickTime;
     private bool isHacking;
+
+    // 해금 요청을 보낸 뒤 상태가 돌아오기를 기다리는 동안. 그사이 클릭으로 해킹을 또 열지 않는다.
+    private const float PendingSeconds = 1.5f;
+    private float _unlockPendingUntil;
 
     private void Awake()
     {
@@ -178,6 +187,12 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         // 해금되지 않은 벽이면 클릭 시 해킹 미니게임 실행
         if (!targetWall.IsUnlocked)
         {
+            if (Time.unscaledTime < _unlockPendingUntil)
+            {
+                Debug.Log("[WallControlButtonUI] 해금 결과를 기다리는 중입니다.");
+                return;
+            }
+
             StartHacking();
             return;
         }
@@ -239,9 +254,11 @@ public class WallControlButtonUI : MonoBehaviour, IPointerClickHandler
         {
             // GAME_DESIGN 격벽 상태 머신: 미니게임 성공 → Unlocked(푸른색, 닫힘).
             // 여는 것은 침투조가 현장에서 상호작용 키로 한다(5초 뒤 자동으로 닫힘).
+            // 해금은 요청이다 — 버튼 색은 상태가 돌아와 OnStateChanged 가 올 때 바뀐다.
+            _unlockPendingUntil = Time.unscaledTime + PendingSeconds;
             targetWall.Unlock();
 
-            Debug.Log("[WallControlButtonUI] 해킹 성공. 격벽 해금(푸른색) — 현장에서 열 수 있음");
+            Debug.Log("[WallControlButtonUI] 해킹 성공. 격벽 해금 요청 — 반영되면 푸른색, 현장에서 열 수 있음");
         }
         else
         {

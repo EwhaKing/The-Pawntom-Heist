@@ -9,9 +9,13 @@ using UnityEngine.UI;
 /// - CCTV 스프링클러 탭의 스프링클러 아이콘 버튼 관리
 /// - 침투자가 해당 스프링클러 구역에 접촉하기 전까지 버튼을 숨김
 /// - 버튼 클릭 시 해킹 미니게임 실행
-/// - 해킹 성공 시 SprinklerZone.ActivateSprinkler 호출
+/// - 해킹 성공 시 SprinklerZone.ActivateSprinkler 로 가동을 요청
 /// - 작동 중에는 보라색 구역 표시 UI를 켬
 /// - 이미 사용한 스프링클러는 회색으로 표시하고 재사용 불가 처리
+///
+/// 네트워크:
+/// - 가동은 상태 권한(호스트)에 보내는 요청이다. 색·작동 구역 표시는 동기화된 스프링클러 상태만 보고 칠한다 —
+///   결과가 오기 전에 작동으로 칠하지 않는다. 결과를 기다리는 동안(<see cref="PendingSeconds"/>) 다시 해킹하지 않는다.
 ///
 /// 사용 위치:
 /// - MainbaseControlUI > MapContent > Layer_Sprinkler > SprinklerButton_01에 붙임
@@ -41,6 +45,12 @@ public class SprinklerControlButtonUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Color runningColor = new Color(0.7f, 0.45f, 1f, 1f);
 
     private bool isHacking;
+
+    // 가동 요청을 보낸 뒤 사용됨 상태가 돌아오기를 기다리는 동안. 그사이 클릭으로 해킹을 또 열지 않는다.
+    private const float PendingSeconds = 1.5f;
+    private float _activatePendingUntil;
+
+    private bool IsActivatePending => !targetZone.IsUsed && Time.unscaledTime < _activatePendingUntil;
 
     private void Awake()
     {
@@ -100,6 +110,12 @@ public class SprinklerControlButtonUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
+        if (IsActivatePending)
+        {
+            Debug.Log("[SprinklerControlButtonUI] 가동 결과를 기다리는 중입니다.");
+            return;
+        }
+
         StartHacking();
     }
 
@@ -134,8 +150,9 @@ public class SprinklerControlButtonUI : MonoBehaviour, IPointerClickHandler
 
         if (isSuccess)
         {
-            Debug.Log("[SprinklerControlButtonUI] 해킹 성공. 스프링클러 작동");
+            Debug.Log("[SprinklerControlButtonUI] 해킹 성공. 스프링클러 가동 요청");
 
+            _activatePendingUntil = Time.unscaledTime + PendingSeconds;
             targetZone.ActivateSprinkler();
         }
         else
@@ -178,6 +195,7 @@ public class SprinklerControlButtonUI : MonoBehaviour, IPointerClickHandler
 
         if (iconImage != null)
         {
+            // 대기 중에도 작동 색을 미리 칠하지 않는다(거부될 수 있다).
             if (targetZone.IsRunning)
             {
                 iconImage.color = runningColor;
