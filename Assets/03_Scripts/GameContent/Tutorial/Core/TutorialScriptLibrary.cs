@@ -196,8 +196,14 @@ namespace Pawntom.Tutorial.Core
                 .AsSkippable());
 
             beats.Add(TutorialBeat.Main("4-14", 4, TutorialSignal.AllDoorsOpened,
-                L("4-14", Hq,"나와서 아까 막혀있던 철문 쪽으로 가 봅시다. 열린 철문 사이로는 경비견도 들어올 수 있으니, 그 점 유의하셔서 다니면 되겠습니다.")
-                    .WithHint("[{TerminalExit}]키를 눌러 단말기에서 나옵시다", TutorialSignal.TerminalClosed))
+                L("4-14", Hq, "열린 격벽을 더블 클릭하면 다시 문을 닫을 수 있습니다.")
+                    .WithHint("[격벽] 탭에서 열린 격벽을 다시 더블클릭하여 닫습니다", TutorialSignal.DoorClosed, TutorialSignal.TerminalClosed))
+                .WithFreshTrigger()
+                .AsSkippable());
+
+            beats.Add(TutorialBeat.Main("4-14b", 4, TutorialSignal.DoorClosed,
+                L("4-14b", Hq, "네, 좋습니다. 다시 열어놓고 이제 닫혀있던 철문 쪽으로 가봅시다. 열린 철문 사이로는 경비견도 들어올 수 있으니, 그 점 유의하셔서 다니면 되겠습니다.")
+                    .WithHint("닫은 격벽을 다시 더블클릭해 열고, [{TerminalExit}]키를 눌러 단말기에서 나옵시다", TutorialSignal.TerminalClosed))
                 .WithFreshTrigger()
                 .AsSkippable());
 
@@ -256,8 +262,17 @@ namespace Pawntom.Tutorial.Core
 
             beats.Add(TutorialBeat.Main("5-10", 5, TutorialSignal.LootRoomExiting,
                 L("5-10", Hq, "열쇠를 챙기셨으니 이제 금고 복도로 가시면 됩니다. 아, 조언 하나 하자면..."),
-                L("5-11", Hq, "그 전에 본부에 들러서 물건을 바닥에 내려놓고 와도 좋겠군요. 욕심내서 짐을 많이 들수록 무거워지니, 개들을 피하기 어려워지니 말입니다."))
+                L("5-11", Hq, "지금 몸이 많이 무거워졌을 겁니다. 욕심내서 짐을 많이 들수록 몸이 무거워지고, 개들한테 쉽게 잡힐 겁니다. 전설의 캣닢을 훔치기 전에 본부에 물건을 내려놓고 오는게 좋겠군요.")
+                    .WithHint("본부로 돌아가 짐을 내려놓읍시다.", TutorialSignal.PlayerInMainbase, TutorialSignal.LootUnloaded))
                 .RequiringPlayed("5-9"));
+
+            beats.Add(TutorialBeat.Main("5-12", 5, TutorialSignal.PlayerInMainbase,
+                    L("5-12", Hq, "도착했습니다. 열쇠만 남기고 나머지 물건은 여기 바닥에 내려놓아 봅시다. 본부 안에 놓인 물건들은 자동으로 정산되니 안심하셔도 됩니다.")
+                        .WithHint("열쇠만 남기고" + SlotDropHint, TutorialSignal.LootUnloaded))
+                .AsSkippable());
+
+            beats.Add(TutorialBeat.Main("5-13", 5, TutorialSignal.LootUnloaded,
+                L("5-13", Hq, "몸이 한결 가벼워지신 것 같군요. 이제 우리의 목적을 이루러 가봅시다.")));
 
             // ───────────── 6단계 적 NPC 순찰 안내 (금고 복도) ─────────────
             beats.Add(TutorialBeat.Main("6-1", 6, TutorialSignal.VaultCorridorEntered,
@@ -357,6 +372,12 @@ namespace Pawntom.Tutorial.Core
         /// </summary>
         private static void AddSituationalBeats(List<TutorialBeat> beats)
         {
+            // 아직 갈 때가 아닌 곳: 전리품 창고(5단계)를 마치기 전에 금고 쪽 복도 입구(보이지 않는 벽)에 다가감
+            beats.Add(TutorialBeat.Side("R-early", 0, TutorialSignal.EarlyAreaBlocked, "2-1", "6-1",
+                    L("R-early-1", Cat, "이 방은 지금 갈 때가 아닌 것 같아. 일단 선배님 지시를 따르자."))
+                .WithConfirm()
+                .AsRepeatable(8f));
+
             // 입력 없음(이동): 10초간 이동 입력 없음
             beats.Add(TutorialBeat.Side("R-move", 0, TutorialSignal.IdleNoMove, "2-1", "8-1",
                     L("R-move-1", Hq, "거기 서서 뭘 하십니까, 후배님?"),

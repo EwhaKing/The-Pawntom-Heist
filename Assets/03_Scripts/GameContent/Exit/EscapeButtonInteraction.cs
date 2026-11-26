@@ -44,6 +44,12 @@ public class EscapeButtonInteraction : NetworkBehaviour
             return;
         }
 
+        if (!RuleManager.Instance.AnyPlayerHasExitItem)
+        {
+            InteractPrompt.Flash("전설의 캣닢을 가지고 있지 않습니다.", InteractPrompt.WarningColor);
+            return;
+        }
+
         RuleManager.Instance.RequestDeparture();
     }
 }

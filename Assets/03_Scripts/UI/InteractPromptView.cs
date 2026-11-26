@@ -27,9 +27,21 @@ public sealed class InteractPromptView : MonoBehaviour
     private Texture2D _chipTexture;
     private Sprite _chipSprite;
 
+    private GameObject _chipObject;
+
     private string _requested;
-    private string _shown;
+    private bool _requestedKey = true;
+    private Color _requestedColor = Color.white;
     private int _lastRequestFrame = -10;
+
+    // 잠깐 띄우는 알림(Flash). 떠 있는 동안은 매 프레임 요청보다 앞선다.
+    private string _flashText;
+    private Color _flashColor = Color.white;
+    private float _flashUntil = -1f;
+
+    private string _shown;
+    private bool _shownKey = true;
+    private Color _shownColor = Color.white;
 
     public static InteractPromptView GetOrCreate()
     {
@@ -51,8 +63,23 @@ public sealed class InteractPromptView : MonoBehaviour
 
     public void Request(string interactName)
     {
-        _requested = interactName;
+        Request(interactName, true, Color.white);
+    }
+
+    /// <param name="showKey">왼쪽 키 칩을 보일지(상호작용 안내면 true, 상태 알림이면 false).</param>
+    public void Request(string text, bool showKey, Color color)
+    {
+        _requested = text;
+        _requestedKey = showKey;
+        _requestedColor = color;
         _lastRequestFrame = Time.frameCount;
+    }
+
+    public void Flash(string text, Color color, float seconds)
+    {
+        _flashText = text;
+        _flashColor = color;
+        _flashUntil = Time.unscaledTime + Mathf.Max(0.1f, seconds);
     }
 
     private void Awake()
@@ -85,12 +112,21 @@ public sealed class InteractPromptView : MonoBehaviour
 
     private void LateUpdate()
     {
-        bool visible = Time.frameCount - _lastRequestFrame <= 1;
+        bool flashing = !string.IsNullOrEmpty(_flashText) && Time.unscaledTime < _flashUntil;
+        bool visible = flashing || Time.frameCount - _lastRequestFrame <= 1;
 
-        if (visible && _requested != _shown)
+        string text = flashing ? _flashText : _requested;
+        bool showKey = !flashing && _requestedKey;
+        Color color = flashing ? _flashColor : _requestedColor;
+
+        if (visible && (text != _shown || showKey != _shownKey || color != _shownColor))
         {
-            _shown = _requested;
+            _shown = text;
+            _shownKey = showKey;
+            _shownColor = color;
             _nameText.text = _shown;
+            _nameText.color = _shownColor;
+            _chipObject.SetActive(_shownKey);
         }
 
         float target = visible ? 1f : 0f;
@@ -130,6 +166,7 @@ public sealed class InteractPromptView : MonoBehaviour
         // 키 칩
         Image chip = _factory.CreateImage("KeyChip", row, new Color(1f, 1f, 1f, 0.94f));
         chip.sprite = CreateChipSprite();
+        _chipObject = chip.gameObject;
         chip.type = Image.Type.Sliced;
         LayoutElement chipSize = chip.gameObject.AddComponent<LayoutElement>();
         chipSize.preferredWidth = ChipSize;

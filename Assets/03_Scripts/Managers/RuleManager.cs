@@ -68,6 +68,15 @@ public class RuleManager : NetworkBehaviour
 
     /// <summary>
     /// 출발 버튼을 눌렀을 때 호출
+    /// 조건 불만족시 메세지 출력
+    /// </summary>
+    public bool AnyPlayerHasExitItem
+    {
+        get { return exitItemId > InventoryManager.EmptySlot && InventoryManager.HasAnyPlayerItem(exitItemId); }
+    }
+
+    /// <summary>
+    /// 출발 버튼을 눌렀을 때 호출
     /// 조건 만족 시 팀 전체 레벨 클리어를 시도
     /// </summary>
     public void RequestDeparture()

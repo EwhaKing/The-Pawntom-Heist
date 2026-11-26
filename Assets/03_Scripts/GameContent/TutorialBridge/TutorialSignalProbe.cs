@@ -1247,6 +1247,11 @@ namespace Pawntom.TutorialBridge
                     Emit(TutorialSignal.DoorOpened);
                 }
 
+                else if (!open && _wallWasOpen[i])
+                {
+                    Emit(TutorialSignal.DoorClosed);
+                }
+
                 _wallWasOpen[i] = open;
 
                 // 안내 상자(격벽 + WallGuideExpand) 안에 들어섰을 때만.
@@ -1320,6 +1325,10 @@ namespace Pawntom.TutorialBridge
             if (loot > 0)
             {
                 _lootedAny = true;
+            }
+            else
+            {
+                Emit(TutorialSignal.LootUnloaded);
             }
 
             if (_lastInventoryCount >= 0 && filled < _lastInventoryCount)

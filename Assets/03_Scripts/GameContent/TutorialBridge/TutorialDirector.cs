@@ -54,6 +54,10 @@ namespace Pawntom.TutorialBridge
         [Tooltip("비우면 TMP 기본 폰트(NanumBarunpenR SDF)")]
         [SerializeField] private TMP_FontAsset fontOverride;
 
+        [Header("길 안내")]
+        [Tooltip("켜면 바닥 화살표와 함께 예전 연초록 안내 상자도 띄운다")]
+        [SerializeField] private bool showGuideBoxes = false;
+
         [Header("사망 후 재개")]
         [Tooltip("죽은 뒤 사망 대사를 들려주고 화면이 어두워지기까지의 시간")]
         [SerializeField, Min(0f)] private float respawnDelaySeconds = 3.5f;
@@ -87,6 +91,7 @@ namespace Pawntom.TutorialBridge
         private TutorialSettlementView _settlement;
         private TutorialEyelidView _eyelids;
         private TutorialGuideMarker _guide;
+
 
         // 전리품 방에서는 여러 개를 동시에 띄운다(_guide 가 첫째, 나머지는 여기). 구역용보다 작은 상자를 쓴다.
         private const int MaxItemGuides = 4;
@@ -152,6 +157,116 @@ namespace Pawntom.TutorialBridge
         public InventoryManager LocalInventory
         {
             get { return _probe != null ? _probe.LocalInventory : null; }
+        }
+
+        public const string TerminalUnlockBeatId = "4-1";      // 단말기는 4-1 차례부터
+        public const string SecurityNodeUnlockBeatId = "3-0";  // 분전반은 3단계부터
+        public const string LockedPrompt = "아직 쓸 수 없습니다 — 지휘부 안내를 먼저 따라가세요";
+
+        // 메인 비트 beatId 의 차례가 왔는가(그보다 앞 메인 비트가 남아 있으면 false)
+        public bool HasReachedMain(string beatId)
+        {
+            if (_sequencer == null) return true;
+
+            int target = _sequencer.Script.IndexOfMain(beatId);
+            if (target < 0) return true;
+
+            int pending = _sequencer.PendingMainIndex;
+            return pending < 0 || pending >= target;
+        }
+
+        private Func<Component, string> _gateQuery;
+
+        private const string TerminalCloseLockedMessage = "아직 단말기에서 나갈 수 없습니다 — 지휘부 안내를 먼저 따라가세요";
+
+        private Func<string> _closeQuery;
+
+        private string QueryTerminalClose()
+        {
+            if (_sequencer == null || _sequencer.GetMainState("4-4") == TutorialBeatState.Pending)
+            {
+                return null;
+            }
+
+            TutorialBeat pending = _sequencer.PendingMain;
+
+            if (pending == null || pending.Stage != 4)
+            {
+                return null;
+            }
+
+            if (FindObjectsByType<ControllableWall>(FindObjectsSortMode.None).Length < 2)
+            {
+                return null;
+            }
+
+            return TerminalCloseLockedMessage;
+        }
+
+        private const string VaultBarrierUnlockBeatId = "6-1";
+        private const float VaultBarrierInset = 1f;
+        private const float VaultBarrierThickness = 0.3f;
+        private const float VaultBarrierSideMargin = 0.5f;
+        private const float VaultBarrierGiveUpSeconds = 15f;
+
+        private bool _vaultBarrierPlaced;
+
+        private void TryPlaceVaultBarrier()
+        {
+            if (_vaultBarrierPlaced) return;
+
+            if (FindAnyObjectByType<TutorialStageBarrier>() != null)
+            {
+                _vaultBarrierPlaced = true;
+                return;
+            }
+
+            Bounds zone;
+            Bounds mainbase;
+
+            if (!_probe.TryGetGuideBounds(TutorialSignal.VaultCorridorEntered, out zone) ||
+                !_probe.TryGetGuideBounds(TutorialSignal.PlayerInMainbase, out mainbase))
+            {
+                if (Time.timeSinceLevelLoad > VaultBarrierGiveUpSeconds)
+                {
+                    _vaultBarrierPlaced = true;
+                    Debug.LogWarning("[TutorialDirector] 금고 복도 구역이나 본부를 찾지 못해 금고 쪽 막는 벽을 세우지 않습니다.");
+                }
+
+                return;
+            }
+
+            _vaultBarrierPlaced = true;
+
+            // 구역에서 본부 쪽을 향한 면(플레이어가 들어오는 쪽)에 세운다.
+            Vector3 toBase = mainbase.center - zone.center;
+            Vector3 center = zone.center;
+            Vector3 size = zone.size;
+
+            if (Mathf.Abs(toBase.x) >= Mathf.Abs(toBase.z))
+            {
+                center.x = toBase.x < 0f ? zone.min.x + VaultBarrierInset : zone.max.x - VaultBarrierInset;
+                size.x = VaultBarrierThickness;
+                size.z += VaultBarrierSideMargin * 2f;
+            }
+            else
+            {
+                center.z = toBase.z < 0f ? zone.min.z + VaultBarrierInset : zone.max.z - VaultBarrierInset;
+                size.z = VaultBarrierThickness;
+                size.x += VaultBarrierSideMargin * 2f;
+            }
+
+            TutorialStageBarrier.Create(gameObject.scene, new Bounds(center, size), VaultBarrierUnlockBeatId);
+        }
+
+        private string QueryInteractionGate(Component target)
+        {
+            if (target is ControlMachine && !HasReachedMain(TerminalUnlockBeatId))
+            {
+                return LockedPrompt;
+            }
+
+            return null;
         }
 
         /// <summary>디렉터 자신이 조작을 막고 있는가(오프닝·정산·엔딩). 분전반·금고 상호작용을 막는 데 쓴다.</summary>
@@ -242,6 +357,12 @@ namespace Pawntom.TutorialBridge
             _probe.SignalRaised += HandleProbeSignal;
             GameManager.OnStateChanged += HandleGameStateChanged;
 
+            _closeQuery = QueryTerminalClose;
+            MainbaseControlUI.CloseBlocker = _closeQuery;
+
+            _gateQuery = QueryInteractionGate;
+            InteractionGate.Query = _gateQuery;
+
             _eyelids.SetBlackout(playOpening ? 1f : 0f);
             _eyelids.SetOpenness(playOpening ? 0f : 1f, playOpening ? 1f : 0f);
         }
@@ -268,6 +389,17 @@ namespace Pawntom.TutorialBridge
             }
 
             GameManager.OnStateChanged -= HandleGameStateChanged;
+
+            if (_closeQuery != null && MainbaseControlUI.CloseBlocker == _closeQuery)
+            {
+                MainbaseControlUI.CloseBlocker = null;
+            }
+
+            if (_gateQuery != null && InteractionGate.Query == _gateQuery)
+            {
+                InteractionGate.Query = null;
+            }
+
             HackingManager.PreferredGameType = null;
             TutorialInputLock.ForgetOwner(this);
             TutorialInputLock.ForgetOwner(_dialogue);
@@ -280,6 +412,8 @@ namespace Pawntom.TutorialBridge
 
         private void Update()
         {
+            TryPlaceVaultBarrier();
+
             bool deathShowing = _deathFlow != null && _deathFlow.IsShowing;
 
             // 실패 화면이 닫혔는데 재시도 알림이 못 나갔다면(재시도 도중 예외 등) 여기서 대신 보낸다.
@@ -292,6 +426,11 @@ namespace Pawntom.TutorialBridge
 
             if (_sequencer == null || deathShowing)
             {
+                if (deathShowing && _guide != null)
+                {
+                    HideAllGuides();
+                }
+
                 return;
             }
 
@@ -909,6 +1048,7 @@ namespace Pawntom.TutorialBridge
         private const string TerminalLabelTab = "격벽 탭 클릭";
         private const string TerminalLabelHack = "클릭해서 해킹";
         private const string TerminalLabelOpen = "더블클릭해서 열기";
+        private const string TerminalLabelClose = "더블클릭해서 닫기";
 
         /// <summary>
         /// 터미널이 열려 있는 동안, 지금 눌러야 할 곳(탭 → 격벽 버튼)을 초록 틀로 가리킨다.
@@ -972,6 +1112,9 @@ namespace Pawntom.TutorialBridge
 
             // 해야 할 일이 남았는지 먼저 본다: 해금됐지만 닫힌 격벽 → 더블클릭, 없으면 잠긴 격벽 → 해킹.
             bool secondPhaseOver = _sequencer.GetMainState("4-14") != TutorialBeatState.Pending;
+            bool closeLesson = _sequencer.GetMainState("4-14") == TutorialBeatState.Done &&
+                               _sequencer.GetMainState("4-14b") == TutorialBeatState.Pending;
+            WallControlButtonUI closeTarget = null;
             ControllableWall firstDoor = _sequencer.GetMainState("4-11") == TutorialBeatState.Pending ? _probe.FirstDoorWall() : null;
 
             WallControlButtonUI openTarget = null;
@@ -995,6 +1138,11 @@ namespace Pawntom.TutorialBridge
                     {
                         openTarget = button;
                     }
+                    
+                    if (wall.IsOpen && closeTarget == null)
+                    {
+                        closeTarget = button;
+                    }
                 }
                 else
                 {
@@ -1012,6 +1160,14 @@ namespace Pawntom.TutorialBridge
 
             WallControlButtonUI pick = null;
             string pickLabel = null;
+
+            if (closeLesson && closeTarget != null)
+            {
+                pick = closeTarget;
+                pickLabel = TerminalLabelClose;
+            }
+
+            else if (openTarget != null)
 
             if (openTarget != null)
             {
@@ -1033,7 +1189,8 @@ namespace Pawntom.TutorialBridge
 
                 for (int i = 0; i < all.Length; i++)
                 {
-                    if (all[i] != null && ((!all[i].IsUnlocked && !secondPhaseOver) || (all[i].IsUnlocked && !all[i].IsOpen)))
+                    if (all[i] != null && ((!all[i].IsUnlocked && !secondPhaseOver) || (all[i].IsUnlocked && !all[i].IsOpen) ||
+                                           (closeLesson && all[i].IsUnlocked && all[i].IsOpen)))
                     {
                         wallsLeft = true;
                         break;
@@ -1072,36 +1229,47 @@ namespace Pawntom.TutorialBridge
                 return;
             }
 
-            // 전리품 방(5단계): 전리품들을 먼저, 그다음 열쇠. 이 안내가 맡는 동안은 일반 안내 대신 이쪽을 띄운다.
+            // 전리품 방: 화살표는 가장 가까운 물건으로, 상자는 옵션이 켜져 있을 때만
             int itemCount = Mathf.Min(_probe.CollectLootRoomGuide(_itemGuideBounds), MaxItemGuides);
 
             if (itemCount > 0)
             {
+                int nearest = 0;
+                float nearestSqr = float.MaxValue;
+
                 for (int i = 0; i < MaxItemGuides; i++)
                 {
                     TutorialGuideMarker marker = i == 0 ? _guide : _extraGuides[i - 1];
 
-                    if (i < itemCount)
-                    {
-                        marker.Show(_itemGuideBounds[i], player.position, ItemGuideMinWidth, ItemGuideMinHeight);
-                    }
-                    else
+                    if (i >= itemCount)
                     {
                         marker.Hide();
+                        continue;
                     }
+
+                    float sqr = (_itemGuideBounds[i].center - player.position).sqrMagnitude;
+
+                    if (sqr < nearestSqr)
+                    {
+                        nearestSqr = sqr;
+                        nearest = i;
+                    }
+
+                    if (showGuideBoxes) marker.Show(_itemGuideBounds[i], player.position, ItemGuideMinWidth, ItemGuideMinHeight);
+                    else marker.Hide();
                 }
 
+                PathGuide.Show(this, player, _itemGuideBounds[nearest]);
                 return;
             }
 
             HideExtraGuides();
 
-            // 본부에 돌아와 출발 버튼을 누를 차례면 버튼을 초록 상자로 가리킨다(정산이 뜨면 사라진다).
             Bounds escapeBounds;
 
             if (TryGetEscapeButtonGuide(out escapeBounds))
             {
-                _guide.Show(escapeBounds, player.position, EscapeGuideMinSize, EscapeGuideMinSize);
+                ShowMainGuide(player, escapeBounds, EscapeGuideMinSize, EscapeGuideMinSize);
                 return;
             }
 
@@ -1110,12 +1278,21 @@ namespace Pawntom.TutorialBridge
 
             if (target != TutorialSignal.None && _probe.TryGetGuideBounds(target, out bounds))
             {
-                _guide.Show(bounds, player.position);
+                ShowMainGuide(player, bounds, 1f, 2f);
             }
             else
             {
                 _guide.Hide();
+                PathGuide.Hide(this);
             }
+        }
+
+        private void ShowMainGuide(Transform player, Bounds bounds, float boxMinWidth, float boxMinHeight)
+        {
+            PathGuide.Show(this, player, bounds);
+
+            if (showGuideBoxes) _guide.Show(bounds, player.position, boxMinWidth, boxMinHeight);
+            else _guide.Hide();
         }
 
         private const float EscapeGuideMinSize = 0.5f;

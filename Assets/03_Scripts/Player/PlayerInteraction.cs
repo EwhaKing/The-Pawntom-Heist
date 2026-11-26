@@ -219,7 +219,14 @@ public class PlayerInteraction : NetworkBehaviour
 
         if (controlMachine != null)
         {
-            return controlMachine.IsPlayerInRange(transform.position) ? controlMachine.InteractName : null;
+            if (!controlMachine.IsPlayerInRange(transform.position))
+            {
+                return null;
+            }
+
+            return InteractionGate.IsBlocked(controlMachine, out string lockedReason)
+                ? lockedReason
+                : controlMachine.InteractName;
         }
 
         EscapeButtonInteraction escapeButton = hit.collider.GetComponentInParent<EscapeButtonInteraction>();
@@ -391,6 +398,12 @@ public class PlayerInteraction : NetworkBehaviour
                     "[PlayerInteraction] 단말기 앞 상자 밖이라 상호작용할 수 없습니다."
                 );
 
+                return;
+            }
+            
+            if (InteractionGate.IsBlocked(controlMachine, out string lockedReason))
+            {
+                Debug.Log("[PlayerInteraction] 단말기가 아직 잠겨 있습니다: " + lockedReason);
                 return;
             }
 
